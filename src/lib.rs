@@ -37,7 +37,9 @@ where
 
     info!("reading features");
 
-    for record in reader.records().filter_map(Result::ok) {
+    for result in reader.records() {
+        let record = result?;
+
         let ty = &record[2];
 
         if ty != feature_type {
