@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Drain;
-use std::io::Read;
+use std::io::{self, Read};
 
 use noodles::formats::bam::{self, ByteRecord, Flag};
 
@@ -23,7 +23,7 @@ impl<R: Read> RecordPairs<R> {
         }
     }
 
-    fn next_pair(&mut self) -> Option<(ByteRecord, ByteRecord)> {
+    fn next_pair(&mut self) -> Option<io::Result<(ByteRecord, ByteRecord)>> {
         loop {
             match self.reader.read_byte_record(&mut self.record) {
                 Ok(0) => {
@@ -34,7 +34,7 @@ impl<R: Read> RecordPairs<R> {
                     return None;
                 },
                 Ok(_) => {},
-                Err(e) => panic!("{}", e),
+                Err(e) => return Some(Err(e)),
             }
 
             let mate_key = mate_key(&self.record);
@@ -43,9 +43,9 @@ impl<R: Read> RecordPairs<R> {
                 let flag = Flag::new(self.record.flag());
 
                 if flag.is_read_1() {
-                    return Some((self.record.clone(), mate));
+                    return Some(Ok((self.record.clone(), mate)));
                 } else if flag.is_read_2() {
-                    return Some((mate, self.record.clone()));
+                    return Some(Ok((mate, self.record.clone())));
                 } else {
                     panic!("pair: read flag not set");
                 }
@@ -62,7 +62,7 @@ impl<R: Read> RecordPairs<R> {
 }
 
 impl<R: Read> Iterator for RecordPairs<R> {
-    type Item = (ByteRecord, ByteRecord);
+    type Item = io::Result<(ByteRecord, ByteRecord)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_pair()

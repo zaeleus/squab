@@ -104,7 +104,9 @@ where
     let mut ctx = Context::default();
     let mut pairs = RecordPairs::new(reader);
 
-    for (r1, r2) in &mut pairs {
+    for pair in &mut pairs {
+        let (r1, r2) = pair?;
+
         let f1 = Flag::new(r1.flag());
         let f2 = Flag::new(r2.flag());
 
