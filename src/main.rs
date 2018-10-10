@@ -348,7 +348,7 @@ fn main() {
 
     if matches.is_present("verbose") {
         env_logger::Builder::from_default_env()
-            .filter(Some("feature_count"), LevelFilter::Info)
+            .filter(Some("noodles_count_features"), LevelFilter::Info)
             .init();
     } else {
         env_logger::init();
