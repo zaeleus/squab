@@ -3,8 +3,8 @@
 **noodles count-features** counts the number of aligned records that intersects
 a set of features.
 
-The goal of this project is to provide a faster alternative to [htseq-count] by
-using the same counting rules.
+The goal of this project is to provide a faster alternative to [htseq-count].
+It uses the same counting rules and outputs a compatible data table.
 
 [htseq-count]: https://htseq.readthedocs.io/en/master/count.html
 
@@ -48,6 +48,8 @@ By default, the input alignment file is assumed to be single-end reads. Use
 
 The output is a tab-delimited text file with two columns: the feature
 identifier and the number of reads from the input alignment that overlap it.
+This file is compatible as output from htseq-count, meaning it includes
+statistics in the trailer.
 
 ## Limitations
 
@@ -58,4 +60,3 @@ identifier and the number of reads from the input alignment that overlap it.
   * Nonunique reads (BAM data tag `NH` > 1) are always counted.
   * For paired end alignments, a read that matches itself before a mate is
     found replaces the previously known record.
-  * Statistics are printed to stderr, not the output file or stdout.

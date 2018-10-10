@@ -9,7 +9,6 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
 use std::ops::Range;
-use std::path::Path;
 
 use clap::{App, Arg};
 use interval_tree::IntervalTree;
@@ -274,22 +273,31 @@ fn find(
     set
 }
 
-fn write_counts<P>(
-    dst: P,
+fn write_counts<W>(
+    writer: &mut W,
     counts: &HashMap<String, u64>,
     feature_ids: &[String],
 ) -> io::Result<()>
 where
-    P: AsRef<Path>,
+    W: Write,
 {
-    let file = File::create(dst)?;
-    let mut writer = BufWriter::new(file);
-
     for id in feature_ids {
         let count = counts.get(id).unwrap_or(&0);
-        writeln!(&mut writer, "{}\t{}", id, count)?;
+        writeln!(writer, "{}\t{}", id, count)?;
     }
 
+    Ok(())
+}
+
+fn write_stats<W>(writer: &mut W, ctx: &Context) -> io::Result<()>
+where
+    W: Write,
+{
+    writeln!(writer, "__no_feature\t{}", ctx.no_feature)?;
+    writeln!(writer, "__ambiguous\t{}", ctx.ambiguous)?;
+    writeln!(writer, "__too_low_aQual\t{}", ctx.low_quality)?;
+    writeln!(writer, "__not_aligned\t{}", ctx.unmapped)?;
+    writeln!(writer, "__alignment_not_unique\t-")?;
     Ok(())
 }
 
@@ -381,11 +389,38 @@ fn main() {
 
     info!("writing counts");
 
-    write_counts(results_dst, &ctx.counts, &feature_ids).unwrap();
+    let file = File::create(results_dst).unwrap();
+    let mut writer = BufWriter::new(file);
+    write_counts(&mut writer, &ctx.counts, &feature_ids).unwrap();
+    write_stats(&mut writer, &ctx).unwrap();
+}
 
-    eprintln!("__no_feature: {}", ctx.no_feature);
-    eprintln!("__ambiguous: {}", ctx.ambiguous);
-    eprintln!("__too_low_aQual: {}", ctx.low_quality);
-    eprintln!("__not_aligned: {}", ctx.unmapped);
-    eprintln!("__alignment_not_unique: -");
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_write_stats() {
+        let mut buf = Vec::new();
+
+        let mut ctx = Context::default();
+        ctx.no_feature = 735;
+        ctx.ambiguous = 5;
+        ctx.low_quality = 60;
+        ctx.unmapped = 8;
+
+        write_stats(&mut buf, &ctx).unwrap();
+
+        let actual = String::from_utf8(buf).unwrap();
+
+        let expected = "\
+__no_feature\t735
+__ambiguous\t5
+__too_low_aQual\t60
+__not_aligned\t8
+__alignment_not_unique\t-
+";
+
+        assert_eq!(actual, expected);
+    }
 }
