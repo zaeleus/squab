@@ -28,7 +28,6 @@ USAGE:
 
 FLAGS:
     -h, --help          Prints help information
-        --paired-end    Read records as mate pairs
     -V, --version       Prints version information
     -v, --verbose       Use verbose logging
 
@@ -42,9 +41,6 @@ OPTIONS:
 ARGS:
     <bam>    Input alignment file
 ```
-
-By default, the input alignment file is assumed to be single-end reads. Use
-`--paired-end` if the input is paired-end reads.
 
 The output is a tab-delimited text file with two columns: the feature
 identifier and the number of reads from the input alignment that overlap it.

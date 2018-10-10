@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
 use std::ops::Range;
+use std::path::Path;
 
 use clap::{App, Arg};
 use interval_tree::IntervalTree;
@@ -301,6 +302,23 @@ where
     Ok(())
 }
 
+fn is_paired_end<P>(src: P) -> io::Result<bool>
+where
+    P: AsRef<Path>,
+{
+    let mut reader = bam::Reader::<File>::open(src)?;
+
+    let _header = reader.header()?;
+    let _references = reader.references()?.for_each(|_| {});
+
+    let mut record = ByteRecord::new();
+    reader.read_byte_record(&mut record)?;
+
+    let flag = Flag::new(record.flag());
+
+    Ok(flag.is_paired())
+}
+
 fn main() {
     let matches = App::new(crate_name!())
         .version(crate_version!())
@@ -325,9 +343,6 @@ fn main() {
              .value_name("u8")
              .help("Minimum mapping quality to consider an alignment")
              .default_value("10"))
-        .arg(Arg::with_name("paired-end")
-             .long("paired-end")
-             .help("Read records as mate pairs"))
         .arg(Arg::with_name("output")
              .short("o")
              .long("output")
@@ -363,11 +378,9 @@ fn main() {
     let id = matches.value_of("id").unwrap();
     let min_mapq = value_t!(matches, "min-mapq", u8).unwrap_or_else(|e| e.exit());
 
-    let is_paired_end = matches.is_present("paired-end");
-
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
-    let mut reader = bam::Reader::<File>::open(bam_src).unwrap();
+    let mut reader = bam::Reader::<File>::open(&bam_src).unwrap();
 
     let _header = reader.header().unwrap();
     let references: Vec<Reference> = reader.references()
@@ -378,6 +391,8 @@ fn main() {
     let mut feature_ids = Vec::with_capacity(names.len());
     feature_ids.extend(names.into_iter());
     feature_ids.sort();
+
+    let is_paired_end = is_paired_end(&bam_src).unwrap();
 
     let ctx = if is_paired_end {
         info!("counting features for paired end records");
