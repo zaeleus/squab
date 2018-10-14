@@ -81,7 +81,7 @@ where
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {
-                let count = ctx.counts.entry(gene_name.clone()).or_insert(0);
+                let count = ctx.counts.entry(gene_name).or_insert(0);
                 *count += 1;
             }
         } else if set.len() > 1 {
@@ -168,7 +168,7 @@ where
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {
-                let count = ctx.counts.entry(gene_name.clone()).or_insert(0);
+                let count = ctx.counts.entry(gene_name).or_insert(0);
                 *count += 1;
             }
         } else if set.len() > 1 {
@@ -242,7 +242,7 @@ where
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {
-                let count = ctx.counts.entry(gene_name.clone()).or_insert(0);
+                let count = ctx.counts.entry(gene_name).or_insert(0);
                 *count += 1;
             }
         } else if set.len() > 1 {
