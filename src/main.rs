@@ -57,12 +57,16 @@ where
             continue;
         }
 
-        if record.ref_id() < 0 {
-            panic!("no ref id");
+        let ref_id = record.ref_id();
+
+        if ref_id < 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("expected ref id >= 0, got {}", ref_id),
+            ));
         }
 
-        let ref_id = record.ref_id() as usize;
-        let reference = &references[ref_id];
+        let reference = &references[ref_id as usize];
 
         let intervals = cigar_to_intervals(&record, false);
 
@@ -123,7 +127,10 @@ where
         let ref_id = r1.ref_id();
 
         if ref_id < 0 {
-            panic!("no ref id");
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("expected ref id >= 0, got {}", ref_id),
+            ));
         }
 
         let reference = &references[ref_id as usize];
@@ -144,7 +151,10 @@ where
         let ref_id = r2.ref_id();
 
         if ref_id < 0 {
-            panic!("no ref id");
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("expected ref id >= 0, got {}", ref_id),
+            ));
         }
 
         let reference = &references[ref_id as usize];
@@ -222,7 +232,10 @@ where
         };
 
         if ref_id < 0 {
-            panic!("no ref id");
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("expected ref id >= 0, got {}", ref_id),
+            ));
         }
 
         let reference = &references[ref_id as usize];
