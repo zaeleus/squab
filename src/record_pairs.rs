@@ -5,13 +5,13 @@ use std::io::{self, Read};
 use noodles::formats::bam::{self, ByteRecord, Flag};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
-enum PairPosition {
+pub enum PairPosition {
     First,
     Second,
 }
 
 impl PairPosition {
-    fn mate(&self) -> PairPosition {
+    pub fn mate(&self) -> PairPosition {
         match *self {
             PairPosition::First => PairPosition::Second,
             PairPosition::Second => PairPosition::First,
@@ -89,7 +89,7 @@ impl<R: Read> RecordPairs<R> {
             match self.reader.read_byte_record(&mut self.record) {
                 Ok(0) => {
                     if !self.buf.is_empty() {
-                        warn!("{} records are orphans", self.buf.len());
+                        warn!("{} records are singletons", self.buf.len());
                     }
 
                     return None;
@@ -117,8 +117,8 @@ impl<R: Read> RecordPairs<R> {
         }
     }
 
-    pub fn orphan_pairs(&mut self) -> OrphanRecordPairs {
-        OrphanRecordPairs { drain: self.buf.drain() }
+    pub fn singletons(&mut self) -> Singletons {
+        Singletons { drain: self.buf.drain() }
     }
 }
 
@@ -154,19 +154,14 @@ fn mate_key(record: &ByteRecord) -> RecordKey {
     )
 }
 
-pub struct OrphanRecordPairs<'a> {
+pub struct Singletons<'a> {
     drain: Drain<'a, RecordKey, ByteRecord>,
 }
 
-impl<'a> Iterator for OrphanRecordPairs<'a> {
-    type Item = (Option<ByteRecord>, Option<ByteRecord>);
+impl<'a> Iterator for Singletons<'a> {
+    type Item = ByteRecord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.drain.next().map(|(_, r)| {
-            match PairPosition::from(&r) {
-                PairPosition::First => (Some(r), None),
-                PairPosition::Second => (None, Some(r)),
-            }
-        })
+        self.drain.next().map(|(_, r)| r)
     }
 }

@@ -15,7 +15,15 @@ use clap::{App, Arg};
 use interval_tree::IntervalTree;
 use log::LevelFilter;
 use noodles::formats::bam::{self, ByteRecord, Flag, Reference};
-use noodles_count_features::{Entry, Features, RecordPairs, Strand, cigar_to_intervals, read_features};
+use noodles_count_features::{
+    Entry,
+    Features,
+    PairPosition,
+    RecordPairs,
+    Strand,
+    cigar_to_intervals,
+    read_features,
+};
 
 #[derive(Default)]
 struct Context {
@@ -186,50 +194,25 @@ where
         }
     }
 
-    let rest = pairs.orphan_pairs();
+    for record in pairs.singletons() {
+        let flag = Flag::new(record.flag());
 
-    for (r1, r2) in rest {
-        let mut intervals = if let Some(ref r1) = r1 {
-            let f1 = Flag::new(r1.flag());
-
-            if f1.is_unmapped() {
-                ctx.unmapped += 1;
-                continue;
-            }
-
-            if r1.mapq() < min_mapq {
-                ctx.low_quality += 1;
-                continue;
-            }
-
-            cigar_to_intervals(&r1, false)
-        } else {
-            vec![]
-        };
-
-        if let Some(ref r2) = r2 {
-            let f2 = Flag::new(r2.flag());
-
-            if f2.is_unmapped() {
-                ctx.unmapped += 1;
-                continue;
-            }
-
-            if r2.mapq() < min_mapq {
-                ctx.low_quality += 1;
-                continue;
-            }
-
-            intervals.extend(cigar_to_intervals(&r2, true));
+        if flag.is_unmapped() {
+            ctx.unmapped += 1;
+            continue;
         }
 
-        let ref_id = if let Some(ref r1) = r1 {
-            r1.ref_id()
-        } else if let Some(ref r2) = r2 {
-            r2.ref_id()
-        } else {
-            unreachable!("one orphan record must be set");
+        if record.mapq() < min_mapq {
+            ctx.low_quality += 1;
+            continue;
+        }
+
+        let intervals = match PairPosition::from(&record) {
+            PairPosition::First => cigar_to_intervals(&record, false),
+            PairPosition::Second => cigar_to_intervals(&record, true),
         };
+
+        let ref_id = record.ref_id();
 
         if ref_id < 0 {
             return Err(io::Error::new(

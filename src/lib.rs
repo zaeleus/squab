@@ -2,7 +2,7 @@ extern crate interval_tree;
 #[macro_use] extern crate log;
 extern crate noodles;
 
-pub use self::record_pairs::RecordPairs;
+pub use self::record_pairs::{PairPosition, RecordPairs};
 pub use self::strand::Strand;
 
 pub mod record_pairs;
