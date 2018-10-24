@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Michael Macias <zaeleus@gmail.com>"]
 license = "MIT"
 
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
 [dependencies]
 clap = "2.32.0"
 env_logger = "0.5.13"
