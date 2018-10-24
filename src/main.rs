@@ -39,6 +39,8 @@ fn count_single_end_records<R>(
     features: Features,
     references: Vec<Reference>,
     min_mapq: u8,
+    with_secondary_records: bool,
+    with_supplementary_records: bool,
 ) -> io::Result<Context>
 where
     R: Read,
@@ -57,6 +59,11 @@ where
 
         if flag.is_unmapped() {
             ctx.unmapped += 1;
+            continue;
+        }
+
+        if (!with_secondary_records && flag.is_secondary())
+                || (!with_supplementary_records && flag.is_supplementary()) {
             continue;
         }
 
@@ -109,6 +116,8 @@ fn count_paired_end_records<R>(
     features: Features,
     references: Vec<Reference>,
     min_mapq: u8,
+    with_secondary_records: bool,
+    with_supplementary_records: bool,
 ) -> io::Result<Context>
 where
     R: Read,
@@ -124,6 +133,11 @@ where
 
         if f1.is_unmapped() && f2.is_unmapped() {
             ctx.unmapped += 1;
+            continue;
+        }
+
+        if (!with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
+                || (!with_supplementary_records && (f1.is_supplementary() || f2.is_supplementary())) {
             continue;
         }
 
@@ -199,6 +213,11 @@ where
 
         if flag.is_unmapped() {
             ctx.unmapped += 1;
+            continue;
+        }
+
+        if (!with_secondary_records && flag.is_secondary())
+                || (!with_supplementary_records && flag.is_supplementary()) {
             continue;
         }
 
@@ -322,6 +341,12 @@ fn main() {
              .short("v")
              .long("verbose")
              .help("Use verbose logging"))
+        .arg(Arg::with_name("with-secondary-records")
+             .long("with-secondary-records")
+             .help("Count secondary records (BAM flag 0x100)"))
+        .arg(Arg::with_name("with-supplementary-records")
+             .long("with-supplementary-records")
+             .help("Count supplementary records (BAM flag 0x800)"))
         .arg(Arg::with_name("type")
              .short("t")
              .long("type")
@@ -374,6 +399,9 @@ fn main() {
     let id = matches.value_of("id").unwrap();
     let min_mapq = value_t!(matches, "min-mapq", u8).unwrap_or_else(|e| e.exit());
 
+    let with_secondary_records = matches.is_present("with-secondary-records");
+    let with_supplementary_records = matches.is_present("with-supplementary-records");
+
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
     let mut reader = bam::Reader::<File>::open(&bam_src).unwrap();
@@ -392,10 +420,26 @@ fn main() {
 
     let ctx = if is_paired_end {
         info!("counting features for paired end records");
-        count_paired_end_records(reader, features, references, min_mapq).unwrap()
+
+        count_paired_end_records(
+            reader,
+            features,
+            references,
+            min_mapq,
+            with_secondary_records,
+            with_supplementary_records,
+        ).unwrap()
     } else {
         info!("counting features for single end records");
-        count_single_end_records(reader, features, references, min_mapq).unwrap()
+
+        count_single_end_records(
+            reader,
+            features,
+            references,
+            min_mapq,
+            with_secondary_records,
+            with_supplementary_records,
+        ).unwrap()
     };
 
     info!("writing counts");
