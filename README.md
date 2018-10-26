@@ -56,3 +56,4 @@ statistics in the trailer.
   * Nonunique reads (BAM data tag `NH` > 1) are always counted.
   * For paired end alignments, a read that matches itself before a mate is
     found replaces the previously known record.
+  * Strandedness is always considered.
