@@ -9,7 +9,6 @@ pub mod record_pairs;
 pub mod strand;
 
 use std::collections::{HashMap, HashSet};
-use std::fs::File;
 use std::io;
 use std::ops::Range;
 use std::path::Path;
@@ -31,7 +30,7 @@ pub fn read_features<P>(
 where
     P: AsRef<Path>,
 {
-    let mut reader = gff::Reader::<File>::open(src)?;
+    let mut reader = gff::open(src)?;
     let mut features: Features = HashMap::new();
     let mut names = HashSet::new();
 
