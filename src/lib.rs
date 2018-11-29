@@ -2,9 +2,11 @@ extern crate interval_tree;
 #[macro_use] extern crate log;
 extern crate noodles;
 
+pub use self::count::{Context, count_paired_end_records, count_single_end_records};
 pub use self::record_pairs::{PairPosition, RecordPairs};
 pub use self::strand::Strand;
 
+pub mod count;
 pub mod record_pairs;
 pub mod strand;
 
