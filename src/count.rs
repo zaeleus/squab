@@ -4,7 +4,8 @@ use std::ops::Range;
 
 use interval_tree::IntervalTree;
 use noodles::formats::bam::{self, ByteRecord, Flag, Reference};
-use {Entry, Features, PairPosition, RecordPairs, Strand, cigar_to_intervals};
+
+use crate::{Entry, Features, PairPosition, RecordPairs, Strand, cigar_to_intervals};
 
 #[derive(Default)]
 pub struct Context {

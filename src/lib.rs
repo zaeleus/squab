@@ -1,7 +1,3 @@
-extern crate interval_tree;
-#[macro_use] extern crate log;
-extern crate noodles;
-
 pub use self::count::{Context, count_paired_end_records, count_single_end_records};
 pub use self::record_pairs::{PairPosition, RecordPairs};
 pub use self::strand::Strand;
@@ -16,6 +12,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use interval_tree::IntervalTree;
+use log::info;
 use noodles::formats::bam::{ByteRecord, Cigar, Flag, cigar};
 use noodles::formats::gff;
 

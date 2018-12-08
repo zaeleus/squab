@@ -1,17 +1,10 @@
-#[macro_use] extern crate clap;
-extern crate env_logger;
-extern crate noodles_count_features;
-extern crate interval_tree;
-#[macro_use] extern crate log;
-extern crate noodles;
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
-use clap::{App, Arg};
-use log::LevelFilter;
+use clap::{App, Arg, crate_name, crate_version, value_t};
+use log::{info, LevelFilter};
 use noodles::formats::bam::{self, ByteRecord, Flag, Reference};
 use noodles_count_features::{
     Context,

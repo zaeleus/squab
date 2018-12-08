@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Drain;
 use std::io::{self, Read};
 
+use log::warn;
 use noodles::formats::bam::{self, ByteRecord, Flag};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
