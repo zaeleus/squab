@@ -48,7 +48,7 @@ where
     let mut reader = bam::Reader::<File>::open(src)?;
 
     let _header = reader.header()?;
-    let _references = reader.references()?.for_each(|_| {});
+    reader.references()?.for_each(|_| {});
 
     let mut record = ByteRecord::new();
     reader.read_byte_record(&mut record)?;

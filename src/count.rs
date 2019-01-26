@@ -78,7 +78,7 @@ where
 
         let set = find(tree, &intervals);
 
-        if set.len() == 0 {
+        if set.is_empty() {
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {
@@ -178,7 +178,7 @@ where
 
         set.extend(set2.into_iter());
 
-        if set.len() == 0 {
+        if set.is_empty() {
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {
@@ -235,7 +235,7 @@ where
 
         let set = find(tree, &intervals);
 
-        if set.len() == 0 {
+        if set.is_empty() {
             ctx.no_feature += 1;
         } else if set.len() == 1 {
             for gene_name in set {

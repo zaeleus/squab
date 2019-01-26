@@ -135,7 +135,7 @@ pub fn cigar_to_intervals(record: &ByteRecord, reverse: bool) -> Vec<(Range<u64>
     let mut intervals = Vec::with_capacity(cigar.len());
 
     for op in cigar.ops() {
-        let len = op.len() as u64;
+        let len = u64::from(op.len());
 
         match op {
             cigar::Op::Match(_) | cigar::Op::SeqMatch(_) | cigar::Op::SeqMismatch(_) => {
