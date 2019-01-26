@@ -11,6 +11,7 @@ codegen-units = 1
 
 [dependencies]
 clap = "2.32.0"
+csv = "1.0.5"
 env_logger = "0.5.13"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git" }
 log = "0.4.5"
