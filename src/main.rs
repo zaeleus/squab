@@ -71,6 +71,9 @@ fn main() {
         .arg(Arg::with_name("with-supplementary-records")
              .long("with-supplementary-records")
              .help("Count supplementary records (BAM flag 0x800)"))
+        .arg(Arg::with_name("strand-irrelevant")
+             .long("strand-irrelevant")
+             .help("Whether the sequencing protocol lacks strandedness"))
         .arg(Arg::with_name("type")
              .short("t")
              .long("type")
@@ -125,6 +128,7 @@ fn main() {
 
     let with_secondary_records = matches.is_present("with-secondary-records");
     let with_supplementary_records = matches.is_present("with-supplementary-records");
+    let strand_irrelevant = matches.is_present("strand-irrelevant");
 
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
@@ -152,6 +156,7 @@ fn main() {
             min_mapq,
             with_secondary_records,
             with_supplementary_records,
+            strand_irrelevant,
         ).unwrap()
     } else {
         info!("counting features for single end records");
@@ -163,6 +168,7 @@ fn main() {
             min_mapq,
             with_secondary_records,
             with_supplementary_records,
+            strand_irrelevant,
         ).unwrap()
     };
 

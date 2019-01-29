@@ -28,6 +28,7 @@ USAGE:
 
 FLAGS:
     -h, --help                          Prints help information
+        --strand-irrelevant             Whether the sequencing protocol lacks strandedness
     -V, --version                       Prints version information
     -v, --verbose                       Use verbose logging
         --with-secondary-records        Count secondary records (BAM flag 0x100)
@@ -56,4 +57,3 @@ statistics in the trailer.
   * Nonunique reads (BAM data tag `NH` > 1) are always counted.
   * For paired end alignments, a read that matches itself before a mate is
     found replaces the previously known record.
-  * Strandedness is always considered.

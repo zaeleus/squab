@@ -23,6 +23,7 @@ pub fn count_single_end_records<R>(
     min_mapq: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
+    strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
     R: Read,
@@ -76,7 +77,7 @@ where
             },
         };
 
-        let set = find(tree, &intervals);
+        let set = find(tree, &intervals, strand_irrelevant);
 
         if set.is_empty() {
             ctx.no_feature += 1;
@@ -100,6 +101,7 @@ pub fn count_paired_end_records<R>(
     min_mapq: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
+    strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
     R: Read,
@@ -150,7 +152,7 @@ where
             },
         };
 
-        let mut set = find(tree, &intervals);
+        let mut set = find(tree, &intervals, strand_irrelevant);
 
         let ref_id = r2.ref_id();
 
@@ -174,7 +176,7 @@ where
             },
         };
 
-        let set2 = find(tree, &intervals);
+        let set2 = find(tree, &intervals, strand_irrelevant);
 
         set.extend(set2.into_iter());
 
@@ -233,7 +235,7 @@ where
             },
         };
 
-        let set = find(tree, &intervals);
+        let set = find(tree, &intervals, strand_irrelevant);
 
         if set.is_empty() {
             ctx.no_feature += 1;
@@ -253,6 +255,7 @@ where
 fn find(
     tree: &IntervalTree<u64, Entry>,
     intervals: &[(Range<u64>, bool)],
+    strand_irrelevant: bool,
 ) -> HashSet<String> {
     let mut set = HashSet::new();
 
@@ -261,7 +264,8 @@ fn find(
             let gene_name = &entry.value.0;
             let strand = &entry.value.1;
 
-            if (strand == &Strand::Reverse && *is_reverse)
+            if strand_irrelevant
+                    || (strand == &Strand::Reverse && *is_reverse)
                     || (strand == &Strand::Forward && !*is_reverse) {
                 set.insert(gene_name.to_string());
             }
