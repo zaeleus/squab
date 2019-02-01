@@ -14,7 +14,7 @@ use std::path::Path;
 use csv::StringRecord;
 use interval_tree::IntervalTree;
 use log::info;
-use noodles::formats::bam::{ByteRecord, Cigar, Flag, cigar};
+use noodles::formats::bam::{Cigar, Flag, cigar};
 use noodles::formats::gff;
 
 const GFF_SEQ_NAME_INDEX: usize = 0;
@@ -125,31 +125,41 @@ fn parse_attrs_and_get<'a>(record: &'a StringRecord, key: &str) -> io::Result<&'
     ))
 }
 
-pub fn cigar_to_intervals(record: &ByteRecord, reverse: bool) -> Vec<(Range<u64>, bool)> {
-    let mut start = record.pos() as u64;
-    let cigar = Cigar::from_bytes(record.cigar());
+pub struct CigarToIntervals<'a> {
+    ops: cigar::Ops<'a>,
+    start: u64,
+    is_reverse: bool,
+}
 
-    let flag = Flag::new(record.flag());
-    let is_reverse = if reverse { !flag.is_reverse() } else { flag.is_reverse() };
-
-    let mut intervals = Vec::with_capacity(cigar.len());
-
-    for op in cigar.ops() {
-        let len = u64::from(op.len());
-
-        match op {
-            cigar::Op::Match(_) | cigar::Op::SeqMatch(_) | cigar::Op::SeqMismatch(_) => {
-                let end = start + len;
-                intervals.push((start..end, is_reverse));
-            },
-            cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {},
-            _ => continue,
-        }
-
-        start += len;
+impl<'a> CigarToIntervals<'a> {
+    fn new(cigar: &'a Cigar, start: u64, flag: Flag, reverse: bool) -> CigarToIntervals<'a> {
+        let ops = cigar.ops();
+        let is_reverse = if reverse { !flag.is_reverse() } else { flag.is_reverse() };
+        CigarToIntervals { ops, start, is_reverse, }
     }
+}
 
-    intervals
+impl<'a> Iterator for CigarToIntervals<'a> {
+    type Item = (Range<u64>, bool);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let op = self.ops.next()?;
+
+            let len = u64::from(op.len());
+
+            match op {
+                cigar::Op::Match(_) | cigar::Op::SeqMatch(_) | cigar::Op::SeqMismatch(_) => {
+                    let end = self.start + len;
+                    return Some((self.start..end, self.is_reverse));
+                },
+                cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {},
+                _ => continue,
+            }
+
+            self.start += len;
+        }
+    }
 }
 
 #[cfg(test)]

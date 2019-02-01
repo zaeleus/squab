@@ -1,11 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{self, Read};
-use std::ops::Range;
 
 use interval_tree::IntervalTree;
-use noodles::formats::bam::{self, ByteRecord, Flag, Reference};
+use noodles::formats::bam::{self, ByteRecord, Cigar, Flag, Reference};
 
-use crate::{Entry, Features, PairPosition, RecordPairs, Strand, cigar_to_intervals};
+use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, Strand};
 
 #[derive(Default)]
 pub struct Context {
@@ -66,7 +65,9 @@ where
 
         let reference = &references[ref_id as usize];
 
-        let intervals = cigar_to_intervals(&record, false);
+        let cigar = Cigar::from_bytes(record.cigar());
+        let start = record.pos() as u64;
+        let intervals = CigarToIntervals::new(&cigar, start, flag, false);
 
         let name = reference.name();
         let tree = match features.get(name) {
@@ -77,7 +78,7 @@ where
             },
         };
 
-        let set = find(tree, &intervals, strand_irrelevant);
+        let set = find(tree, intervals, strand_irrelevant);
 
         if set.is_empty() {
             ctx.no_feature += 1;
@@ -141,7 +142,9 @@ where
 
         let reference = &references[ref_id as usize];
 
-        let intervals = cigar_to_intervals(&r1, false);
+        let cigar = Cigar::from_bytes(r1.cigar());
+        let start = r1.pos() as u64;
+        let intervals = CigarToIntervals::new(&cigar, start, f1, false);
 
         let name = reference.name();
         let tree = match features.get(name) {
@@ -152,7 +155,7 @@ where
             },
         };
 
-        let mut set = find(tree, &intervals, strand_irrelevant);
+        let mut set = find(tree, intervals, strand_irrelevant);
 
         let ref_id = r2.ref_id();
 
@@ -165,7 +168,9 @@ where
 
         let reference = &references[ref_id as usize];
 
-        let intervals = cigar_to_intervals(&r2, true);
+        let cigar = Cigar::from_bytes(r2.cigar());
+        let start = r2.pos() as u64;
+        let intervals = CigarToIntervals::new(&cigar, start, f2, true);
 
         let name = reference.name();
         let tree = match features.get(name) {
@@ -176,7 +181,7 @@ where
             },
         };
 
-        let set2 = find(tree, &intervals, strand_irrelevant);
+        let set2 = find(tree, intervals, strand_irrelevant);
 
         set.extend(set2.into_iter());
 
@@ -210,10 +215,15 @@ where
             continue;
         }
 
-        let intervals = match PairPosition::from(&record) {
-            PairPosition::First => cigar_to_intervals(&record, false),
-            PairPosition::Second => cigar_to_intervals(&record, true),
+        let cigar = Cigar::from_bytes(record.cigar());
+        let start = record.pos() as u64;
+
+        let reverse = match PairPosition::from(&record) {
+            PairPosition::First => false,
+            PairPosition::Second => true,
         };
+
+        let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
         let ref_id = record.ref_id();
 
@@ -235,7 +245,7 @@ where
             },
         };
 
-        let set = find(tree, &intervals, strand_irrelevant);
+        let set = find(tree, intervals, strand_irrelevant);
 
         if set.is_empty() {
             ctx.no_feature += 1;
@@ -254,7 +264,7 @@ where
 
 fn find(
     tree: &IntervalTree<u64, Entry>,
-    intervals: &[(Range<u64>, bool)],
+    intervals: CigarToIntervals,
     strand_irrelevant: bool,
 ) -> HashSet<String> {
     let mut set = HashSet::new();
@@ -265,8 +275,8 @@ fn find(
             let strand = &entry.value.1;
 
             if strand_irrelevant
-                    || (strand == &Strand::Reverse && *is_reverse)
-                    || (strand == &Strand::Forward && !*is_reverse) {
+                    || (strand == &Strand::Reverse && is_reverse)
+                    || (strand == &Strand::Forward && !is_reverse) {
                 set.insert(gene_name.to_string());
             }
         }
