@@ -2,9 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::io::{self, Read};
 
 use interval_tree::IntervalTree;
-use noodles::formats::bam::{self, ByteRecord, Cigar, Flag, Reference};
+use noodles::formats::{
+    bam::{self, ByteRecord, Cigar, Flag, Reference},
+    gff,
+};
 
-use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, Strand};
+use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs};
 
 #[derive(Default)]
 pub struct Context {
@@ -275,8 +278,8 @@ fn find(
             let strand = &entry.value.1;
 
             if strand_irrelevant
-                    || (strand == &Strand::Reverse && is_reverse)
-                    || (strand == &Strand::Forward && !is_reverse) {
+                    || (strand == &gff::Strand::Reverse && is_reverse)
+                    || (strand == &gff::Strand::Forward && !is_reverse) {
                 set.insert(gene_name.to_string());
             }
         }

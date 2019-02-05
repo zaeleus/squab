@@ -1,10 +1,8 @@
 pub use self::count::{Context, count_paired_end_records, count_single_end_records};
 pub use self::record_pairs::{PairPosition, RecordPairs};
-pub use self::strand::Strand;
 
 pub mod count;
 pub mod record_pairs;
-pub mod strand;
 
 use std::collections::{HashMap, HashSet};
 use std::io;
@@ -19,7 +17,7 @@ use noodles::formats::gff;
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
 #[derive(Default)]
-pub struct Entry(pub String, pub Strand);
+pub struct Entry(pub String, pub gff::Strand);
 
 pub fn read_features<P>(
     src: P,
@@ -49,7 +47,7 @@ where
         let start = record.start().map_err(invalid_data)?;
         let end = record.end().map_err(invalid_data)?;
 
-        let strand = record.strand().map_err(invalid_data).and_then(parse_strand)?;
+        let strand = record.strand().map_err(invalid_data)?;
 
         let attributes = record.attributes().map_err(invalid_data)?;
         let id = attributes.get(feature_id).ok_or_else(|| {
@@ -72,10 +70,6 @@ where
 
 fn invalid_data(e: gff::record::Error) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, e)
-}
-
-fn parse_strand(s: &str) -> io::Result<Strand> {
-    s.parse().map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 pub struct CigarToIntervals<'a> {
