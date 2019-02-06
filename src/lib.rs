@@ -44,7 +44,7 @@ where
         }
 
         let seq_name = record.seq_name().map_err(invalid_data)?;
-        let start = record.start().map_err(invalid_data)?;
+        let start = record.start().map_err(invalid_data)? - 1;
         let end = record.end().map_err(invalid_data)?;
 
         let strand = record.strand().map_err(invalid_data)?;
