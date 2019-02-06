@@ -97,8 +97,10 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
             match op {
                 cigar::Op::Match(_) | cigar::Op::SeqMatch(_) | cigar::Op::SeqMismatch(_) => {
-                    let end = self.start + len;
-                    return Some((self.start..end, self.is_reverse));
+                    let start = self.start;
+                    let end = start + len;
+                    self.start += len;
+                    return Some((start..end, self.is_reverse));
                 },
                 cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {},
                 _ => continue,
