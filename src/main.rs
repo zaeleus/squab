@@ -37,7 +37,7 @@ where
     writeln!(writer, "__ambiguous\t{}", ctx.ambiguous)?;
     writeln!(writer, "__too_low_aQual\t{}", ctx.low_quality)?;
     writeln!(writer, "__not_aligned\t{}", ctx.unmapped)?;
-    writeln!(writer, "__alignment_not_unique\t-")?;
+    writeln!(writer, "__alignment_not_unique\t{}", ctx.nonunique)?;
     Ok(())
 }
 
@@ -71,6 +71,9 @@ fn main() {
         .arg(Arg::with_name("with-supplementary-records")
              .long("with-supplementary-records")
              .help("Count supplementary records (BAM flag 0x800)"))
+        .arg(Arg::with_name("with-nonunique-records")
+             .long("with-nonunique-records")
+             .help("Count nonunique records (BAM data tag NH > 1)"))
         .arg(Arg::with_name("strand-irrelevant")
              .long("strand-irrelevant")
              .help("Whether the sequencing protocol lacks strandedness"))
@@ -128,6 +131,7 @@ fn main() {
 
     let with_secondary_records = matches.is_present("with-secondary-records");
     let with_supplementary_records = matches.is_present("with-supplementary-records");
+    let with_nonunique_records = matches.is_present("with-nonunique-records");
     let strand_irrelevant = matches.is_present("strand-irrelevant");
 
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
@@ -156,6 +160,7 @@ fn main() {
             min_mapq,
             with_secondary_records,
             with_supplementary_records,
+            with_nonunique_records,
             strand_irrelevant,
         ).unwrap()
     } else {
@@ -168,6 +173,7 @@ fn main() {
             min_mapq,
             with_secondary_records,
             with_supplementary_records,
+            with_nonunique_records,
             strand_irrelevant,
         ).unwrap()
     };

@@ -31,6 +31,7 @@ FLAGS:
         --strand-irrelevant             Whether the sequencing protocol lacks strandedness
     -V, --version                       Prints version information
     -v, --verbose                       Use verbose logging
+        --with-nonunique-records        Count nonunique records (BAM data tag NH > 1)
         --with-secondary-records        Count secondary records (BAM flag 0x100)
         --with-supplementary-records    Count supplementary records (BAM flag 0x800)
 
@@ -54,6 +55,5 @@ statistics in the trailer.
 
   * Counts are taken only as the union of matched feature sets, i.e., reads that
     overlap any part of the feature is considered once.
-  * Nonunique reads (BAM data tag `NH` > 1) are always counted.
   * For paired end alignments, a read that matches itself before a mate is
     found replaces the previously known record.

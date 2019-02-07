@@ -16,6 +16,7 @@ pub struct Context {
     pub ambiguous: u64,
     pub low_quality: u64,
     pub unmapped: u64,
+    pub nonunique: u64,
 }
 
 pub fn count_single_end_records<R>(
@@ -25,6 +26,7 @@ pub fn count_single_end_records<R>(
     min_mapq: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
+    with_nonunique_records: bool,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
@@ -49,6 +51,11 @@ where
 
         if (!with_secondary_records && flag.is_secondary())
                 || (!with_supplementary_records && flag.is_supplementary()) {
+            continue;
+        }
+
+        if !with_nonunique_records && is_nonunique_record(&record)? {
+            ctx.nonunique += 1;
             continue;
         }
 
@@ -105,6 +112,7 @@ pub fn count_paired_end_records<R>(
     min_mapq: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
+    with_nonunique_records: bool,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
@@ -126,6 +134,11 @@ where
 
         if (!with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
                 || (!with_supplementary_records && (f1.is_supplementary() || f2.is_supplementary())) {
+            continue;
+        }
+
+        if !with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?) {
+            ctx.nonunique += 1;
             continue;
         }
 
@@ -213,6 +226,11 @@ where
             continue;
         }
 
+        if !with_nonunique_records && is_nonunique_record(&record)? {
+            ctx.nonunique += 1;
+            continue;
+        }
+
         if record.mapq() < min_mapq {
             ctx.low_quality += 1;
             continue;
@@ -286,4 +304,20 @@ fn find(
     }
 
     set
+}
+
+fn is_nonunique_record(record: &ByteRecord) -> io::Result<bool> {
+    let mut data = bam::data::Reader::new(record.data());
+
+    for result in data.fields() {
+        let field = result?;
+
+        if field.tag() == "NH" {
+            if let bam::data::Value::Int8(n) = field.value() {
+                return Ok(*n > 1);
+            }
+        }
+    }
+
+    Ok(false)
 }
