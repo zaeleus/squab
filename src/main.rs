@@ -5,7 +5,7 @@ use std::path::Path;
 
 use clap::{App, Arg, crate_name, crate_version, value_t};
 use log::{info, LevelFilter};
-use noodles::formats::bam::{self, ByteRecord, Flag, Reference};
+use noodles::formats::bam::{self, Record, Reference};
 use noodles_count_features::{
     Context,
     count_paired_end_records,
@@ -50,12 +50,10 @@ where
     let _header = reader.header()?;
     reader.references()?.for_each(|_| {});
 
-    let mut record = ByteRecord::new();
-    reader.read_byte_record(&mut record)?;
+    let mut record = Record::new();
+    reader.read_record(&mut record)?;
 
-    let flag = Flag::new(record.flag());
-
-    Ok(flag.is_paired())
+    Ok(record.flag().is_paired())
 }
 
 fn main() {

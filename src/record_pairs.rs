@@ -3,7 +3,7 @@ use std::collections::hash_map::Drain;
 use std::io::{self, Read};
 
 use log::warn;
-use noodles::formats::bam::{self, ByteRecord, Flag};
+use noodles::formats::bam::{self, Record, Flag};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -20,10 +20,9 @@ impl PairPosition {
     }
 }
 
-impl<'a> From<&'a ByteRecord> for PairPosition {
-    fn from(record: &ByteRecord) -> PairPosition {
-        let flag = Flag::new(record.flag());
-        PairPosition::from(flag)
+impl<'a> From<&'a Record> for PairPosition {
+    fn from(record: &Record) -> PairPosition {
+        record.flag().into()
     }
 }
 
@@ -72,22 +71,22 @@ type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
 
 pub struct RecordPairs<R: Read> {
     reader: bam::Reader<R>,
-    record: ByteRecord,
-    buf: HashMap<RecordKey, ByteRecord>,
+    record: Record,
+    buf: HashMap<RecordKey, Record>,
 }
 
 impl<R: Read> RecordPairs<R> {
     pub fn new(reader: bam::Reader<R>) -> RecordPairs<R> {
         RecordPairs {
             reader,
-            record: ByteRecord::new(),
+            record: Record::new(),
             buf: HashMap::new(),
         }
     }
 
-    fn next_pair(&mut self) -> Option<io::Result<(ByteRecord, ByteRecord)>> {
+    fn next_pair(&mut self) -> Option<io::Result<(Record, Record)>> {
         loop {
-            match self.reader.read_byte_record(&mut self.record) {
+            match self.reader.read_record(&mut self.record) {
                 Ok(0) => {
                     if !self.buf.is_empty() {
                         warn!("{} records are singletons", self.buf.len());
@@ -124,14 +123,14 @@ impl<R: Read> RecordPairs<R> {
 }
 
 impl<R: Read> Iterator for RecordPairs<R> {
-    type Item = io::Result<(ByteRecord, ByteRecord)>;
+    type Item = io::Result<(Record, Record)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_pair()
     }
 }
 
-fn key(record: &ByteRecord) -> RecordKey {
+fn key(record: &Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::from(record),
@@ -143,7 +142,7 @@ fn key(record: &ByteRecord) -> RecordKey {
     )
 }
 
-fn mate_key(record: &ByteRecord) -> RecordKey {
+fn mate_key(record: &Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::from(record).mate(),
@@ -156,11 +155,11 @@ fn mate_key(record: &ByteRecord) -> RecordKey {
 }
 
 pub struct Singletons<'a> {
-    drain: Drain<'a, RecordKey, ByteRecord>,
+    drain: Drain<'a, RecordKey, Record>,
 }
 
 impl<'a> Iterator for Singletons<'a> {
-    type Item = ByteRecord;
+    type Item = Record;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.drain.next().map(|(_, r)| r)

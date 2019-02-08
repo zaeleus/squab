@@ -3,7 +3,7 @@ use std::io::{self, Read};
 
 use interval_tree::IntervalTree;
 use noodles::formats::{
-    bam::{self, ByteRecord, Cigar, Flag, Reference},
+    bam::{self, Record, Reference},
     gff,
 };
 
@@ -33,16 +33,16 @@ where
     R: Read,
 {
     let mut ctx = Context::default();
-    let mut record = ByteRecord::new();
+    let mut record = Record::new();
 
     loop {
-        let bytes_read = reader.read_byte_record(&mut record)?;
+        let bytes_read = reader.read_record(&mut record)?;
 
         if bytes_read == 0 {
             break;
         }
 
-        let flag = Flag::new(record.flag());
+        let flag = record.flag();
 
         if flag.is_unmapped() {
             ctx.unmapped += 1;
@@ -66,7 +66,7 @@ where
 
         let reference = get_reference(&record, &references)?;
 
-        let cigar = Cigar::from_bytes(record.cigar());
+        let cigar = record.cigar();
         let start = record.pos() as u64;
         let intervals = CigarToIntervals::new(&cigar, start, flag, false);
 
@@ -115,8 +115,8 @@ where
     for pair in &mut pairs {
         let (r1, r2) = pair?;
 
-        let f1 = Flag::new(r1.flag());
-        let f2 = Flag::new(r2.flag());
+        let f1 = r1.flag();
+        let f2 = r2.flag();
 
         if f1.is_unmapped() && f2.is_unmapped() {
             ctx.unmapped += 1;
@@ -140,7 +140,7 @@ where
 
         let reference = get_reference(&r1, &references)?;
 
-        let cigar = Cigar::from_bytes(r1.cigar());
+        let cigar = r1.cigar();
         let start = r1.pos() as u64;
         let intervals = CigarToIntervals::new(&cigar, start, f1, false);
 
@@ -157,7 +157,7 @@ where
 
         let reference = get_reference(&r2, &references)?;
 
-        let cigar = Cigar::from_bytes(r2.cigar());
+        let cigar = r2.cigar();
         let start = r2.pos() as u64;
         let intervals = CigarToIntervals::new(&cigar, start, f2, true);
 
@@ -187,7 +187,7 @@ where
     }
 
     for record in pairs.singletons() {
-        let flag = Flag::new(record.flag());
+        let flag = record.flag();
 
         if flag.is_unmapped() {
             ctx.unmapped += 1;
@@ -209,7 +209,7 @@ where
             continue;
         }
 
-        let cigar = Cigar::from_bytes(record.cigar());
+        let cigar = record.cigar();
         let start = record.pos() as u64;
 
         let reverse = match PairPosition::from(&record) {
@@ -270,8 +270,8 @@ fn find(
     set
 }
 
-fn is_nonunique_record(record: &ByteRecord) -> io::Result<bool> {
-    let mut data = bam::data::Reader::new(record.data());
+fn is_nonunique_record(record: &Record) -> io::Result<bool> {
+    let data = record.data();
 
     for result in data.fields() {
         let field = result?;
@@ -287,7 +287,7 @@ fn is_nonunique_record(record: &ByteRecord) -> io::Result<bool> {
 }
 
 fn get_reference<'a>(
-    record: &ByteRecord,
+    record: &Record,
     references: &'a [Reference],
 ) -> io::Result<&'a Reference> {
     let ref_id = record.ref_id();
