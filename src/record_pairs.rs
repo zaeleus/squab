@@ -73,14 +73,16 @@ pub struct RecordPairs<R: Read> {
     reader: bam::Reader<R>,
     record: Record,
     buf: HashMap<RecordKey, Record>,
+    primary_only: bool,
 }
 
 impl<R: Read> RecordPairs<R> {
-    pub fn new(reader: bam::Reader<R>) -> RecordPairs<R> {
+    pub fn new(reader: bam::Reader<R>, primary_only: bool) -> RecordPairs<R> {
         RecordPairs {
             reader,
             record: Record::new(),
             buf: HashMap::new(),
+            primary_only,
         }
     }
 
@@ -96,6 +98,10 @@ impl<R: Read> RecordPairs<R> {
                 },
                 Ok(_) => {},
                 Err(e) => return Some(Err(e)),
+            }
+
+            if self.primary_only && is_primary(&self.record) {
+                continue;
             }
 
             let mate_key = mate_key(&self.record);
@@ -117,6 +123,8 @@ impl<R: Read> RecordPairs<R> {
         }
     }
 
+
+
     pub fn singletons(&mut self) -> Singletons {
         Singletons { drain: self.buf.drain() }
     }
@@ -128,6 +136,12 @@ impl<R: Read> Iterator for RecordPairs<R> {
     fn next(&mut self) -> Option<Self::Item> {
         self.next_pair()
     }
+}
+
+
+fn is_primary(record: &Record) -> bool {
+    let flag = record.flag();
+    flag.is_secondary() || flag.is_supplementary()
 }
 
 fn key(record: &Record) -> RecordKey {

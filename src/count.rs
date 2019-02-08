@@ -110,7 +110,9 @@ where
     R: Read,
 {
     let mut ctx = Context::default();
-    let mut pairs = RecordPairs::new(reader);
+
+    let primary_only = !with_secondary_records && !with_supplementary_records;
+    let mut pairs = RecordPairs::new(reader, primary_only);
 
     for pair in &mut pairs {
         let (r1, r2) = pair?;
