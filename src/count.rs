@@ -64,16 +64,7 @@ where
             continue;
         }
 
-        let ref_id = record.ref_id();
-
-        if ref_id < 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("expected ref id >= 0, got {}", ref_id),
-            ));
-        }
-
-        let reference = &references[ref_id as usize];
+        let reference = get_reference(&record, &references)?;
 
         let cigar = Cigar::from_bytes(record.cigar());
         let start = record.pos() as u64;
@@ -147,16 +138,7 @@ where
             continue;
         }
 
-        let ref_id = r1.ref_id();
-
-        if ref_id < 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("expected ref id >= 0, got {}", ref_id),
-            ));
-        }
-
-        let reference = &references[ref_id as usize];
+        let reference = get_reference(&r1, &references)?;
 
         let cigar = Cigar::from_bytes(r1.cigar());
         let start = r1.pos() as u64;
@@ -173,16 +155,7 @@ where
 
         let mut set = find(tree, intervals, strand_irrelevant);
 
-        let ref_id = r2.ref_id();
-
-        if ref_id < 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("expected ref id >= 0, got {}", ref_id),
-            ));
-        }
-
-        let reference = &references[ref_id as usize];
+        let reference = get_reference(&r2, &references)?;
 
         let cigar = Cigar::from_bytes(r2.cigar());
         let start = r2.pos() as u64;
@@ -246,16 +219,7 @@ where
 
         let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
-        let ref_id = record.ref_id();
-
-        if ref_id < 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("expected ref id >= 0, got {}", ref_id),
-            ));
-        }
-
-        let reference = &references[ref_id as usize];
+        let reference = get_reference(&record, &references)?;
 
         let name = reference.name();
         let tree = match features.get(name) {
@@ -320,4 +284,25 @@ fn is_nonunique_record(record: &ByteRecord) -> io::Result<bool> {
     }
 
     Ok(false)
+}
+
+fn get_reference<'a>(
+    record: &ByteRecord,
+    references: &'a [Reference],
+) -> io::Result<&'a Reference> {
+    let ref_id = record.ref_id();
+
+    if ref_id < 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("expected ref id >= 0, got {}", ref_id),
+        ));
+    }
+
+    references.get(ref_id as usize).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("expected ref id < {}, got {}", references.len(), ref_id),
+        )
+    })
 }
