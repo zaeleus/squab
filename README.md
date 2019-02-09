@@ -10,13 +10,14 @@ It uses the same counting rules and outputs a compatible data table.
 
 ## Installation
 
-Use [Cargo] to install `noodles-count-features`.
+Install [Rust] and use `cargo` to install `noodles-count-features`.
 
 ```
 $ cargo install --git https://github.com/zaeleus/noodles-count-features.git
 ```
 
-[Cargo]: https://doc.rust-lang.org/cargo/getting-started/installation.html
+[Rust]: https://www.rust-lang.org/tools/install
+
 
 ## Usage
 
