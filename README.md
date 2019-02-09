@@ -48,9 +48,9 @@ ARGS:
 ```
 
 The output is a tab-delimited text file with two columns: the feature
-identifier and the number of reads from the input alignment that overlap it.
-This file is compatible as output from htseq-count, meaning it includes
-statistics in the trailer.
+identifier (string) and the number of reads (integer) from the input alignment
+that overlap it.  This file is compatible as output from htseq-count, meaning
+it includes statistics in the trailer.
 
 ## Limitations
 
