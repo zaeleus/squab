@@ -52,17 +52,17 @@ mod pair_position_tests {
 
     #[test]
     fn test_from_flag() {
-        let flag = Flag::new(0x41);
+        let flag = Flag::from(0x41);
         assert_eq!(PairPosition::from(flag), PairPosition::First);
 
-        let flag = Flag::new(0x81);
+        let flag = Flag::from(0x81);
         assert_eq!(PairPosition::from(flag), PairPosition::Second);
     }
 
     #[test]
     #[should_panic]
     fn test_from_flag_with_invalid_flag() {
-        let flag = Flag::new(0x01);
+        let flag = Flag::from(0x01);
         PairPosition::from(flag);
     }
 }
