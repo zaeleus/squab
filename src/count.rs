@@ -64,7 +64,7 @@ where
             continue;
         }
 
-        let reference = get_reference(&record, &references)?;
+        let reference = get_reference(&references, record.ref_id())?;
 
         let cigar = record.cigar();
         let start = record.pos() as u64;
@@ -140,7 +140,7 @@ where
             continue;
         }
 
-        let reference = get_reference(&r1, &references)?;
+        let reference = get_reference(&references, r1.ref_id())?;
 
         let cigar = r1.cigar();
         let start = r1.pos() as u64;
@@ -157,7 +157,7 @@ where
 
         let mut set = find(tree, intervals, strand_irrelevant);
 
-        let reference = get_reference(&r2, &references)?;
+        let reference = get_reference(&references, r2.ref_id())?;
 
         let cigar = r2.cigar();
         let start = r2.pos() as u64;
@@ -221,7 +221,7 @@ where
 
         let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
-        let reference = get_reference(&record, &references)?;
+        let reference = get_reference(&references, record.ref_id())?;
 
         let name = reference.name();
         let tree = match features.get(name) {
@@ -288,12 +288,7 @@ fn is_nonunique_record(record: &Record) -> io::Result<bool> {
     Ok(false)
 }
 
-fn get_reference<'a>(
-    record: &Record,
-    references: &'a [Reference],
-) -> io::Result<&'a Reference> {
-    let ref_id = record.ref_id();
-
+fn get_reference<'a>(references: &'a [Reference], ref_id: i32) -> io::Result<&'a Reference> {
     if ref_id < 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -307,4 +302,34 @@ fn get_reference<'a>(
             format!("expected ref id < {}, got {}", references.len(), ref_id),
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use noodles::formats::bam;
+
+    use super::*;
+
+    fn build_references() -> Vec<bam::Reference> {
+        return vec![
+            bam::Reference::new(String::from("chr1"), 7),
+            bam::Reference::new(String::from("chr2"), 12),
+            bam::Reference::new(String::from("chr3"), 148),
+        ];
+    }
+
+    #[test]
+    fn test_get_reference() {
+        let references = build_references();
+
+        let reference = get_reference(&references, 1).unwrap();
+        assert_eq!(reference.name(), "chr2");
+        assert_eq!(reference.len(), 12);
+
+        let reference = get_reference(&references, -2);
+        assert!(reference.is_err());
+
+        let reference = get_reference(&references, 5);
+        assert!(reference.is_err());
+    }
 }
