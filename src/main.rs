@@ -228,6 +228,7 @@ PAK4\t145
         ctx.ambiguous = 5;
         ctx.low_quality = 60;
         ctx.unmapped = 8;
+        ctx.nonunique = 13;
 
         write_stats(&mut buf, &ctx).unwrap();
 
@@ -238,7 +239,7 @@ __no_feature\t735
 __ambiguous\t5
 __too_low_aQual\t60
 __not_aligned\t8
-__alignment_not_unique\t-
+__alignment_not_unique\t13
 ";
 
         assert_eq!(actual, expected);
