@@ -110,3 +110,73 @@ impl<'a> Iterator for CigarToIntervals<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use noodles::formats::bam::{cigar, Cigar, Flag};
+
+    use super::CigarToIntervals;
+
+    fn build_raw_cigar() -> Vec<u8> {
+        let ops = [
+            u32::from(cigar::Op::Match(1)).to_le_bytes(),
+            u32::from(cigar::Op::Insertion(2)).to_le_bytes(),
+            u32::from(cigar::Op::Deletion(3)).to_le_bytes(),
+            u32::from(cigar::Op::Skip(5)).to_le_bytes(),
+            u32::from(cigar::Op::SoftClip(8)).to_le_bytes(),
+            u32::from(cigar::Op::HardClip(13)).to_le_bytes(),
+            u32::from(cigar::Op::Pad(21)).to_le_bytes(),
+            u32::from(cigar::Op::SeqMatch(34)).to_le_bytes(),
+            u32::from(cigar::Op::SeqMismatch(55)).to_le_bytes(),
+        ];
+
+        ops.iter().flat_map(|u| u).cloned().collect()
+    }
+
+    #[test]
+    fn test_new() {
+        let raw_cigar = build_raw_cigar();
+        let cigar = Cigar::new(&raw_cigar);
+
+        let start = 0;
+
+        let flag = Flag::from(99);
+        let it = CigarToIntervals::new(&cigar, start, flag, false);
+        assert!(!it.is_reverse);
+
+        let flag = Flag::from(99);
+        let it = CigarToIntervals::new(&cigar, start, flag, true);
+        assert!(it.is_reverse);
+
+        let flag = Flag::from(147);
+        let it = CigarToIntervals::new(&cigar, start, flag, false);
+        assert!(it.is_reverse);
+
+        let flag = Flag::from(147);
+        let it = CigarToIntervals::new(&cigar, start, flag, true);
+        assert!(!it.is_reverse);
+    }
+
+    #[test]
+    fn test_next() {
+        let raw_cigar = build_raw_cigar();
+        let cigar = Cigar::new(&raw_cigar);
+
+        let flag = Flag::from(99);
+        let mut it = CigarToIntervals::new(&cigar, 0, flag, false);
+
+        let (interval, is_reverse) = it.next().unwrap();
+        assert_eq!(interval, 0..1);
+        assert!(!is_reverse);
+
+        let (interval, is_reverse) = it.next().unwrap();
+        assert_eq!(interval, 9..43);
+        assert!(!is_reverse);
+
+        let (interval, is_reverse) = it.next().unwrap();
+        assert_eq!(interval, 43..98);
+        assert!(!is_reverse);
+
+        assert!(it.next().is_none());
+    }
+}

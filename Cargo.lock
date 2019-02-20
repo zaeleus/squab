@@ -195,7 +195,7 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git#5625c2032d198cca4915cf2d4f1899cc344dab3e"
+source = "git+https://github.com/zaeleus/noodles.git#45c89805f05dedb8d10a3914c4afc77fa2ba548b"
 dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
