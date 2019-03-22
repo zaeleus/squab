@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Drain;
+use std::collections::HashMap;
 use std::io::{self, Read};
 
 use log::warn;
-use noodles::formats::bam::{self, Record, Flag};
+use noodles::formats::bam::{self, Flag, Record};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -95,8 +95,8 @@ impl<R: Read> RecordPairs<R> {
                     }
 
                     return None;
-                },
-                Ok(_) => {},
+                }
+                Ok(_) => {}
                 Err(e) => return Some(Err(e)),
             }
 
@@ -108,12 +108,8 @@ impl<R: Read> RecordPairs<R> {
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
-                    PairPosition::First => {
-                        Some(Ok((mate, self.record.clone())))
-                    },
-                    PairPosition::Second => {
-                        Some(Ok((self.record.clone(), mate)))
-                    },
+                    PairPosition::First => Some(Ok((mate, self.record.clone()))),
+                    PairPosition::Second => Some(Ok((self.record.clone(), mate))),
                 };
             }
 
@@ -123,10 +119,10 @@ impl<R: Read> RecordPairs<R> {
         }
     }
 
-
-
     pub fn singletons(&mut self) -> Singletons {
-        Singletons { drain: self.buf.drain() }
+        Singletons {
+            drain: self.buf.drain(),
+        }
     }
 }
 
@@ -137,7 +133,6 @@ impl<R: Read> Iterator for RecordPairs<R> {
         self.next_pair()
     }
 }
-
 
 fn is_primary(record: &Record) -> bool {
     let flag = record.flag();

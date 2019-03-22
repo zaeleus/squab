@@ -50,7 +50,8 @@ where
         }
 
         if (!with_secondary_records && flag.is_secondary())
-                || (!with_supplementary_records && flag.is_supplementary()) {
+            || (!with_supplementary_records && flag.is_supplementary())
+        {
             continue;
         }
 
@@ -76,7 +77,7 @@ where
             None => {
                 ctx.no_feature += 1;
                 continue;
-            },
+            }
         };
 
         let set = find(tree, intervals, strand_irrelevant);
@@ -126,7 +127,8 @@ where
         }
 
         if (!with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
-                || (!with_supplementary_records && (f1.is_supplementary() || f2.is_supplementary())) {
+            || (!with_supplementary_records && (f1.is_supplementary() || f2.is_supplementary()))
+        {
             continue;
         }
 
@@ -152,7 +154,7 @@ where
             None => {
                 ctx.no_feature += 1;
                 continue;
-            },
+            }
         };
 
         let mut set = find(tree, intervals, strand_irrelevant);
@@ -169,7 +171,7 @@ where
             None => {
                 ctx.no_feature += 1;
                 continue;
-            },
+            }
         };
 
         let set2 = find(tree, intervals, strand_irrelevant);
@@ -197,7 +199,8 @@ where
         }
 
         if (!with_secondary_records && flag.is_secondary())
-                || (!with_supplementary_records && flag.is_supplementary()) {
+            || (!with_supplementary_records && flag.is_supplementary())
+        {
             continue;
         }
 
@@ -229,7 +232,7 @@ where
             None => {
                 ctx.no_feature += 1;
                 continue;
-            },
+            }
         };
 
         let set = find(tree, intervals, strand_irrelevant);
@@ -262,8 +265,9 @@ fn find(
             let strand = &entry.value.1;
 
             if strand_irrelevant
-                    || (strand == &gff::Strand::Reverse && is_reverse)
-                    || (strand == &gff::Strand::Forward && !is_reverse) {
+                || (strand == &gff::Strand::Reverse && is_reverse)
+                || (strand == &gff::Strand::Forward && !is_reverse)
+            {
                 set.insert(gene_name.to_string());
             }
         }

@@ -1,4 +1,4 @@
-pub use self::count::{Context, count_paired_end_records, count_single_end_records};
+pub use self::count::{count_paired_end_records, count_single_end_records, Context};
 pub use self::record_pairs::{PairPosition, RecordPairs};
 
 pub mod count;
@@ -11,7 +11,7 @@ use std::path::Path;
 
 use interval_tree::IntervalTree;
 use log::info;
-use noodles::formats::bam::{Cigar, Flag, cigar};
+use noodles::formats::bam::{cigar, Cigar, Flag};
 use noodles::formats::gff;
 
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
@@ -81,8 +81,18 @@ pub struct CigarToIntervals<'a> {
 impl<'a> CigarToIntervals<'a> {
     fn new(cigar: &'a Cigar, start: u64, flag: Flag, reverse: bool) -> CigarToIntervals<'a> {
         let ops = cigar.ops();
-        let is_reverse = if reverse { !flag.is_reverse() } else { flag.is_reverse() };
-        CigarToIntervals { ops, start, is_reverse, }
+
+        let is_reverse = if reverse {
+            !flag.is_reverse()
+        } else {
+            flag.is_reverse()
+        };
+
+        CigarToIntervals {
+            ops,
+            start,
+            is_reverse,
+        }
     }
 }
 
@@ -101,8 +111,8 @@ impl<'a> Iterator for CigarToIntervals<'a> {
                     let end = start + len;
                     self.start += len;
                     return Some((start..end, self.is_reverse));
-                },
-                cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {},
+                }
+                cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {}
                 _ => continue,
             }
 

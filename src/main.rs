@@ -3,14 +3,11 @@ use std::fs::File;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
-use clap::{App, Arg, crate_name, crate_version, value_t};
+use clap::{crate_name, crate_version, value_t, App, Arg};
 use log::{info, LevelFilter};
 use noodles::formats::bam::{self, Record, Reference};
 use noodles_count_features::{
-    Context,
-    count_paired_end_records,
-    count_single_end_records,
-    read_features,
+    count_paired_end_records, count_single_end_records, read_features, Context,
 };
 
 fn write_counts<W>(
@@ -59,55 +56,77 @@ where
 fn main() {
     let matches = App::new(crate_name!())
         .version(crate_version!())
-        .arg(Arg::with_name("verbose")
-             .short("v")
-             .long("verbose")
-             .help("Use verbose logging"))
-        .arg(Arg::with_name("with-secondary-records")
-             .long("with-secondary-records")
-             .help("Count secondary records (BAM flag 0x100)"))
-        .arg(Arg::with_name("with-supplementary-records")
-             .long("with-supplementary-records")
-             .help("Count supplementary records (BAM flag 0x800)"))
-        .arg(Arg::with_name("with-nonunique-records")
-             .long("with-nonunique-records")
-             .help("Count nonunique records (BAM data tag NH > 1)"))
-        .arg(Arg::with_name("strand-irrelevant")
-             .long("strand-irrelevant")
-             .help("Whether the sequencing protocol lacks strandedness"))
-        .arg(Arg::with_name("type")
-             .short("t")
-             .long("type")
-             .value_name("str")
-             .help("Feature type to count")
-             .default_value("exon"))
-        .arg(Arg::with_name("id")
-             .short("i")
-             .long("id")
-             .value_name("str")
-             .help("Feature attribute to use as the feature identity")
-             .default_value("gene_id"))
-        .arg(Arg::with_name("min-mapq")
-             .long("min-mapq")
-             .value_name("u8")
-             .help("Minimum mapping quality to consider an alignment")
-             .default_value("10"))
-        .arg(Arg::with_name("output")
-             .short("o")
-             .long("output")
-             .value_name("file")
-             .help("Output destination for feature counts")
-             .required(true))
-        .arg(Arg::with_name("annotations")
-             .short("a")
-             .long("annotations")
-             .value_name("file")
-             .help("Input annotations file (GTF/GFFv2)")
-             .required(true))
-        .arg(Arg::with_name("bam")
-             .help("Input alignment file")
-             .required(true)
-             .index(1))
+        .arg(
+            Arg::with_name("verbose")
+                .short("v")
+                .long("verbose")
+                .help("Use verbose logging"),
+        )
+        .arg(
+            Arg::with_name("with-secondary-records")
+                .long("with-secondary-records")
+                .help("Count secondary records (BAM flag 0x100)"),
+        )
+        .arg(
+            Arg::with_name("with-supplementary-records")
+                .long("with-supplementary-records")
+                .help("Count supplementary records (BAM flag 0x800)"),
+        )
+        .arg(
+            Arg::with_name("with-nonunique-records")
+                .long("with-nonunique-records")
+                .help("Count nonunique records (BAM data tag NH > 1)"),
+        )
+        .arg(
+            Arg::with_name("strand-irrelevant")
+                .long("strand-irrelevant")
+                .help("Whether the sequencing protocol lacks strandedness"),
+        )
+        .arg(
+            Arg::with_name("type")
+                .short("t")
+                .long("type")
+                .value_name("str")
+                .help("Feature type to count")
+                .default_value("exon"),
+        )
+        .arg(
+            Arg::with_name("id")
+                .short("i")
+                .long("id")
+                .value_name("str")
+                .help("Feature attribute to use as the feature identity")
+                .default_value("gene_id"),
+        )
+        .arg(
+            Arg::with_name("min-mapq")
+                .long("min-mapq")
+                .value_name("u8")
+                .help("Minimum mapping quality to consider an alignment")
+                .default_value("10"),
+        )
+        .arg(
+            Arg::with_name("output")
+                .short("o")
+                .long("output")
+                .value_name("file")
+                .help("Output destination for feature counts")
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("annotations")
+                .short("a")
+                .long("annotations")
+                .value_name("file")
+                .help("Input annotations file (GTF/GFFv2)")
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("bam")
+                .help("Input alignment file")
+                .required(true)
+                .index(1),
+        )
         .get_matches();
 
     if matches.is_present("verbose") {
@@ -137,7 +156,8 @@ fn main() {
     let mut reader = bam::Reader::<File>::open(&bam_src).unwrap();
 
     let _header = reader.header().unwrap();
-    let references: Vec<Reference> = reader.references()
+    let references: Vec<Reference> = reader
+        .references()
         .unwrap()
         .filter_map(Result::ok)
         .collect();
@@ -160,7 +180,8 @@ fn main() {
             with_supplementary_records,
             with_nonunique_records,
             strand_irrelevant,
-        ).unwrap()
+        )
+        .unwrap()
     } else {
         info!("counting features for single end records");
 
@@ -173,7 +194,8 @@ fn main() {
             with_supplementary_records,
             with_nonunique_records,
             strand_irrelevant,
-        ).unwrap()
+        )
+        .unwrap()
     };
 
     info!("writing counts");
@@ -190,33 +212,36 @@ mod tests {
 
     #[test]
     fn test_write_counts() {
-         let counts: HashMap<String, u64> = [
+        let counts: HashMap<String, u64> = [
             (String::from("AADAT"), 302),
             (String::from("CLN3"), 37),
             (String::from("PAK4"), 145),
-         ].iter().cloned().collect();
+        ]
+        .iter()
+        .cloned()
+        .collect();
 
-         let ids = vec![
+        let ids = vec![
             String::from("AADAT"),
             String::from("CLN3"),
             String::from("NEO1"),
             String::from("PAK4"),
-         ];
+        ];
 
-         let mut buf = Vec::new();
+        let mut buf = Vec::new();
 
-         write_counts(&mut buf, &counts, &ids).unwrap();
+        write_counts(&mut buf, &counts, &ids).unwrap();
 
-         let actual = String::from_utf8(buf).unwrap();
+        let actual = String::from_utf8(buf).unwrap();
 
-         let expected = "\
+        let expected = "\
 AADAT\t302
 CLN3\t37
 NEO1\t0
 PAK4\t145
 ";
 
-         assert_eq!(actual, expected);
+        assert_eq!(actual, expected);
     }
 
     #[test]
