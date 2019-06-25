@@ -3,12 +3,15 @@ use std::fs::File;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
-use clap::{crate_name, crate_version, value_t, App, Arg};
+use clap::{crate_name, value_t, App, Arg};
+use git_testament::{git_testament, render_testament};
 use log::{info, LevelFilter};
 use noodles::formats::bam::{self, Record, Reference};
 use noodles_count_features::{
     count_paired_end_records, count_single_end_records, read_features, Context,
 };
+
+git_testament!(TESTAMENT);
 
 fn write_counts<W>(
     writer: &mut W,
@@ -55,7 +58,7 @@ where
 
 fn main() {
     let matches = App::new(crate_name!())
-        .version(crate_version!())
+        .version(render_testament!(TESTAMENT).as_str())
         .arg(
             Arg::with_name("verbose")
                 .short("v")
