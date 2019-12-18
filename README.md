@@ -1,7 +1,7 @@
 # noodles count-features
 
-**noodles count-features** counts the number of aligned records that intersects
-a set of features.
+**noodles count-features** performs gene expression quantification by counting
+the number of aligned records that intersects a set of features.
 
 The goal of this project is to provide a faster alternative to [htseq-count].
 It uses the same counting rules and outputs a compatible data table.
