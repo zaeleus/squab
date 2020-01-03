@@ -11,8 +11,8 @@ use std::path::Path;
 
 use interval_tree::IntervalTree;
 use log::info;
-use noodles::formats::bam::{cigar, Cigar, Flag};
-use noodles::formats::gff;
+use noodles_bam::{cigar, Cigar, Flag};
+use noodles_gff as gff;
 
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
@@ -123,7 +123,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles::formats::bam::{cigar, Cigar, Flag};
+    use noodles_bam::{cigar, Cigar, Flag};
 
     use super::CigarToIntervals;
 

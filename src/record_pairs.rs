@@ -1,9 +1,9 @@
 use std::collections::hash_map::Drain;
 use std::collections::HashMap;
-use std::io::{self, Read};
+use std::io::{self, Read, Seek};
 
 use log::warn;
-use noodles::formats::bam::{self, Flag, Record};
+use noodles_bam::{self as bam, Flag, Record};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -40,7 +40,7 @@ impl From<Flag> for PairPosition {
 
 #[cfg(test)]
 mod pair_position_tests {
-    use noodles::formats::bam::Flag;
+    use noodles_bam::Flag;
 
     use super::PairPosition;
 
@@ -69,14 +69,14 @@ mod pair_position_tests {
 
 type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
 
-pub struct RecordPairs<R: Read> {
+pub struct RecordPairs<R: Read + Seek> {
     reader: bam::Reader<R>,
     record: Record,
     buf: HashMap<RecordKey, Record>,
     primary_only: bool,
 }
 
-impl<R: Read> RecordPairs<R> {
+impl<R: Read + Seek> RecordPairs<R> {
     pub fn new(reader: bam::Reader<R>, primary_only: bool) -> RecordPairs<R> {
         RecordPairs {
             reader,
@@ -126,7 +126,7 @@ impl<R: Read> RecordPairs<R> {
     }
 }
 
-impl<R: Read> Iterator for RecordPairs<R> {
+impl<R: Read + Seek> Iterator for RecordPairs<R> {
     type Item = io::Result<(Record, Record)>;
 
     fn next(&mut self) -> Option<Self::Item> {

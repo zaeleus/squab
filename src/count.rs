@@ -1,11 +1,9 @@
 use std::collections::{HashMap, HashSet};
-use std::io::{self, Read};
+use std::io::{self, Read, Seek};
 
 use interval_tree::IntervalTree;
-use noodles::formats::{
-    bam::{self, Record, Reference},
-    gff,
-};
+use noodles_bam::{self as bam, Record, Reference};
+use noodles_gff as gff;
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs};
 
@@ -30,7 +28,7 @@ pub fn count_single_end_records<R>(
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
-    R: Read,
+    R: Read + Seek,
 {
     let mut ctx = Context::default();
     let mut record = Record::new();
@@ -108,7 +106,7 @@ pub fn count_paired_end_records<R>(
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
-    R: Read,
+    R: Read + Seek,
 {
     let mut ctx = Context::default();
 
@@ -310,7 +308,7 @@ fn get_reference<'a>(references: &'a [Reference], ref_id: i32) -> io::Result<&'a
 
 #[cfg(test)]
 mod tests {
-    use noodles::formats::bam;
+    use noodles_bam as bam;
 
     use super::*;
 

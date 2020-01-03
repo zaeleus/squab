@@ -6,7 +6,7 @@ use std::path::Path;
 use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};
 use log::{info, LevelFilter};
-use noodles::formats::bam::{self, Record, Reference};
+use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
     count_paired_end_records, count_single_end_records, read_features, Context,
 };
@@ -45,10 +45,9 @@ fn is_paired_end<P>(src: P) -> io::Result<bool>
 where
     P: AsRef<Path>,
 {
-    let mut reader = bam::Reader::<File>::open(src)?;
-
-    let _header = reader.header()?;
-    reader.references()?.for_each(|_| {});
+    let file = File::open(src)?;
+    let mut reader = bam::Reader::new(file);
+    reader.meta()?;
 
     let mut record = Record::new();
     reader.read_record(&mut record)?;
@@ -156,14 +155,9 @@ fn main() {
 
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
-    let mut reader = bam::Reader::<File>::open(&bam_src).unwrap();
-
-    let _header = reader.header().unwrap();
-    let references: Vec<Reference> = reader
-        .references()
-        .unwrap()
-        .filter_map(Result::ok)
-        .collect();
+    let file = File::open(&bam_src).unwrap();
+    let mut reader = bam::Reader::new(file);
+    let (_, references) = reader.meta().expect("failed to read bam header");
 
     let mut feature_ids = Vec::with_capacity(names.len());
     feature_ids.extend(names.into_iter());
