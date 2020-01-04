@@ -7,6 +7,86 @@ use noodles_gff as gff;
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs};
 
+pub struct Filter {
+    min_mapq: u8,
+    with_secondary_records: bool,
+    with_supplementary_records: bool,
+    with_nonunique_records: bool,
+}
+
+impl Filter {
+    pub fn new(
+        min_mapq: u8,
+        with_secondary_records: bool,
+        with_supplementary_records: bool,
+        with_nonunique_records: bool,
+    ) -> Filter {
+        Self {
+            min_mapq,
+            with_secondary_records,
+            with_supplementary_records,
+            with_nonunique_records,
+        }
+    }
+
+    pub fn filter(&self, ctx: &mut Context, record: &Record) -> io::Result<bool> {
+        let flag = record.flag();
+
+        if flag.is_unmapped() {
+            ctx.unmapped += 1;
+            return Ok(true);
+        }
+
+        if (!self.with_secondary_records && flag.is_secondary())
+            || (!self.with_supplementary_records && flag.is_supplementary())
+        {
+            return Ok(true);
+        }
+
+        if !self.with_nonunique_records && is_nonunique_record(&record)? {
+            ctx.nonunique += 1;
+            return Ok(true);
+        }
+
+        if record.mapq() < self.min_mapq {
+            ctx.low_quality += 1;
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
+    pub fn filter_pair(&self, ctx: &mut Context, r1: &Record, r2: &Record) -> io::Result<bool> {
+        let f1 = r1.flag();
+        let f2 = r2.flag();
+
+        if f1.is_unmapped() && f2.is_unmapped() {
+            ctx.unmapped += 1;
+            return Ok(true);
+        }
+
+        if (!self.with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
+            || (!self.with_supplementary_records
+                && (f1.is_supplementary() || f2.is_supplementary()))
+        {
+            return Ok(true);
+        }
+
+        if !self.with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?)
+        {
+            ctx.nonunique += 1;
+            return Ok(true);
+        }
+
+        if r1.mapq() < self.min_mapq || r2.mapq() < self.min_mapq {
+            ctx.low_quality += 1;
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+}
+
 #[derive(Default)]
 pub struct Context {
     pub counts: HashMap<String, u64>,
@@ -21,10 +101,7 @@ pub fn count_single_end_records<R>(
     mut reader: bam::Reader<R>,
     features: Features,
     references: Vec<Reference>,
-    min_mapq: u8,
-    with_secondary_records: bool,
-    with_supplementary_records: bool,
-    with_nonunique_records: bool,
+    filter: Filter,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
@@ -40,26 +117,7 @@ where
             break;
         }
 
-        let flag = record.flag();
-
-        if flag.is_unmapped() {
-            ctx.unmapped += 1;
-            continue;
-        }
-
-        if (!with_secondary_records && flag.is_secondary())
-            || (!with_supplementary_records && flag.is_supplementary())
-        {
-            continue;
-        }
-
-        if !with_nonunique_records && is_nonunique_record(&record)? {
-            ctx.nonunique += 1;
-            continue;
-        }
-
-        if record.mapq() < min_mapq {
-            ctx.low_quality += 1;
+        if filter.filter(&mut ctx, &record)? {
             continue;
         }
 
@@ -67,6 +125,7 @@ where
 
         let cigar = record.cigar();
         let start = record.pos() as u64;
+        let flag = record.flag();
         let intervals = CigarToIntervals::new(&cigar, start, flag, false);
 
         let name = reference.name();
@@ -99,10 +158,7 @@ pub fn count_paired_end_records<R>(
     reader: bam::Reader<R>,
     features: Features,
     references: Vec<Reference>,
-    min_mapq: u8,
-    with_secondary_records: bool,
-    with_supplementary_records: bool,
-    with_nonunique_records: bool,
+    filter: Filter,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
@@ -110,33 +166,13 @@ where
 {
     let mut ctx = Context::default();
 
-    let primary_only = !with_secondary_records && !with_supplementary_records;
+    let primary_only = !filter.with_secondary_records && !filter.with_supplementary_records;
     let mut pairs = RecordPairs::new(reader, primary_only);
 
     for pair in &mut pairs {
         let (r1, r2) = pair?;
 
-        let f1 = r1.flag();
-        let f2 = r2.flag();
-
-        if f1.is_unmapped() && f2.is_unmapped() {
-            ctx.unmapped += 1;
-            continue;
-        }
-
-        if (!with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
-            || (!with_supplementary_records && (f1.is_supplementary() || f2.is_supplementary()))
-        {
-            continue;
-        }
-
-        if !with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?) {
-            ctx.nonunique += 1;
-            continue;
-        }
-
-        if r1.mapq() < min_mapq || r2.mapq() < min_mapq {
-            ctx.low_quality += 1;
+        if filter.filter_pair(&mut ctx, &r1, &r2)? {
             continue;
         }
 
@@ -144,6 +180,7 @@ where
 
         let cigar = r1.cigar();
         let start = r1.pos() as u64;
+        let f1 = r1.flag();
         let intervals = CigarToIntervals::new(&cigar, start, f1, false);
 
         let name = reference.name();
@@ -161,6 +198,7 @@ where
 
         let cigar = r2.cigar();
         let start = r2.pos() as u64;
+        let f2 = r2.flag();
         let intervals = CigarToIntervals::new(&cigar, start, f2, true);
 
         let name = reference.name();
@@ -189,26 +227,7 @@ where
     }
 
     for record in pairs.singletons() {
-        let flag = record.flag();
-
-        if flag.is_unmapped() {
-            ctx.unmapped += 1;
-            continue;
-        }
-
-        if (!with_secondary_records && flag.is_secondary())
-            || (!with_supplementary_records && flag.is_supplementary())
-        {
-            continue;
-        }
-
-        if !with_nonunique_records && is_nonunique_record(&record)? {
-            ctx.nonunique += 1;
-            continue;
-        }
-
-        if record.mapq() < min_mapq {
-            ctx.low_quality += 1;
+        if filter.filter(&mut ctx, &record)? {
             continue;
         }
 
@@ -220,6 +239,7 @@ where
             PairPosition::Second => true,
         };
 
+        let flag = record.flag();
         let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
         let reference = get_reference(&references, record.ref_id())?;

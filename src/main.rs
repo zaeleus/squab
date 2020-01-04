@@ -8,7 +8,7 @@ use git_testament::{git_testament, render_testament};
 use log::{info, LevelFilter};
 use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
-    count_paired_end_records, count_single_end_records, read_features, Context,
+    count::Filter, count_paired_end_records, count_single_end_records, read_features, Context,
 };
 
 git_testament!(TESTAMENT);
@@ -165,34 +165,19 @@ fn main() {
 
     let is_paired_end = is_paired_end(&bam_src).unwrap();
 
+    let filter = Filter::new(
+        min_mapq,
+        with_secondary_records,
+        with_supplementary_records,
+        with_nonunique_records,
+    );
+
     let ctx = if is_paired_end {
         info!("counting features for paired end records");
-
-        count_paired_end_records(
-            reader,
-            features,
-            references,
-            min_mapq,
-            with_secondary_records,
-            with_supplementary_records,
-            with_nonunique_records,
-            strand_irrelevant,
-        )
-        .unwrap()
+        count_paired_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
     } else {
         info!("counting features for single end records");
-
-        count_single_end_records(
-            reader,
-            features,
-            references,
-            min_mapq,
-            with_secondary_records,
-            with_supplementary_records,
-            with_nonunique_records,
-            strand_irrelevant,
-        )
-        .unwrap()
+        count_single_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
     };
 
     info!("writing counts");
