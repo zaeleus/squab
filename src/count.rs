@@ -139,16 +139,7 @@ where
 
         let set = find(tree, intervals, strand_irrelevant);
 
-        if set.is_empty() {
-            ctx.no_feature += 1;
-        } else if set.len() == 1 {
-            for gene_name in set {
-                let count = ctx.counts.entry(gene_name).or_insert(0);
-                *count += 1;
-            }
-        } else if set.len() > 1 {
-            ctx.ambiguous += 1;
-        }
+        update_intersections(&mut ctx, set);
     }
 
     Ok(ctx)
@@ -214,16 +205,7 @@ where
 
         set.extend(set2.into_iter());
 
-        if set.is_empty() {
-            ctx.no_feature += 1;
-        } else if set.len() == 1 {
-            for gene_name in set {
-                let count = ctx.counts.entry(gene_name).or_insert(0);
-                *count += 1;
-            }
-        } else if set.len() > 1 {
-            ctx.ambiguous += 1;
-        }
+        update_intersections(&mut ctx, set);
     }
 
     for record in pairs.singletons() {
@@ -255,16 +237,7 @@ where
 
         let set = find(tree, intervals, strand_irrelevant);
 
-        if set.is_empty() {
-            ctx.no_feature += 1;
-        } else if set.len() == 1 {
-            for gene_name in set {
-                let count = ctx.counts.entry(gene_name).or_insert(0);
-                *count += 1;
-            }
-        } else if set.len() > 1 {
-            ctx.ambiguous += 1;
-        }
+        update_intersections(&mut ctx, set);
     }
 
     Ok(ctx)
@@ -324,6 +297,19 @@ fn get_reference<'a>(references: &'a [Reference], ref_id: i32) -> io::Result<&'a
             format!("expected ref id < {}, got {}", references.len(), ref_id),
         )
     })
+}
+
+fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
+    if intersections.is_empty() {
+        ctx.no_feature += 1;
+    } else if intersections.len() == 1 {
+        for name in intersections {
+            let count = ctx.counts.entry(name).or_insert(0);
+            *count += 1;
+        }
+    } else if intersections.len() > 1 {
+        ctx.ambiguous += 1;
+    }
 }
 
 #[cfg(test)]
