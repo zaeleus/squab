@@ -97,25 +97,35 @@ pub struct Context {
     pub nonunique: u64,
 }
 
-pub fn count_single_end_records<R>(
-    mut reader: bam::Reader<R>,
+impl Context {
+    pub fn add(&mut self, other: &Context) {
+        for (name, count) in other.counts.iter() {
+            let entry = self.counts.entry(name.to_string()).or_insert(0);
+            *entry += count;
+        }
+
+        self.no_feature += other.no_feature;
+        self.ambiguous += other.ambiguous;
+        self.low_quality += other.low_quality;
+        self.unmapped += other.unmapped;
+        self.nonunique += other.nonunique;
+    }
+}
+
+pub fn count_single_end_records<I>(
+    records: I,
     features: &Features,
     references: &[Reference],
     filter: &Filter,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
-    R: Read + Seek,
+    I: Iterator<Item = io::Result<Record>>,
 {
     let mut ctx = Context::default();
-    let mut record = Record::new();
 
-    loop {
-        let bytes_read = reader.read_record(&mut record)?;
-
-        if bytes_read == 0 {
-            break;
-        }
+    for result in records {
+        let record = result?;
 
         count_single_end_record(
             &mut ctx,

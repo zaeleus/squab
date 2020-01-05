@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};
 use log::{info, LevelFilter};
+use noodles::formats::bai;
 use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
     count::Filter, count_paired_end_records, count_single_end_records, read_features, Context,
@@ -177,8 +178,37 @@ fn main() {
         count_paired_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
     } else {
         info!("counting features for single end records");
-        count_single_end_records(reader, &features, &references, &filter, strand_irrelevant)
-            .unwrap()
+
+        let bai_src = PathBuf::from(bam_src).with_extension("bam.bai");
+        let bai_file = File::open(bai_src).unwrap();
+        let mut bai_reader = bai::Reader::new(bai_file);
+        bai_reader.header().unwrap();
+        let index = bai_reader.read_index().unwrap();
+
+        let mut ctxs = Vec::new();
+
+        for (ref_id, reference) in references.iter().enumerate() {
+            let index_ref = &index.references[ref_id];
+
+            let start = 0;
+            let end = reference.len();
+
+            let query = reader.query(index_ref, start, end);
+
+            let ctx =
+                count_single_end_records(query, &features, &references, &filter, strand_irrelevant)
+                    .unwrap();
+
+            ctxs.push(ctx);
+        }
+
+        let mut ctx = Context::default();
+
+        for c in ctxs {
+            ctx.add(&c);
+        }
+
+        ctx
     };
 
     info!("writing counts");
