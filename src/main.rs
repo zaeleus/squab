@@ -177,7 +177,8 @@ fn main() {
         count_paired_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
     } else {
         info!("counting features for single end records");
-        count_single_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
+        count_single_end_records(reader, &features, &references, &filter, strand_irrelevant)
+            .unwrap()
     };
 
     info!("writing counts");

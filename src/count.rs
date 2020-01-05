@@ -99,9 +99,9 @@ pub struct Context {
 
 pub fn count_single_end_records<R>(
     mut reader: bam::Reader<R>,
-    features: Features,
-    references: Vec<Reference>,
-    filter: Filter,
+    features: &Features,
+    references: &[Reference],
+    filter: &Filter,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
@@ -117,32 +117,52 @@ where
             break;
         }
 
-        if filter.filter(&mut ctx, &record)? {
-            continue;
-        }
-
-        let reference = get_reference(&references, record.ref_id())?;
-
-        let cigar = record.cigar();
-        let start = record.pos() as u64;
-        let flag = record.flag();
-        let intervals = CigarToIntervals::new(&cigar, start, flag, false);
-
-        let name = reference.name();
-        let tree = match features.get(name) {
-            Some(t) => t,
-            None => {
-                ctx.no_feature += 1;
-                continue;
-            }
-        };
-
-        let set = find(tree, intervals, strand_irrelevant);
-
-        update_intersections(&mut ctx, set);
+        count_single_end_record(
+            &mut ctx,
+            features,
+            references,
+            filter,
+            strand_irrelevant,
+            &record,
+        )?;
     }
 
     Ok(ctx)
+}
+
+pub fn count_single_end_record(
+    ctx: &mut Context,
+    features: &Features,
+    references: &[Reference],
+    filter: &Filter,
+    strand_irrelevant: bool,
+    record: &Record,
+) -> io::Result<()> {
+    if filter.filter(ctx, record)? {
+        return Ok(());
+    }
+
+    let reference = get_reference(&references, record.ref_id())?;
+
+    let cigar = record.cigar();
+    let start = record.pos() as u64;
+    let flag = record.flag();
+    let intervals = CigarToIntervals::new(&cigar, start, flag, false);
+
+    let name = reference.name();
+    let tree = match features.get(name) {
+        Some(t) => t,
+        None => {
+            ctx.no_feature += 1;
+            return Ok(());
+        }
+    };
+
+    let set = find(tree, intervals, strand_irrelevant);
+
+    update_intersections(ctx, set);
+
+    Ok(())
 }
 
 pub fn count_paired_end_records<R>(
