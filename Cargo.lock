@@ -259,7 +259,6 @@ name = "noodles-count-features"
 version = "0.1.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "csv 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "git-testament 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "interval-tree 0.1.0 (git+https://github.com/zaeleus/interval-tree.git?rev=2a0bab09e79766f3daf8b02725f27f66dbd9d009)",
