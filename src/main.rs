@@ -209,7 +209,8 @@ async fn main() {
 
     let ctx = if is_paired_end {
         info!("counting features for paired end records");
-        count_paired_end_records(reader, features, references, filter, strand_irrelevant).unwrap()
+        let records = reader.records();
+        count_paired_end_records(records, features, references, filter, strand_irrelevant).unwrap()
     } else {
         info!("counting features for single end records");
 

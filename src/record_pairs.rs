@@ -1,9 +1,9 @@
 use std::collections::hash_map::Drain;
 use std::collections::HashMap;
-use std::io::{self, Read, Seek};
+use std::io;
 
 use log::warn;
-use noodles_bam::{self as bam, Flag, Record};
+use noodles_bam::{Flag, Record};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -69,18 +69,19 @@ mod pair_position_tests {
 
 type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
 
-pub struct RecordPairs<R: Read + Seek> {
-    reader: bam::Reader<R>,
-    record: Record,
+pub struct RecordPairs<R: Iterator<Item = io::Result<Record>>> {
+    records: R,
     buf: HashMap<RecordKey, Record>,
     primary_only: bool,
 }
 
-impl<R: Read + Seek> RecordPairs<R> {
-    pub fn new(reader: bam::Reader<R>, primary_only: bool) -> RecordPairs<R> {
+impl<R> RecordPairs<R>
+where
+    R: Iterator<Item = io::Result<Record>>,
+{
+    pub fn new(records: R, primary_only: bool) -> RecordPairs<R> {
         RecordPairs {
-            reader,
-            record: Record::new(),
+            records,
             buf: HashMap::new(),
             primary_only,
         }
@@ -88,34 +89,36 @@ impl<R: Read + Seek> RecordPairs<R> {
 
     fn next_pair(&mut self) -> Option<io::Result<(Record, Record)>> {
         loop {
-            match self.reader.read_record(&mut self.record) {
-                Ok(0) => {
+            let record = match self.records.next() {
+                Some(result) => match result {
+                    Ok(r) => r,
+                    Err(e) => return Some(Err(e)),
+                },
+                None => {
                     if !self.buf.is_empty() {
                         warn!("{} records are singletons", self.buf.len());
                     }
 
                     return None;
                 }
-                Ok(_) => {}
-                Err(e) => return Some(Err(e)),
-            }
+            };
 
-            if self.primary_only && is_primary(&self.record) {
+            if self.primary_only && is_primary(&record) {
                 continue;
             }
 
-            let mate_key = mate_key(&self.record);
+            let mate_key = mate_key(&record);
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
-                    PairPosition::First => Some(Ok((mate, self.record.clone()))),
-                    PairPosition::Second => Some(Ok((self.record.clone(), mate))),
+                    PairPosition::First => Some(Ok((mate, record.clone()))),
+                    PairPosition::Second => Some(Ok((record.clone(), mate))),
                 };
             }
 
-            let key = key(&self.record);
+            let key = key(&record);
 
-            self.buf.insert(key, self.record.clone());
+            self.buf.insert(key, record.clone());
         }
     }
 
@@ -126,7 +129,10 @@ impl<R: Read + Seek> RecordPairs<R> {
     }
 }
 
-impl<R: Read + Seek> Iterator for RecordPairs<R> {
+impl<R> Iterator for RecordPairs<R>
+where
+    R: Iterator<Item = io::Result<Record>>,
+{
     type Item = io::Result<(Record, Record)>;
 
     fn next(&mut self) -> Option<Self::Item> {

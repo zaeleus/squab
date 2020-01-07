@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::io::{self, Read, Seek};
+use std::io;
 
 use interval_tree::IntervalTree;
 use noodles_bam::{self as bam, Record, Reference};
@@ -176,20 +176,20 @@ pub fn count_single_end_record(
     Ok(())
 }
 
-pub fn count_paired_end_records<R>(
-    reader: bam::Reader<R>,
+pub fn count_paired_end_records<I>(
+    records: I,
     features: Features,
     references: Vec<Reference>,
     filter: Filter,
     strand_irrelevant: bool,
 ) -> io::Result<Context>
 where
-    R: Read + Seek,
+    I: Iterator<Item = io::Result<Record>>,
 {
     let mut ctx = Context::default();
 
     let primary_only = !filter.with_secondary_records && !filter.with_supplementary_records;
-    let mut pairs = RecordPairs::new(reader, primary_only);
+    let mut pairs = RecordPairs::new(records, primary_only);
 
     for pair in &mut pairs {
         let (r1, r2) = pair?;
