@@ -10,8 +10,8 @@ use log::{info, LevelFilter};
 use noodles::formats::bai;
 use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
-    count::Filter, count_paired_end_records, count_single_end_records, read_features, Context,
-    Features,
+    count::count_paired_end_record_singletons, count::Filter, count_paired_end_records,
+    count_single_end_records, read_features, Context, Features,
 };
 
 git_testament!(TESTAMENT);
@@ -209,8 +209,25 @@ async fn main() {
 
     let ctx = if is_paired_end {
         info!("counting features for paired end records");
+
         let records = reader.records();
-        count_paired_end_records(records, features, references, filter, strand_irrelevant).unwrap()
+        let (mut ctx1, mut pairs) =
+            count_paired_end_records(records, &features, &references, &filter, strand_irrelevant)
+                .unwrap();
+
+        let singletons = pairs.singletons().map(|r| Ok(r));
+        let ctx2 = count_paired_end_record_singletons(
+            singletons,
+            &features,
+            &references,
+            &filter,
+            strand_irrelevant,
+        )
+        .unwrap();
+
+        ctx1.add(&ctx2);
+
+        ctx1
     } else {
         info!("counting features for single end records");
 

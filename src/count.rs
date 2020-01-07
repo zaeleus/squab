@@ -178,11 +178,11 @@ pub fn count_single_end_record(
 
 pub fn count_paired_end_records<I>(
     records: I,
-    features: Features,
-    references: Vec<Reference>,
-    filter: Filter,
+    features: &Features,
+    references: &[Reference],
+    filter: &Filter,
     strand_irrelevant: bool,
-) -> io::Result<Context>
+) -> io::Result<(Context, RecordPairs<I>)>
 where
     I: Iterator<Item = io::Result<Record>>,
 {
@@ -239,7 +239,24 @@ where
         update_intersections(&mut ctx, set);
     }
 
-    for record in pairs.singletons() {
+    Ok((ctx, pairs))
+}
+
+pub fn count_paired_end_record_singletons<I>(
+    records: I,
+    features: &Features,
+    references: &[Reference],
+    filter: &Filter,
+    strand_irrelevant: bool,
+) -> io::Result<Context>
+where
+    I: Iterator<Item = io::Result<Record>>,
+{
+    let mut ctx = Context::default();
+
+    for result in records {
+        let record = result?;
+
         if filter.filter(&mut ctx, &record)? {
             continue;
         }
