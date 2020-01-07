@@ -7,6 +7,7 @@ use noodles_gff as gff;
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs};
 
+#[derive(Clone)]
 pub struct Filter {
     min_mapq: u8,
     with_secondary_records: bool,

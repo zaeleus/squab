@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::Arc;
 
 use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};
@@ -10,6 +11,7 @@ use noodles::formats::bai;
 use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
     count::Filter, count_paired_end_records, count_single_end_records, read_features, Context,
+    Features,
 };
 
 git_testament!(TESTAMENT);
@@ -56,7 +58,39 @@ where
     Ok(record.flag().is_paired())
 }
 
-fn main() {
+async fn count_single_end_records_by_region<P>(
+    bam_src: P,
+    ref_id: usize,
+    reference: bam::Reference,
+    features: Arc<Features>,
+    references: Arc<Vec<bam::Reference>>,
+    filter: Filter,
+    strand_irrelevant: bool,
+) -> Context
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(bam_src.as_ref()).unwrap();
+    let mut reader = bam::Reader::new(file);
+
+    let bai_src = bam_src.as_ref().with_extension("bam.bai");
+    let bai_file = File::open(bai_src).unwrap();
+    let mut bai_reader = bai::Reader::new(bai_file);
+    bai_reader.header().unwrap();
+    let index = bai_reader.read_index().unwrap();
+
+    let index_ref = &index.references[ref_id];
+
+    let start = 0;
+    let end = reference.len();
+
+    let query = reader.query(index_ref, start, end);
+
+    count_single_end_records(query, &features, &references, &filter, strand_irrelevant).unwrap()
+}
+
+#[tokio::main]
+async fn main() {
     let matches = App::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
         .arg(
@@ -179,33 +213,30 @@ fn main() {
     } else {
         info!("counting features for single end records");
 
-        let bai_src = PathBuf::from(bam_src).with_extension("bam.bai");
-        let bai_file = File::open(bai_src).unwrap();
-        let mut bai_reader = bai::Reader::new(bai_file);
-        bai_reader.header().unwrap();
-        let index = bai_reader.read_index().unwrap();
+        let features = Arc::new(features);
+        let references = Arc::new(references);
 
-        let mut ctxs = Vec::new();
-
-        for (ref_id, reference) in references.iter().enumerate() {
-            let index_ref = &index.references[ref_id];
-
-            let start = 0;
-            let end = reference.len();
-
-            let query = reader.query(index_ref, start, end);
-
-            let ctx =
-                count_single_end_records(query, &features, &references, &filter, strand_irrelevant)
-                    .unwrap();
-
-            ctxs.push(ctx);
-        }
+        let tasks: Vec<_> = references
+            .iter()
+            .enumerate()
+            .map(|(ref_id, reference)| {
+                tokio::spawn(count_single_end_records_by_region(
+                    bam_src.to_string(),
+                    ref_id,
+                    reference.clone(),
+                    features.clone(),
+                    references.clone(),
+                    filter.clone(),
+                    strand_irrelevant,
+                ))
+            })
+            .collect();
 
         let mut ctx = Context::default();
 
-        for c in ctxs {
-            ctx.add(&c);
+        for task in tasks {
+            let region_ctx = task.await.unwrap();
+            ctx.add(&region_ctx);
         }
 
         ctx
