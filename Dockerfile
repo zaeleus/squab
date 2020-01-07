@@ -1,4 +1,4 @@
-FROM rust:1.37.0-buster as builder
+FROM rust:1.40.0-buster as builder
 
 COPY Cargo.lock Cargo.toml /tmp/noodles-count-features/
 COPY src/ /tmp/noodles-count-features/src/
