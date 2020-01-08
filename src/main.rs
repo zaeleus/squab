@@ -217,7 +217,7 @@ async fn main() {
             count_paired_end_records(records, &features, &references, &filter, strand_irrelevant)
                 .unwrap();
 
-        let singletons = pairs.singletons().map(|r| Ok(r));
+        let singletons = pairs.singletons().map(Ok);
         let ctx2 = count_paired_end_record_singletons(
             singletons,
             &features,
