@@ -1,8 +1,10 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::{self, BufWriter, Write};
-use std::path::Path;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{self, BufWriter, Write},
+    path::Path,
+    sync::Arc,
+};
 
 use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};

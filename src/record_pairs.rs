@@ -1,6 +1,7 @@
-use std::collections::hash_map::Drain;
-use std::collections::HashMap;
-use std::io;
+use std::{
+    collections::{hash_map::Drain, HashMap},
+    io,
+};
 
 use log::warn;
 use noodles_bam::{Flag, Record};

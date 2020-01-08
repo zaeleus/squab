@@ -1,13 +1,17 @@
-pub use self::count::{count_paired_end_records, count_single_end_records, Context};
-pub use self::record_pairs::{PairPosition, RecordPairs};
+pub use self::{
+    count::{count_paired_end_records, count_single_end_records, Context},
+    record_pairs::{PairPosition, RecordPairs},
+};
 
 pub mod count;
 pub mod record_pairs;
 
-use std::collections::{HashMap, HashSet};
-use std::io;
-use std::ops::Range;
-use std::path::Path;
+use std::{
+    collections::{HashMap, HashSet},
+    io,
+    ops::Range,
+    path::Path,
+};
 
 use interval_tree::IntervalTree;
 use log::info;

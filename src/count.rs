@@ -1,5 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::io;
+use std::{
+    collections::{HashMap, HashSet},
+    io,
+};
 
 use interval_tree::IntervalTree;
 use noodles_bam::{self as bam, Record, Reference};
