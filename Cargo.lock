@@ -228,7 +228,7 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3#f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3"
+source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
 dependencies = [
  "bit-vec 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -237,18 +237,18 @@ dependencies = [
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3#f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3"
+source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)",
- "noodles-bgzf 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)",
+ "noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
+ "noodles-bgzf 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
 ]
 
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3#f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3"
+source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -263,16 +263,16 @@ dependencies = [
  "git-testament 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "interval-tree 0.1.0 (git+https://github.com/zaeleus/interval-tree.git?rev=2a0bab09e79766f3daf8b02725f27f66dbd9d009)",
  "log 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)",
- "noodles-bam 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)",
- "noodles-gff 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)",
+ "noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
+ "noodles-bam 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
+ "noodles-gff 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
  "tokio 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3#f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3"
+source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
 dependencies = [
  "csv 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -519,10 +519,10 @@ dependencies = [
 "checksum log 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)" = "1b9ad466a945c9c40f6f9a449c55675547e59bc75a2722d4689042ab3ae80c9c"
 "checksum memchr 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "88579771288728879b57485cc7d6b07d648c9f0141eb955f8ab7f9d45394468e"
 "checksum miniz_oxide 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6f3f74f726ae935c3f514300cc6773a0c9492abc5e972d42ba0c0ebb88757625"
-"checksum noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)" = "<none>"
-"checksum noodles-bam 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)" = "<none>"
-"checksum noodles-bgzf 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)" = "<none>"
-"checksum noodles-gff 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=f0c20dd0d0ca0fc2d7b0b5ea06a8eb09ea7958e3)" = "<none>"
+"checksum noodles 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)" = "<none>"
+"checksum noodles-bam 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)" = "<none>"
+"checksum noodles-bgzf 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)" = "<none>"
+"checksum noodles-gff 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)" = "<none>"
 "checksum num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)" = "b85e541ef8255f6cf42bbfe4ef361305c6c135d10919ecc26126c4e5ae94bc09"
 "checksum num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)" = "d4c81ffc11c212fa327657cb19dd85eb7419e163b5b076bede2bdb5c974c07e4"
 "checksum num_cpus 1.11.1 (registry+https://github.com/rust-lang/crates.io-index)" = "76dac5ed2a876980778b8b85f75a71b6cbf0db0b1232ee12f826bccb00d09d72"
