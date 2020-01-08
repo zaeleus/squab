@@ -153,20 +153,15 @@ pub fn count_single_end_record(
         return Ok(());
     }
 
-    let reference = get_reference(&references, record.ref_id())?;
-
     let cigar = record.cigar();
     let start = record.pos() as u64;
     let flag = record.flag();
     let intervals = CigarToIntervals::new(&cigar, start, flag, false);
 
-    let name = reference.name();
-    let tree = match features.get(name) {
+    let ref_id = record.ref_id();
+    let tree = match get_tree(ctx, features, references, ref_id)? {
         Some(t) => t,
-        None => {
-            ctx.no_feature += 1;
-            return Ok(());
-        }
+        None => return Ok(()),
     };
 
     let set = find(tree, intervals, strand_irrelevant);
@@ -198,38 +193,28 @@ where
             continue;
         }
 
-        let reference = get_reference(&references, r1.ref_id())?;
-
         let cigar = r1.cigar();
         let start = r1.pos() as u64;
         let f1 = r1.flag();
         let intervals = CigarToIntervals::new(&cigar, start, f1, false);
 
-        let name = reference.name();
-        let tree = match features.get(name) {
+        let ref_id = r1.ref_id();
+        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
             Some(t) => t,
-            None => {
-                ctx.no_feature += 1;
-                continue;
-            }
+            None => continue,
         };
 
         let mut set = find(tree, intervals, strand_irrelevant);
-
-        let reference = get_reference(&references, r2.ref_id())?;
 
         let cigar = r2.cigar();
         let start = r2.pos() as u64;
         let f2 = r2.flag();
         let intervals = CigarToIntervals::new(&cigar, start, f2, true);
 
-        let name = reference.name();
-        let tree = match features.get(name) {
+        let ref_id = r2.ref_id();
+        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
             Some(t) => t,
-            None => {
-                ctx.no_feature += 1;
-                continue;
-            }
+            None => continue,
         };
 
         let set2 = find(tree, intervals, strand_irrelevant);
@@ -272,15 +257,10 @@ where
         let flag = record.flag();
         let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
-        let reference = get_reference(&references, record.ref_id())?;
-
-        let name = reference.name();
-        let tree = match features.get(name) {
+        let ref_id = record.ref_id();
+        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
             Some(t) => t,
-            None => {
-                ctx.no_feature += 1;
-                continue;
-            }
+            None => continue,
         };
 
         let set = find(tree, intervals, strand_irrelevant);
@@ -357,6 +337,24 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
         }
     } else if intersections.len() > 1 {
         ctx.ambiguous += 1;
+    }
+}
+
+fn get_tree<'t>(
+    ctx: &mut Context,
+    features: &'t Features,
+    references: &[Reference],
+    ref_id: i32,
+) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
+    let reference = get_reference(&references, ref_id)?;
+    let name = reference.name();
+
+    match features.get(name) {
+        Some(t) => Ok(Some(t)),
+        None => {
+            ctx.no_feature += 1;
+            Ok(None)
+        }
     }
 }
 
