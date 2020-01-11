@@ -13,7 +13,7 @@ use noodles::formats::bai;
 use noodles_bam::{self as bam, Record};
 use noodles_count_features::{
     count::count_paired_end_record_singletons, count::Filter, count_paired_end_records,
-    count_single_end_records, read_features, Context, Features,
+    count_single_end_records, read_features, Context, Features, StrandSpecification,
 };
 
 git_testament!(TESTAMENT);
@@ -117,9 +117,11 @@ async fn main() {
                 .help("Count nonunique records (BAM data tag NH > 1)"),
         )
         .arg(
-            Arg::with_name("strand-irrelevant")
-                .long("strand-irrelevant")
-                .help("Whether the sequencing protocol lacks strandedness"),
+            Arg::with_name("strand-specification")
+                .long("strand-specification")
+                .help("Strand specification")
+                .possible_values(&["none", "forward"])
+                .default_value("none"),
         )
         .arg(
             Arg::with_name("type")
@@ -188,7 +190,14 @@ async fn main() {
     let with_secondary_records = matches.is_present("with-secondary-records");
     let with_supplementary_records = matches.is_present("with-supplementary-records");
     let with_nonunique_records = matches.is_present("with-nonunique-records");
-    let strand_irrelevant = matches.is_present("strand-irrelevant");
+
+    let strand_specification =
+        value_t!(matches, "strand-specification", StrandSpecification).unwrap_or_else(|e| e.exit());
+
+    let strand_irrelevant = match strand_specification {
+        StrandSpecification::None => true,
+        StrandSpecification::Forward => false,
+    };
 
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 

@@ -11,6 +11,7 @@ use std::{
     io,
     ops::Range,
     path::Path,
+    str::FromStr,
 };
 
 use interval_tree::IntervalTree;
@@ -192,5 +193,22 @@ mod tests {
         assert!(!is_reverse);
 
         assert!(it.next().is_none());
+    }
+}
+
+pub enum StrandSpecification {
+    None,
+    Forward,
+}
+
+impl FromStr for StrandSpecification {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "none" => Ok(Self::None),
+            "forward" => Ok(Self::Forward),
+            _ => Err(()),
+        }
     }
 }
