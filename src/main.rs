@@ -67,7 +67,7 @@ async fn count_single_end_records_by_region<P>(
     features: Arc<Features>,
     references: Arc<Vec<bam::Reference>>,
     filter: Filter,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
 ) -> Context
 where
     P: AsRef<Path>,
@@ -88,7 +88,7 @@ where
 
     let query = reader.query(index_ref, start, end);
 
-    count_single_end_records(query, &features, &references, &filter, strand_irrelevant).unwrap()
+    count_single_end_records(query, &features, &references, &filter, strand_specification).unwrap()
 }
 
 #[tokio::main]
@@ -194,11 +194,6 @@ async fn main() {
     let strand_specification =
         value_t!(matches, "strand-specification", StrandSpecification).unwrap_or_else(|e| e.exit());
 
-    let strand_irrelevant = match strand_specification {
-        StrandSpecification::None => true,
-        StrandSpecification::Forward => false,
-    };
-
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
     let file = File::open(&bam_src).unwrap();
@@ -222,9 +217,14 @@ async fn main() {
         info!("counting features for paired end records");
 
         let records = reader.records();
-        let (mut ctx1, mut pairs) =
-            count_paired_end_records(records, &features, &references, &filter, strand_irrelevant)
-                .unwrap();
+        let (mut ctx1, mut pairs) = count_paired_end_records(
+            records,
+            &features,
+            &references,
+            &filter,
+            strand_specification,
+        )
+        .unwrap();
 
         let singletons = pairs.singletons().map(Ok);
         let ctx2 = count_paired_end_record_singletons(
@@ -232,7 +232,7 @@ async fn main() {
             &features,
             &references,
             &filter,
-            strand_irrelevant,
+            strand_specification,
         )
         .unwrap();
 
@@ -256,7 +256,7 @@ async fn main() {
                     features.clone(),
                     references.clone(),
                     filter.clone(),
-                    strand_irrelevant,
+                    strand_specification,
                 ))
             })
             .collect();

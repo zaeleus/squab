@@ -7,7 +7,7 @@ use interval_tree::IntervalTree;
 use noodles_bam::{self as bam, Record, Reference};
 use noodles_gff as gff;
 
-use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs};
+use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
 
 #[derive(Clone)]
 pub struct Filter {
@@ -120,7 +120,7 @@ pub fn count_single_end_records<I>(
     features: &Features,
     references: &[Reference],
     filter: &Filter,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
 ) -> io::Result<Context>
 where
     I: Iterator<Item = io::Result<Record>>,
@@ -135,7 +135,7 @@ where
             features,
             references,
             filter,
-            strand_irrelevant,
+            strand_specification,
             &record,
         )?;
     }
@@ -148,7 +148,7 @@ pub fn count_single_end_record(
     features: &Features,
     references: &[Reference],
     filter: &Filter,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
     record: &Record,
 ) -> io::Result<()> {
     if filter.filter(ctx, record)? {
@@ -166,7 +166,7 @@ pub fn count_single_end_record(
         None => return Ok(()),
     };
 
-    let set = find(tree, intervals, strand_irrelevant);
+    let set = find(tree, intervals, strand_specification);
 
     update_intersections(ctx, set);
 
@@ -178,7 +178,7 @@ pub fn count_paired_end_records<I>(
     features: &Features,
     references: &[Reference],
     filter: &Filter,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
 ) -> io::Result<(Context, RecordPairs<I>)>
 where
     I: Iterator<Item = io::Result<Record>>,
@@ -206,7 +206,7 @@ where
             None => continue,
         };
 
-        let mut set = find(tree, intervals, strand_irrelevant);
+        let mut set = find(tree, intervals, strand_specification);
 
         let cigar = r2.cigar();
         let start = r2.pos() as u64;
@@ -219,7 +219,7 @@ where
             None => continue,
         };
 
-        let set2 = find(tree, intervals, strand_irrelevant);
+        let set2 = find(tree, intervals, strand_specification);
 
         set.extend(set2.into_iter());
 
@@ -234,7 +234,7 @@ pub fn count_paired_end_record_singletons<I>(
     features: &Features,
     references: &[Reference],
     filter: &Filter,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
 ) -> io::Result<Context>
 where
     I: Iterator<Item = io::Result<Record>>,
@@ -265,7 +265,7 @@ where
             None => continue,
         };
 
-        let set = find(tree, intervals, strand_irrelevant);
+        let set = find(tree, intervals, strand_specification);
 
         update_intersections(&mut ctx, set);
     }
@@ -276,7 +276,7 @@ where
 fn find(
     tree: &IntervalTree<u64, Entry>,
     intervals: CigarToIntervals,
-    strand_irrelevant: bool,
+    strand_specification: StrandSpecification,
 ) -> HashSet<String> {
     let mut set = HashSet::new();
 
@@ -285,11 +285,17 @@ fn find(
             let gene_name = &entry.value.0;
             let strand = &entry.value.1;
 
-            if strand_irrelevant
-                || (strand == &gff::Strand::Reverse && is_reverse)
-                || (strand == &gff::Strand::Forward && !is_reverse)
-            {
-                set.insert(gene_name.to_string());
+            match strand_specification {
+                StrandSpecification::None => {
+                    set.insert(gene_name.to_string());
+                }
+                StrandSpecification::Forward => {
+                    if (strand == &gff::Strand::Reverse && is_reverse)
+                        || (strand == &gff::Strand::Forward && !is_reverse)
+                    {
+                        set.insert(gene_name.to_string());
+                    }
+                }
             }
         }
     }
