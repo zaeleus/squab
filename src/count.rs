@@ -158,7 +158,13 @@ pub fn count_single_end_record(
     let cigar = record.cigar();
     let start = record.pos() as u64;
     let flag = record.flag();
-    let intervals = CigarToIntervals::new(&cigar, start, flag, false);
+
+    let reverse = match strand_specification {
+        StrandSpecification::Reverse => true,
+        _ => false,
+    };
+
+    let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
     let ref_id = record.ref_id();
     let tree = match get_tree(ctx, features, references, ref_id)? {
@@ -198,7 +204,13 @@ where
         let cigar = r1.cigar();
         let start = r1.pos() as u64;
         let f1 = r1.flag();
-        let intervals = CigarToIntervals::new(&cigar, start, f1, false);
+
+        let reverse = match strand_specification {
+            StrandSpecification::Reverse => true,
+            _ => false,
+        };
+
+        let intervals = CigarToIntervals::new(&cigar, start, f1, reverse);
 
         let ref_id = r1.ref_id();
         let tree = match get_tree(&mut ctx, features, references, ref_id)? {
@@ -211,7 +223,13 @@ where
         let cigar = r2.cigar();
         let start = r2.pos() as u64;
         let f2 = r2.flag();
-        let intervals = CigarToIntervals::new(&cigar, start, f2, true);
+
+        let reverse = match strand_specification {
+            StrandSpecification::Reverse => false,
+            _ => true,
+        };
+
+        let intervals = CigarToIntervals::new(&cigar, start, f2, reverse);
 
         let ref_id = r2.ref_id();
         let tree = match get_tree(&mut ctx, features, references, ref_id)? {
@@ -256,6 +274,11 @@ where
             PairPosition::Second => true,
         };
 
+        let reverse = match strand_specification {
+            StrandSpecification::Reverse => !reverse,
+            _ => reverse,
+        };
+
         let flag = record.flag();
         let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
 
@@ -289,7 +312,7 @@ fn find(
                 StrandSpecification::None => {
                     set.insert(gene_name.to_string());
                 }
-                StrandSpecification::Forward => {
+                StrandSpecification::Forward | StrandSpecification::Reverse => {
                     if (strand == &gff::Strand::Reverse && is_reverse)
                         || (strand == &gff::Strand::Forward && !is_reverse)
                     {

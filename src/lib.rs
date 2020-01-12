@@ -200,6 +200,7 @@ mod tests {
 pub enum StrandSpecification {
     None,
     Forward,
+    Reverse,
 }
 
 impl FromStr for StrandSpecification {
@@ -209,6 +210,7 @@ impl FromStr for StrandSpecification {
         match s {
             "none" => Ok(Self::None),
             "forward" => Ok(Self::Forward),
+            "reverse" => Ok(Self::Reverse),
             _ => Err(()),
         }
     }
