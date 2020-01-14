@@ -371,7 +371,7 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
     }
 }
 
-fn get_tree<'t>(
+pub fn get_tree<'t>(
     ctx: &mut Context,
     features: &'t Features,
     references: &[Reference],

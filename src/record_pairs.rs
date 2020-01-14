@@ -6,7 +6,7 @@ use std::{
 use log::warn;
 use noodles_bam::{Flag, Record};
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
     First,
     Second,

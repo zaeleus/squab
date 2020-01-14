@@ -10,10 +10,12 @@ use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};
 use log::{info, LevelFilter};
 use noodles::formats::bai;
-use noodles_bam::{self as bam, Record};
+use noodles_bam as bam;
 use noodles_count_features::{
-    count::count_paired_end_record_singletons, count::Filter, count_paired_end_records,
-    count_single_end_records, read_features, Context, Features, StrandSpecification,
+    count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
+    count_single_end_records,
+    detect::detect_specification,
+    read_features, Context, Features, StrandSpecification,
 };
 
 git_testament!(TESTAMENT);
@@ -44,20 +46,6 @@ where
     writeln!(writer, "__not_aligned\t{}", ctx.unmapped)?;
     writeln!(writer, "__alignment_not_unique\t{}", ctx.nonunique)?;
     Ok(())
-}
-
-fn is_paired_end<P>(src: P) -> io::Result<bool>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(src)?;
-    let mut reader = bam::Reader::new(file);
-    reader.meta()?;
-
-    let mut record = Record::new();
-    reader.read_record(&mut record)?;
-
-    Ok(record.flag().is_paired())
 }
 
 async fn count_single_end_records_by_region<P>(
@@ -204,7 +192,31 @@ async fn main() {
     feature_ids.extend(names.into_iter());
     feature_ids.sort();
 
-    let is_paired_end = is_paired_end(&bam_src).unwrap();
+    info!("detecting library type");
+
+    let (is_paired_end, detected_strand_specification, strandedness_confidence) =
+        detect_specification(&bam_src, &references, &features).unwrap();
+
+    if is_paired_end {
+        info!("paired end: true");
+    } else {
+        info!("paired end: false");
+    }
+
+    match detected_strand_specification {
+        StrandSpecification::None => info!(
+            "strand specification: none (confidence: {:.2})",
+            strandedness_confidence
+        ),
+        StrandSpecification::Forward => info!(
+            "strand specification: forward (confidence: {:.2})",
+            strandedness_confidence
+        ),
+        StrandSpecification::Reverse => info!(
+            "strand specification: reverse (confidence: {:.2})",
+            strandedness_confidence
+        ),
+    }
 
     let filter = Filter::new(
         min_mapq,
