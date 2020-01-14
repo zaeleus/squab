@@ -197,7 +197,7 @@ mod tests {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {
     None,
     Forward,

@@ -8,7 +8,7 @@ use std::{
 
 use clap::{crate_name, value_t, App, Arg};
 use git_testament::{git_testament, render_testament};
-use log::{info, LevelFilter};
+use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
 use noodles_bam as bam;
 use noodles_count_features::{
@@ -216,6 +216,10 @@ async fn main() {
             "strand specification: reverse (confidence: {:.2})",
             strandedness_confidence
         ),
+    }
+
+    if strand_specification != detected_strand_specification {
+        warn!("input strand specification does not match detected strandedness");
     }
 
     let filter = Filter::new(
