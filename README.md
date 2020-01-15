@@ -1,9 +1,9 @@
-# noodles count-features
+# noodles squab
 
-[![GitHub Actions status](https://github.com/zaeleus/noodles-count-features/workflows/CI/badge.svg)](https://github.com/zaeleus/noodles-count-features/actions)
+[![GitHub Actions status](https://github.com/zaeleus/noodles-squab/workflows/CI/badge.svg)](https://github.com/zaeleus/noodles-squab/actions)
 
-**noodles count-features** performs gene expression quantification by counting
-the number of aligned records that intersects a set of features.
+**noodles squab** performs gene expression quantification by counting the
+number of aligned records that intersects a set of features.
 
 The goal of this project is to provide a faster alternative to [htseq-count].
 It uses the same counting rules and outputs a compatible data table.
@@ -12,10 +12,10 @@ It uses the same counting rules and outputs a compatible data table.
 
 ## Installation
 
-Install [Rust] and use `cargo` to install `noodles-count-features`.
+Install [Rust] and use `cargo` to install `noodles-squab`.
 
 ```
-$ cargo install --git https://github.com/zaeleus/noodles-count-features.git
+$ cargo install --git https://github.com/zaeleus/noodles-squab.git
 ```
 
 [Rust]: https://www.rust-lang.org/tools/install
@@ -24,10 +24,10 @@ $ cargo install --git https://github.com/zaeleus/noodles-count-features.git
 ## Usage
 
 ```
-noodles-count-features 0.1.0
+noodles-squab 0.1.0
 
 USAGE:
-    noodles-count-features [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
+    noodles-squab [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
 
 FLAGS:
     -h, --help                          Prints help information

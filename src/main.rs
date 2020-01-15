@@ -11,7 +11,7 @@ use git_testament::{git_testament, render_testament};
 use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
 use noodles_bam as bam;
-use noodles_count_features::{
+use noodles_squab::{
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::detect_specification,

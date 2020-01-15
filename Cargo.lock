@@ -255,7 +255,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "noodles-count-features"
+name = "noodles-gff"
+version = "0.1.0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
+dependencies = [
+ "csv 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "noodles-squab"
 version = "0.1.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -267,15 +276,6 @@ dependencies = [
  "noodles-bam 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
  "noodles-gff 0.1.0 (git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6)",
  "tokio 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "noodles-gff"
-version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=d35a65bb4ee06c2ca763622c881698cfb84acfe6#d35a65bb4ee06c2ca763622c881698cfb84acfe6"
-dependencies = [
- "csv 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "flate2 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
