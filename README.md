@@ -24,14 +24,13 @@ $ cargo install --git https://github.com/zaeleus/noodles-squab.git
 ## Usage
 
 ```
-noodles-squab 0.1.0
+noodles-squab unknown (431529403 2020-01-14)
 
 USAGE:
     noodles-squab [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
 
 FLAGS:
     -h, --help                          Prints help information
-        --strand-irrelevant             Whether the sequencing protocol lacks strandedness
     -V, --version                       Prints version information
     -v, --verbose                       Use verbose logging
         --with-nonunique-records        Count nonunique records (BAM data tag NH > 1)
@@ -39,11 +38,13 @@ FLAGS:
         --with-supplementary-records    Count supplementary records (BAM flag 0x800)
 
 OPTIONS:
-    -a, --annotations <file>    Input annotations file (GTF/GFFv2)
-    -i, --id <str>              Feature attribute to use as the feature identity [default: gene_id]
-        --min-mapq <u8>         Minimum mapping quality to consider an alignment [default: 10]
-    -o, --output <file>         Output destination for feature counts
-    -t, --type <str>            Feature type to count [default: exon]
+    -a, --annotations <file>            Input annotations file (GTF/GFFv2)
+    -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
+        --min-mapq <u8>                 Minimum mapping quality to consider an alignment [default: 10]
+    -o, --output <file>                 Output destination for feature counts
+        --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,
+                                        auto]
+    -t, --type <str>                    Feature type to count [default: exon]
 
 ARGS:
     <bam>    Input alignment file
@@ -51,8 +52,8 @@ ARGS:
 
 The output is a tab-delimited text file with two columns: the feature
 identifier (string) and the number of reads (integer) from the input alignment
-that overlap it.  This file is compatible as output from htseq-count, meaning
-it includes statistics in the trailer.
+that overlap it. This file is compatible as output from htseq-count, meaning it
+includes statistics in the trailer.
 
 ## Limitations
 
