@@ -13,8 +13,8 @@ pub enum PairPosition {
 }
 
 impl PairPosition {
-    pub fn mate(&self) -> PairPosition {
-        match *self {
+    pub fn mate(self) -> PairPosition {
+        match self {
             PairPosition::First => PairPosition::Second,
             PairPosition::Second => PairPosition::First,
         }
@@ -112,8 +112,8 @@ where
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
-                    PairPosition::First => Some(Ok((mate, record.clone()))),
-                    PairPosition::Second => Some(Ok((record.clone(), mate))),
+                    PairPosition::First => Some(Ok((mate, record))),
+                    PairPosition::Second => Some(Ok((record, mate))),
                 };
             }
 

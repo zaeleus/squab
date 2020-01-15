@@ -6,7 +6,7 @@ use noodles_gff as gff;
 
 use crate::{count::get_tree, Context, Entry, Features, PairPosition, StrandSpecification};
 
-const MAX_RECORDS: usize = 524288;
+const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
 
 #[derive(Debug, Default)]
