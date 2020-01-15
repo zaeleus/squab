@@ -1,5 +1,7 @@
 # noodles count-features
 
+[![GitHub Actions status](https://github.com/zaeleus/noodles-count-features/workflows/CI/badge.svg)](https://github.com/zaeleus/noodles-count-features/actions)
+
 **noodles count-features** performs gene expression quantification by counting
 the number of aligned records that intersects a set of features.
 
