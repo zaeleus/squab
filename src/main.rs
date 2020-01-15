@@ -15,7 +15,7 @@ use noodles_count_features::{
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::detect_specification,
-    read_features, Context, Features, StrandSpecification,
+    read_features, Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
 git_testament!(TESTAMENT);
@@ -108,8 +108,8 @@ async fn main() {
             Arg::with_name("strand-specification")
                 .long("strand-specification")
                 .help("Strand specification")
-                .possible_values(&["none", "forward", "reverse"])
-                .default_value("none"),
+                .possible_values(&["none", "forward", "reverse", "auto"])
+                .default_value("auto"),
         )
         .arg(
             Arg::with_name("type")
@@ -179,8 +179,9 @@ async fn main() {
     let with_supplementary_records = matches.is_present("with-supplementary-records");
     let with_nonunique_records = matches.is_present("with-nonunique-records");
 
-    let strand_specification =
-        value_t!(matches, "strand-specification", StrandSpecification).unwrap_or_else(|e| e.exit());
+    let strand_specification_option =
+        value_t!(matches, "strand-specification", StrandSpecificationOption)
+            .unwrap_or_else(|e| e.exit());
 
     let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
 
@@ -218,9 +219,18 @@ async fn main() {
         ),
     }
 
-    if strand_specification != detected_strand_specification {
-        warn!("input strand specification does not match detected strandedness");
-    }
+    let strand_specification = match strand_specification_option {
+        StrandSpecificationOption::Auto => detected_strand_specification,
+        _ => {
+            let spec = StrandSpecification::from(strand_specification_option);
+
+            if spec != detected_strand_specification {
+                warn!("input strand specification does not match detected strandedness");
+            }
+
+            spec
+        }
+    };
 
     let filter = Filter::new(
         min_mapq,

@@ -198,13 +198,14 @@ mod tests {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum StrandSpecification {
+pub enum StrandSpecificationOption {
     None,
     Forward,
     Reverse,
+    Auto,
 }
 
-impl FromStr for StrandSpecification {
+impl FromStr for StrandSpecificationOption {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -212,7 +213,26 @@ impl FromStr for StrandSpecification {
             "none" => Ok(Self::None),
             "forward" => Ok(Self::Forward),
             "reverse" => Ok(Self::Reverse),
+            "auto" => Ok(Self::Auto),
             _ => Err(()),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StrandSpecification {
+    None,
+    Forward,
+    Reverse,
+}
+
+impl From<StrandSpecificationOption> for StrandSpecification {
+    fn from(option: StrandSpecificationOption) -> Self {
+        match option {
+            StrandSpecificationOption::None => Self::None,
+            StrandSpecificationOption::Forward => Self::Forward,
+            StrandSpecificationOption::Reverse => Self::Reverse,
+            _ => panic!("invalid option"),
         }
     }
 }
