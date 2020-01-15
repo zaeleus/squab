@@ -107,6 +107,7 @@ async fn main() {
         .arg(
             Arg::with_name("strand-specification")
                 .long("strand-specification")
+                .value_name("str")
                 .help("Strand specification")
                 .possible_values(&["none", "forward", "reverse", "auto"])
                 .default_value("auto"),
