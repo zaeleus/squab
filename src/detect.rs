@@ -1,4 +1,4 @@
-use std::{fs::File, io, path::Path};
+use std::{convert::TryFrom, fs::File, io, path::Path};
 
 use interval_tree::IntervalTree;
 use noodles_bam as bam;
@@ -17,36 +17,67 @@ struct Counts {
     reverse: u64,
 }
 
+#[derive(Clone, Copy, Debug)]
+enum Strand {
+    Forward,
+    Reverse,
+}
+
+impl From<bool> for Strand {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::Reverse
+        } else {
+            Self::Forward
+        }
+    }
+}
+
+impl TryFrom<gff::Strand> for Strand {
+    type Error = ();
+
+    fn try_from(strand: gff::Strand) -> Result<Self, Self::Error> {
+        match strand {
+            gff::Strand::Forward => Ok(Self::Forward),
+            gff::Strand::Reverse => Ok(Self::Reverse),
+            _ => Err(()),
+        }
+    }
+}
+
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) {
-    let flag = record.flag();
     let start = record.pos() as u64;
     let end = start + record.cigar().mapped_len() as u64;
+
     let pair_position = PairPosition::from(record);
 
-    for entry in tree.find(start..end) {
-        let strand = &entry.value.1;
+    let flag = record.flag();
+    let record_strand = Strand::from(flag.is_reverse());
 
-        match (pair_position, flag.is_reverse(), strand) {
-            (PairPosition::First, false, gff::Strand::Forward)
-            | (PairPosition::First, true, gff::Strand::Reverse)
-            | (PairPosition::Second, false, gff::Strand::Reverse)
-            | (PairPosition::Second, true, gff::Strand::Forward) => {
+    for entry in tree.find(start..end) {
+        let strand = entry.value.1;
+        let feature_strand = Strand::try_from(strand).unwrap();
+
+        match (pair_position, record_strand, feature_strand) {
+            (PairPosition::First, Strand::Forward, Strand::Forward)
+            | (PairPosition::First, Strand::Reverse, Strand::Reverse)
+            | (PairPosition::Second, Strand::Forward, Strand::Reverse)
+            | (PairPosition::Second, Strand::Reverse, Strand::Forward) => {
                 counts.forward += 1;
-                counts.matches += 1;
             }
-            (PairPosition::First, false, gff::Strand::Reverse)
-            | (PairPosition::First, true, gff::Strand::Forward)
-            | (PairPosition::Second, false, gff::Strand::Forward)
-            | (PairPosition::Second, true, gff::Strand::Reverse) => {
+            (PairPosition::First, Strand::Forward, Strand::Reverse)
+            | (PairPosition::First, Strand::Reverse, Strand::Forward)
+            | (PairPosition::Second, Strand::Forward, Strand::Forward)
+            | (PairPosition::Second, Strand::Reverse, Strand::Reverse) => {
                 counts.reverse += 1;
-                counts.matches += 1;
             }
-            (_, _, _) => unimplemented!(),
         }
+
+        counts.matches += 1;
     }
 }
 
@@ -55,24 +86,26 @@ fn count_single_end_record(
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) {
-    let flag = record.flag();
     let start = record.pos() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
-    for entry in tree.find(start..end) {
-        let strand = &entry.value.1;
+    let flag = record.flag();
+    let record_strand = Strand::from(flag.is_reverse());
 
-        match (flag.is_reverse(), strand) {
-            (false, gff::Strand::Forward) | (true, gff::Strand::Reverse) => {
+    for entry in tree.find(start..end) {
+        let strand = entry.value.1;
+        let feature_strand = Strand::try_from(strand).unwrap();
+
+        match (record_strand, feature_strand) {
+            (Strand::Forward, Strand::Forward) | (Strand::Reverse, Strand::Reverse) => {
                 counts.forward += 1;
-                counts.matches += 1;
             }
-            (false, gff::Strand::Reverse) | (true, gff::Strand::Forward) => {
+            (Strand::Forward, Strand::Reverse) | (Strand::Reverse, Strand::Forward) => {
                 counts.reverse += 1;
-                counts.matches += 1;
             }
-            (_, _) => unimplemented!(),
         }
+
+        counts.matches += 1;
     }
 }
 
