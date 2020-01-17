@@ -23,9 +23,9 @@ enum Strand {
     Reverse,
 }
 
-impl From<bool> for Strand {
-    fn from(value: bool) -> Self {
-        if value {
+impl From<bam::Flag> for Strand {
+    fn from(flag: bam::Flag) -> Self {
+        if flag.is_reverse() {
             Self::Reverse
         } else {
             Self::Forward
@@ -54,9 +54,7 @@ fn count_paired_end_record(
     let end = start + record.cigar().mapped_len() as u64;
 
     let pair_position = PairPosition::from(record);
-
-    let flag = record.flag();
-    let record_strand = Strand::from(flag.is_reverse());
+    let record_strand = Strand::from(record.flag());
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
@@ -93,8 +91,7 @@ fn count_single_end_record(
     let start = record.pos() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
-    let flag = record.flag();
-    let record_strand = Strand::from(flag.is_reverse());
+    let record_strand = Strand::from(record.flag());
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
