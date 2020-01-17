@@ -165,7 +165,8 @@ where
     } else if reverse_pct > STRANDEDNESS_THRESHOLD {
         (StrandSpecification::Reverse, reverse_pct)
     } else {
-        (StrandSpecification::None, forward_pct + reverse_pct)
+        let confidence = (0.5 - (forward_pct - reverse_pct).abs()) / 0.5;
+        (StrandSpecification::None, confidence)
     };
 
     Ok((is_paired_end, strand_specification, strandedness_confidence))
