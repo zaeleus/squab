@@ -60,7 +60,11 @@ fn count_paired_end_record(
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
-        let feature_strand = Strand::try_from(strand).unwrap();
+
+        let feature_strand = match Strand::try_from(strand) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
 
         match (pair_position, record_strand, feature_strand) {
             (PairPosition::First, Strand::Forward, Strand::Forward)
@@ -94,7 +98,11 @@ fn count_single_end_record(
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
-        let feature_strand = Strand::try_from(strand).unwrap();
+
+        let feature_strand = match Strand::try_from(strand) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
 
         match (record_strand, feature_strand) {
             (Strand::Forward, Strand::Forward) | (Strand::Reverse, Strand::Reverse) => {
