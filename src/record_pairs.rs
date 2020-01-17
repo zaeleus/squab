@@ -1,5 +1,6 @@
 use std::{
     collections::{hash_map::Drain, HashMap},
+    convert::TryFrom,
     io,
 };
 
@@ -21,26 +22,32 @@ impl PairPosition {
     }
 }
 
-impl<'a> From<&'a Record> for PairPosition {
-    fn from(record: &Record) -> PairPosition {
-        record.flag().into()
+impl<'a> TryFrom<&'a Record> for PairPosition {
+    type Error = ();
+
+    fn try_from(record: &Record) -> Result<Self, Self::Error> {
+        Self::try_from(record.flag())
     }
 }
 
-impl From<Flag> for PairPosition {
-    fn from(flag: Flag) -> PairPosition {
+impl TryFrom<Flag> for PairPosition {
+    type Error = ();
+
+    fn try_from(flag: Flag) -> Result<Self, Self::Error> {
         if flag.is_read_1() {
-            PairPosition::First
+            Ok(PairPosition::First)
         } else if flag.is_read_2() {
-            PairPosition::Second
+            Ok(PairPosition::Second)
         } else {
-            panic!("unknown pair position");
+            Err(())
         }
     }
 }
 
 #[cfg(test)]
 mod pair_position_tests {
+    use std::convert::TryFrom;
+
     use noodles_bam::Flag;
 
     use super::PairPosition;
@@ -52,19 +59,15 @@ mod pair_position_tests {
     }
 
     #[test]
-    fn test_from_flag() {
+    fn test_try_from_flag() {
         let flag = Flag::from(0x41);
-        assert_eq!(PairPosition::from(flag), PairPosition::First);
+        assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::First));
 
         let flag = Flag::from(0x81);
-        assert_eq!(PairPosition::from(flag), PairPosition::Second);
-    }
+        assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::Second));
 
-    #[test]
-    #[should_panic]
-    fn test_from_flag_with_invalid_flag() {
         let flag = Flag::from(0x01);
-        PairPosition::from(flag);
+        assert!(PairPosition::try_from(flag).is_err());
     }
 }
 
@@ -149,7 +152,7 @@ fn is_primary(record: &Record) -> bool {
 fn key(record: &Record) -> RecordKey {
     (
         record.read_name().to_vec(),
-        PairPosition::from(record),
+        PairPosition::try_from(record).unwrap(),
         record.ref_id(),
         record.pos(),
         record.next_ref_id(),
@@ -161,7 +164,7 @@ fn key(record: &Record) -> RecordKey {
 fn mate_key(record: &Record) -> RecordKey {
     (
         record.read_name().to_vec(),
-        PairPosition::from(record).mate(),
+        PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
         record.next_ref_id(),
         record.next_pos(),
         record.ref_id(),

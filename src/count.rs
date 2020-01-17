@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     io,
 };
 
@@ -269,9 +270,15 @@ where
         let cigar = record.cigar();
         let start = record.pos() as u64;
 
-        let reverse = match PairPosition::from(&record) {
-            PairPosition::First => false,
-            PairPosition::Second => true,
+        let reverse = match PairPosition::try_from(&record) {
+            Ok(PairPosition::First) => false,
+            Ok(PairPosition::Second) => true,
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "record is neither read 1 nor 2",
+                ))
+            }
         };
 
         let reverse = match strand_specification {

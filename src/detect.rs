@@ -45,15 +45,19 @@ impl TryFrom<gff::Strand> for Strand {
     }
 }
 
+fn invalid_record_pair(_: ()) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, "invalid record pair")
+}
+
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
-) {
+) -> io::Result<()> {
     let start = record.pos() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
-    let pair_position = PairPosition::from(record);
+    let pair_position = PairPosition::try_from(record).map_err(invalid_record_pair)?;
     let record_strand = Strand::from(record.flag());
 
     for entry in tree.find(start..end) {
@@ -81,13 +85,15 @@ fn count_paired_end_record(
 
         counts.matches += 1;
     }
+
+    Ok(())
 }
 
 fn count_single_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
-) {
+) -> io::Result<()> {
     let start = record.pos() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
@@ -112,6 +118,8 @@ fn count_single_end_record(
 
         counts.matches += 1;
     }
+
+    Ok(())
 }
 
 pub fn detect_specification<P>(
@@ -145,9 +153,9 @@ where
 
         if flag.is_paired() {
             counts.paired += 1;
-            count_paired_end_record(&mut counts, tree, &record);
+            count_paired_end_record(&mut counts, tree, &record)?;
         } else {
-            count_single_end_record(&mut counts, tree, &record);
+            count_single_end_record(&mut counts, tree, &record)?;
         }
     }
 
