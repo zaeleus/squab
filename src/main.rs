@@ -222,16 +222,15 @@ async fn main() {
 
     let strand_specification = match strand_specification_option {
         StrandSpecificationOption::Auto => detected_strand_specification,
-        _ => {
-            let spec = StrandSpecification::try_from(strand_specification_option).unwrap();
-
-            if spec != detected_strand_specification {
-                warn!("input strand specification does not match detected strandedness");
-            }
-
-            spec
-        }
+        _ => StrandSpecification::try_from(strand_specification_option).unwrap(),
     };
+
+    if strand_specification != detected_strand_specification {
+        warn!(
+            "input strand specification ({:?}) does not match detected strandedness ({:?})",
+            strand_specification, detected_strand_specification,
+        );
+    }
 
     let filter = Filter::new(
         min_mapq,
