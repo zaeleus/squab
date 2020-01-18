@@ -17,7 +17,7 @@ use std::{
 
 use interval_tree::IntervalTree;
 use log::info;
-use noodles_bam::{cigar, Cigar, Flag};
+use noodles_bam::{self as bam, cigar};
 use noodles_gff as gff;
 
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
@@ -85,7 +85,12 @@ pub struct CigarToIntervals<'a> {
 }
 
 impl<'a> CigarToIntervals<'a> {
-    fn new(cigar: &'a Cigar, start: u64, flag: Flag, reverse: bool) -> CigarToIntervals<'a> {
+    fn new(
+        cigar: &'a bam::Cigar,
+        start: u64,
+        flag: bam::Flag,
+        reverse: bool,
+    ) -> CigarToIntervals<'a> {
         let ops = cigar.ops();
 
         let is_reverse = if reverse {
@@ -129,7 +134,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles_bam::{cigar, Cigar, Flag};
+    use noodles_bam::{self as bam, cigar};
 
     use super::CigarToIntervals;
 
@@ -152,23 +157,23 @@ mod tests {
     #[test]
     fn test_new() {
         let raw_cigar = build_raw_cigar();
-        let cigar = Cigar::new(&raw_cigar);
+        let cigar = bam::Cigar::new(&raw_cigar);
 
         let start = 0;
 
-        let flag = Flag::from(99);
+        let flag = bam::Flag::from(99);
         let it = CigarToIntervals::new(&cigar, start, flag, false);
         assert!(!it.is_reverse);
 
-        let flag = Flag::from(99);
+        let flag = bam::Flag::from(99);
         let it = CigarToIntervals::new(&cigar, start, flag, true);
         assert!(it.is_reverse);
 
-        let flag = Flag::from(147);
+        let flag = bam::Flag::from(147);
         let it = CigarToIntervals::new(&cigar, start, flag, false);
         assert!(it.is_reverse);
 
-        let flag = Flag::from(147);
+        let flag = bam::Flag::from(147);
         let it = CigarToIntervals::new(&cigar, start, flag, true);
         assert!(!it.is_reverse);
     }
@@ -176,9 +181,9 @@ mod tests {
     #[test]
     fn test_next() {
         let raw_cigar = build_raw_cigar();
-        let cigar = Cigar::new(&raw_cigar);
+        let cigar = bam::Cigar::new(&raw_cigar);
 
-        let flag = Flag::from(99);
+        let flag = bam::Flag::from(99);
         let mut it = CigarToIntervals::new(&cigar, 0, flag, false);
 
         let (interval, is_reverse) = it.next().unwrap();

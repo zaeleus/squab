@@ -5,7 +5,7 @@ use std::{
 };
 
 use interval_tree::IntervalTree;
-use noodles_bam::{self as bam, Record, Reference};
+use noodles_bam as bam;
 use noodles_gff as gff;
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
@@ -33,7 +33,7 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, ctx: &mut Context, record: &Record) -> io::Result<bool> {
+    pub fn filter(&self, ctx: &mut Context, record: &bam::Record) -> io::Result<bool> {
         let flag = record.flag();
 
         if flag.is_unmapped() {
@@ -60,7 +60,12 @@ impl Filter {
         Ok(false)
     }
 
-    pub fn filter_pair(&self, ctx: &mut Context, r1: &Record, r2: &Record) -> io::Result<bool> {
+    pub fn filter_pair(
+        &self,
+        ctx: &mut Context,
+        r1: &bam::Record,
+        r2: &bam::Record,
+    ) -> io::Result<bool> {
         let f1 = r1.flag();
         let f2 = r2.flag();
 
@@ -119,12 +124,12 @@ impl Context {
 pub fn count_single_end_records<I>(
     records: I,
     features: &Features,
-    references: &[Reference],
+    references: &[bam::Reference],
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<Context>
 where
-    I: Iterator<Item = io::Result<Record>>,
+    I: Iterator<Item = io::Result<bam::Record>>,
 {
     let mut ctx = Context::default();
 
@@ -147,10 +152,10 @@ where
 pub fn count_single_end_record(
     ctx: &mut Context,
     features: &Features,
-    references: &[Reference],
+    references: &[bam::Reference],
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &Record,
+    record: &bam::Record,
 ) -> io::Result<()> {
     if filter.filter(ctx, record)? {
         return Ok(());
@@ -183,12 +188,12 @@ pub fn count_single_end_record(
 pub fn count_paired_end_records<I>(
     records: I,
     features: &Features,
-    references: &[Reference],
+    references: &[bam::Reference],
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<(Context, RecordPairs<I>)>
 where
-    I: Iterator<Item = io::Result<Record>>,
+    I: Iterator<Item = io::Result<bam::Record>>,
 {
     let mut ctx = Context::default();
 
@@ -251,12 +256,12 @@ where
 pub fn count_paired_end_record_singletons<I>(
     records: I,
     features: &Features,
-    references: &[Reference],
+    references: &[bam::Reference],
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<Context>
 where
-    I: Iterator<Item = io::Result<Record>>,
+    I: Iterator<Item = io::Result<bam::Record>>,
 {
     let mut ctx = Context::default();
 
@@ -333,7 +338,7 @@ fn find(
     set
 }
 
-fn is_nonunique_record(record: &Record) -> io::Result<bool> {
+fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
     let data = record.data();
 
     for result in data.fields() {
@@ -349,7 +354,10 @@ fn is_nonunique_record(record: &Record) -> io::Result<bool> {
     Ok(false)
 }
 
-fn get_reference<'a>(references: &'a [Reference], ref_id: i32) -> io::Result<&'a Reference> {
+fn get_reference<'a>(
+    references: &'a [bam::Reference],
+    ref_id: i32,
+) -> io::Result<&'a bam::Reference> {
     if ref_id < 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -381,7 +389,7 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
 pub fn get_tree<'t>(
     ctx: &mut Context,
     features: &'t Features,
-    references: &[Reference],
+    references: &[bam::Reference],
     ref_id: i32,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
     let reference = get_reference(&references, ref_id)?;

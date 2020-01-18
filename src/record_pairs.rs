@@ -5,7 +5,7 @@ use std::{
 };
 
 use log::warn;
-use noodles_bam::{Flag, Record};
+use noodles_bam as bam;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -22,18 +22,18 @@ impl PairPosition {
     }
 }
 
-impl<'a> TryFrom<&'a Record> for PairPosition {
+impl<'a> TryFrom<&'a bam::Record> for PairPosition {
     type Error = ();
 
-    fn try_from(record: &Record) -> Result<Self, Self::Error> {
+    fn try_from(record: &bam::Record) -> Result<Self, Self::Error> {
         Self::try_from(record.flag())
     }
 }
 
-impl TryFrom<Flag> for PairPosition {
+impl TryFrom<bam::Flag> for PairPosition {
     type Error = ();
 
-    fn try_from(flag: Flag) -> Result<Self, Self::Error> {
+    fn try_from(flag: bam::Flag) -> Result<Self, Self::Error> {
         if flag.is_read_1() {
             Ok(PairPosition::First)
         } else if flag.is_read_2() {
@@ -48,7 +48,7 @@ impl TryFrom<Flag> for PairPosition {
 mod pair_position_tests {
     use std::convert::TryFrom;
 
-    use noodles_bam::Flag;
+    use noodles_bam as bam;
 
     use super::PairPosition;
 
@@ -60,28 +60,28 @@ mod pair_position_tests {
 
     #[test]
     fn test_try_from_flag() {
-        let flag = Flag::from(0x41);
+        let flag = bam::Flag::from(0x41);
         assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::First));
 
-        let flag = Flag::from(0x81);
+        let flag = bam::Flag::from(0x81);
         assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::Second));
 
-        let flag = Flag::from(0x01);
+        let flag = bam::Flag::from(0x01);
         assert!(PairPosition::try_from(flag).is_err());
     }
 }
 
 type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
 
-pub struct RecordPairs<R: Iterator<Item = io::Result<Record>>> {
+pub struct RecordPairs<R: Iterator<Item = io::Result<bam::Record>>> {
     records: R,
-    buf: HashMap<RecordKey, Record>,
+    buf: HashMap<RecordKey, bam::Record>,
     primary_only: bool,
 }
 
 impl<R> RecordPairs<R>
 where
-    R: Iterator<Item = io::Result<Record>>,
+    R: Iterator<Item = io::Result<bam::Record>>,
 {
     pub fn new(records: R, primary_only: bool) -> RecordPairs<R> {
         RecordPairs {
@@ -91,7 +91,7 @@ where
         }
     }
 
-    fn next_pair(&mut self) -> Option<io::Result<(Record, Record)>> {
+    fn next_pair(&mut self) -> Option<io::Result<(bam::Record, bam::Record)>> {
         loop {
             let record = match self.records.next() {
                 Some(result) => match result {
@@ -135,21 +135,21 @@ where
 
 impl<R> Iterator for RecordPairs<R>
 where
-    R: Iterator<Item = io::Result<Record>>,
+    R: Iterator<Item = io::Result<bam::Record>>,
 {
-    type Item = io::Result<(Record, Record)>;
+    type Item = io::Result<(bam::Record, bam::Record)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_pair()
     }
 }
 
-fn is_primary(record: &Record) -> bool {
+fn is_primary(record: &bam::Record) -> bool {
     let flag = record.flag();
     flag.is_secondary() || flag.is_supplementary()
 }
 
-fn key(record: &Record) -> RecordKey {
+fn key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).unwrap(),
@@ -161,7 +161,7 @@ fn key(record: &Record) -> RecordKey {
     )
 }
 
-fn mate_key(record: &Record) -> RecordKey {
+fn mate_key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
@@ -174,11 +174,11 @@ fn mate_key(record: &Record) -> RecordKey {
 }
 
 pub struct Singletons<'a> {
-    drain: Drain<'a, RecordKey, Record>,
+    drain: Drain<'a, RecordKey, bam::Record>,
 }
 
 impl<'a> Iterator for Singletons<'a> {
-    type Item = Record;
+    type Item = bam::Record;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.drain.next().map(|(_, r)| r)
