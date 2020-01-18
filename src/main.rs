@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    convert::TryFrom,
     fs::File,
     io::{self, BufWriter, Write},
     path::Path,
@@ -222,7 +223,7 @@ async fn main() {
     let strand_specification = match strand_specification_option {
         StrandSpecificationOption::Auto => detected_strand_specification,
         _ => {
-            let spec = StrandSpecification::from(strand_specification_option);
+            let spec = StrandSpecification::try_from(strand_specification_option).unwrap();
 
             if spec != detected_strand_specification {
                 warn!("input strand specification does not match detected strandedness");

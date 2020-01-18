@@ -9,6 +9,7 @@ pub mod record_pairs;
 
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     io,
     ops::Range,
     path::Path,
@@ -231,13 +232,15 @@ pub enum StrandSpecification {
     Reverse,
 }
 
-impl From<StrandSpecificationOption> for StrandSpecification {
-    fn from(option: StrandSpecificationOption) -> Self {
+impl TryFrom<StrandSpecificationOption> for StrandSpecification {
+    type Error = ();
+
+    fn try_from(option: StrandSpecificationOption) -> Result<Self, Self::Error> {
         match option {
-            StrandSpecificationOption::None => Self::None,
-            StrandSpecificationOption::Forward => Self::Forward,
-            StrandSpecificationOption::Reverse => Self::Reverse,
-            _ => panic!("invalid option"),
+            StrandSpecificationOption::None => Ok(Self::None),
+            StrandSpecificationOption::Forward => Ok(Self::Forward),
+            StrandSpecificationOption::Reverse => Ok(Self::Reverse),
+            _ => Err(()),
         }
     }
 }
