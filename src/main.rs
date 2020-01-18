@@ -14,7 +14,7 @@ use noodles_bam as bam;
 use noodles_squab::{
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
-    detect::detect_specification,
+    detect::{detect_specification, LibraryLayout},
     read_features, Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
@@ -196,13 +196,12 @@ async fn main() {
 
     info!("detecting library type");
 
-    let (is_paired_end, detected_strand_specification, strandedness_confidence) =
+    let (library_layout, detected_strand_specification, strandedness_confidence) =
         detect_specification(&bam_src, &references, &features).unwrap();
 
-    if is_paired_end {
-        info!("paired end: true");
-    } else {
-        info!("paired end: false");
+    match library_layout {
+        LibraryLayout::SingleEnd => info!("library layout: single end"),
+        LibraryLayout::PairedEnd => info!("library layout: paired end"),
     }
 
     match detected_strand_specification {
@@ -240,62 +239,63 @@ async fn main() {
         with_nonunique_records,
     );
 
-    let ctx = if is_paired_end {
-        info!("counting features for paired end records");
+    info!("counting features");
 
-        let records = reader.records();
-        let (mut ctx1, mut pairs) = count_paired_end_records(
-            records,
-            &features,
-            &references,
-            &filter,
-            strand_specification,
-        )
-        .unwrap();
+    let ctx = match library_layout {
+        LibraryLayout::SingleEnd => {
+            let records = reader.records();
+            let (mut ctx1, mut pairs) = count_paired_end_records(
+                records,
+                &features,
+                &references,
+                &filter,
+                strand_specification,
+            )
+            .unwrap();
 
-        let singletons = pairs.singletons().map(Ok);
-        let ctx2 = count_paired_end_record_singletons(
-            singletons,
-            &features,
-            &references,
-            &filter,
-            strand_specification,
-        )
-        .unwrap();
+            let singletons = pairs.singletons().map(Ok);
+            let ctx2 = count_paired_end_record_singletons(
+                singletons,
+                &features,
+                &references,
+                &filter,
+                strand_specification,
+            )
+            .unwrap();
 
-        ctx1.add(&ctx2);
+            ctx1.add(&ctx2);
 
-        ctx1
-    } else {
-        info!("counting features for single end records");
-
-        let features = Arc::new(features);
-        let references = Arc::new(references);
-
-        let tasks: Vec<_> = references
-            .iter()
-            .enumerate()
-            .map(|(ref_id, reference)| {
-                tokio::spawn(count_single_end_records_by_region(
-                    bam_src.to_string(),
-                    ref_id,
-                    reference.clone(),
-                    features.clone(),
-                    references.clone(),
-                    filter.clone(),
-                    strand_specification,
-                ))
-            })
-            .collect();
-
-        let mut ctx = Context::default();
-
-        for task in tasks {
-            let region_ctx = task.await.unwrap();
-            ctx.add(&region_ctx);
+            ctx1
         }
+        LibraryLayout::PairedEnd => {
+            let features = Arc::new(features);
+            let references = Arc::new(references);
 
-        ctx
+            let tasks: Vec<_> = references
+                .iter()
+                .enumerate()
+                .map(|(ref_id, reference)| {
+                    tokio::spawn(count_single_end_records_by_region(
+                        bam_src.to_string(),
+                        ref_id,
+                        reference.clone(),
+                        features.clone(),
+                        references.clone(),
+                        filter.clone(),
+                        strand_specification,
+                    ))
+                })
+                .collect();
+
+            let mut ctx = Context::default();
+
+            for task in tasks {
+                let region_ctx = task.await.unwrap();
+                ctx.add(&region_ctx);
+            }
+
+            ctx
+        }
     };
 
     info!("writing counts");

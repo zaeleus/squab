@@ -18,6 +18,12 @@ struct Counts {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub enum LibraryLayout {
+    SingleEnd,
+    PairedEnd,
+}
+
+#[derive(Clone, Copy, Debug)]
 enum Strand {
     Forward,
     Reverse,
@@ -126,7 +132,7 @@ pub fn detect_specification<P>(
     src: P,
     references: &[bam::Reference],
     features: &Features,
-) -> io::Result<(bool, StrandSpecification, f64)>
+) -> io::Result<(LibraryLayout, StrandSpecification, f64)>
 where
     P: AsRef<Path>,
 {
@@ -159,7 +165,11 @@ where
         }
     }
 
-    let is_paired_end = counts.paired > 0;
+    let library_layout = if counts.paired > 0 {
+        LibraryLayout::PairedEnd
+    } else {
+        LibraryLayout::SingleEnd
+    };
 
     let matches = counts.matches as f64;
     let forward_pct = counts.forward as f64 / matches;
@@ -174,5 +184,9 @@ where
         (StrandSpecification::None, confidence)
     };
 
-    Ok((is_paired_end, strand_specification, strandedness_confidence))
+    Ok((
+        library_layout,
+        strand_specification,
+        strandedness_confidence,
+    ))
 }
