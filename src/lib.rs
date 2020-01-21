@@ -112,19 +112,21 @@ impl<'a> Iterator for CigarToIntervals<'a> {
     type Item = (Range<u64>, bool);
 
     fn next(&mut self) -> Option<Self::Item> {
+        use bam::cigar::op::Kind;
+
         loop {
             let op = self.ops.next()?;
 
             let len = u64::from(op.len());
 
-            match op {
-                cigar::Op::Match(_) | cigar::Op::SeqMatch(_) | cigar::Op::SeqMismatch(_) => {
+            match op.kind() {
+                Kind::Match | Kind::SeqMatch | Kind::SeqMismatch => {
                     let start = self.start;
                     let end = start + len;
                     self.start += len;
                     return Some((start..end, self.is_reverse));
                 }
-                cigar::Op::Deletion(_) | cigar::Op::Skip(_) => {}
+                Kind::Deletion | Kind::Skip => {}
                 _ => continue,
             }
 

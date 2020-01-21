@@ -15,7 +15,7 @@ env_logger = "0.7.1"
 git-testament = "0.1.6"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "2a0bab09e79766f3daf8b02725f27f66dbd9d009" }
 log = "0.4.5"
-noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "d35a65bb4ee06c2ca763622c881698cfb84acfe6" }
-noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "d35a65bb4ee06c2ca763622c881698cfb84acfe6" }
-noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "d35a65bb4ee06c2ca763622c881698cfb84acfe6" }
+noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "3f1d386f7349a8661145bcb958b0d6c4c55f2366" }
+noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "3f1d386f7349a8661145bcb958b0d6c4c55f2366" }
+noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "3f1d386f7349a8661145bcb958b0d6c4c55f2366" }
 tokio = { version = "0.2.6", features = ["macros", "rt-threaded"] }
