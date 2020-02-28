@@ -242,7 +242,7 @@ async fn main() {
     info!("counting features");
 
     let ctx = match library_layout {
-        LibraryLayout::SingleEnd => {
+        LibraryLayout::PairedEnd => {
             let records = reader.records();
             let (mut ctx1, mut pairs) = count_paired_end_records(
                 records,
@@ -267,7 +267,7 @@ async fn main() {
 
             ctx1
         }
-        LibraryLayout::PairedEnd => {
+        LibraryLayout::SingleEnd => {
             let features = Arc::new(features);
             let references = Arc::new(references);
 
