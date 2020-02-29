@@ -7,6 +7,7 @@ pub use self::{
 pub mod count;
 pub mod detect;
 pub mod feature;
+pub mod normalization;
 pub mod record_pairs;
 pub mod writer;
 

@@ -17,6 +17,7 @@ use noodles_squab::{
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::{detect_specification, LibraryLayout},
+    normalization::calculate_tpms,
     read_features,
     writer::QuantificationMethod,
     Context, Features, StrandSpecification, StrandSpecificationOption,
@@ -144,7 +145,7 @@ async fn main() {
                 .long("quantification-method")
                 .value_name("str")
                 .help("Expression quantification method")
-                .possible_values(&["count"])
+                .possible_values(&["count", "tpm"])
                 .default_value("count"),
         )
         .arg(
@@ -312,13 +313,26 @@ async fn main() {
         }
     };
 
+    let file = File::create(results_dst).unwrap();
+    let mut writer = BufWriter::new(file);
+
     match quantification_method {
         QuantificationMethod::Count => {
             info!("writing counts");
-            let file = File::create(results_dst).unwrap();
-            let mut writer = BufWriter::new(file);
             write_counts(&mut writer, &ctx.counts, &feature_ids).unwrap();
             write_stats(&mut writer, &ctx).unwrap();
+        }
+        QuantificationMethod::Tpm => {
+            info!("calculating tpms");
+
+            let tpms = calculate_tpms(&ctx.counts, &feature_map).unwrap();
+
+            info!("writing tpms");
+
+            for id in feature_ids {
+                let count = tpms.get(&id).unwrap_or(&0.0);
+                writeln!(&mut writer, "{}\t{}", id, count).unwrap();
+            }
         }
     }
 }

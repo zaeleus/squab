@@ -30,7 +30,15 @@ impl Feature {
         self.end
     }
 
+    pub fn end_mut(&mut self) -> &mut u64 {
+        &mut self.end
+    }
+
     pub fn strand(&self) -> gff::Strand {
         self.strand
+    }
+
+    pub fn len(&self) -> u64 {
+        self.end - self.start + 1
     }
 }
