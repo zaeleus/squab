@@ -6,6 +6,7 @@ pub use self::{
 pub mod count;
 pub mod detect;
 pub mod record_pairs;
+pub mod writer;
 
 use std::{
     collections::{HashMap, HashSet},

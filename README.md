@@ -24,7 +24,7 @@ $ cargo install --git https://github.com/zaeleus/noodles-squab.git
 ## Usage
 
 ```
-noodles-squab unknown (431529403 2020-01-14)
+noodles-squab unknown (7181944b4 2020-02-28)
 
 USAGE:
     noodles-squab [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
@@ -38,13 +38,14 @@ FLAGS:
         --with-supplementary-records    Count supplementary records (BAM flag 0x800)
 
 OPTIONS:
-    -a, --annotations <file>            Input annotations file (GTF/GFFv2)
-    -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
-        --min-mapq <u8>                 Minimum mapping quality to consider an alignment [default: 10]
-    -o, --output <file>                 Output destination for feature counts
-        --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,
-                                        auto]
-    -t, --type <str>                    Feature type to count [default: exon]
+    -a, --annotations <file>             Input annotations file (GTF/GFFv2)
+    -i, --id <str>                       Feature attribute to use as the feature identity [default: gene_id]
+        --min-mapq <u8>                  Minimum mapping quality to consider an alignment [default: 10]
+    -o, --output <file>                  Output destination for feature counts
+        --quantification-method <str>    Expression quantification method [default: count]  [possible values: count]
+        --strand-specification <str>     Strand specification [default: auto]  [possible values: none, forward, reverse,
+                                         auto]
+    -t, --type <str>                     Feature type to count [default: exon]
 
 ARGS:
     <bam>    Input alignment file

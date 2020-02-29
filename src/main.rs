@@ -16,7 +16,9 @@ use noodles_squab::{
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::{detect_specification, LibraryLayout},
-    read_features, Context, Features, StrandSpecification, StrandSpecificationOption,
+    read_features,
+    writer::QuantificationMethod,
+    Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
 git_testament!(TESTAMENT);
@@ -137,6 +139,14 @@ async fn main() {
                 .default_value("10"),
         )
         .arg(
+            Arg::with_name("quantification-method")
+                .long("quantification-method")
+                .value_name("str")
+                .help("Expression quantification method")
+                .possible_values(&["count"])
+                .default_value("count"),
+        )
+        .arg(
             Arg::with_name("output")
                 .short("o")
                 .long("output")
@@ -171,6 +181,8 @@ async fn main() {
     let bam_src = matches.value_of("bam").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
+    let quantification_method = value_t!(matches, "quantification-method", QuantificationMethod)
+        .unwrap_or_else(|e| e.exit());
     let results_dst = matches.value_of("output").unwrap();
 
     let feature_type = matches.value_of("type").unwrap();
@@ -298,12 +310,15 @@ async fn main() {
         }
     };
 
-    info!("writing counts");
-
-    let file = File::create(results_dst).unwrap();
-    let mut writer = BufWriter::new(file);
-    write_counts(&mut writer, &ctx.counts, &feature_ids).unwrap();
-    write_stats(&mut writer, &ctx).unwrap();
+    match quantification_method {
+        QuantificationMethod::Count => {
+            info!("writing counts");
+            let file = File::create(results_dst).unwrap();
+            let mut writer = BufWriter::new(file);
+            write_counts(&mut writer, &ctx.counts, &feature_ids).unwrap();
+            write_stats(&mut writer, &ctx).unwrap();
+        }
+    }
 }
 
 #[cfg(test)]
