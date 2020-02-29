@@ -35,6 +35,27 @@ pub fn calculate_tpms(counts: &Counts, features: &Features) -> Result<HashMap<St
     Ok(tpms)
 }
 
+pub fn calculate_fpkms(
+    counts: &Counts,
+    features: &Features,
+) -> Result<HashMap<String, f64>, Error> {
+    let counts_sum = sum_counts(counts);
+
+    counts
+        .iter()
+        .map(|(name, &count)| {
+            features
+                .get(name)
+                .map(|intervals| {
+                    let len = sum_nonoverlapping_interval_lengths(intervals);
+                    let fpkm = calculate_fpkm(count, len, counts_sum);
+                    (name.clone(), fpkm)
+                })
+                .ok_or_else(|| Error::MissingFeature(name.clone()))
+        })
+        .collect()
+}
+
 fn calculate_tpm(cpb: f64, cpbs_sum: f64) -> f64 {
     cpb * 1e6 / cpbs_sum
 }
@@ -66,4 +87,12 @@ fn merge_features(features: &[Feature]) -> Vec<Feature> {
     }
 
     merged_features
+}
+
+fn sum_counts(counts: &Counts) -> u64 {
+    counts.values().sum()
+}
+
+fn calculate_fpkm(count: u64, len: u64, counts_sum: u64) -> f64 {
+    (count as f64 * 1e9) / (len as f64 * counts_sum as f64)
 }
