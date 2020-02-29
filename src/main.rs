@@ -189,7 +189,7 @@ async fn main() {
 
     let file = File::open(&bam_src).unwrap();
     let mut reader = bam::Reader::new(file);
-    let (_, references) = reader.meta().expect("failed to read bam header");
+    let (_, references) = reader.header().expect("failed to read bam header");
 
     let mut feature_ids = Vec::with_capacity(names.len());
     feature_ids.extend(names.into_iter());

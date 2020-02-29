@@ -138,7 +138,7 @@ where
 {
     let file = File::open(src)?;
     let mut reader = bam::Reader::new(file);
-    reader.meta()?;
+    reader.header()?;
 
     let mut counts = Counts::default();
     let mut _ctx = Context::default();
