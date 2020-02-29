@@ -137,21 +137,24 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles_bam::{self as bam, cigar};
+    use noodles_bam::{
+        self as bam,
+        cigar::{self, op},
+    };
 
     use super::CigarToIntervals;
 
     fn build_raw_cigar() -> Vec<u8> {
         let ops = [
-            u32::from(cigar::Op::Match(1)).to_le_bytes(),
-            u32::from(cigar::Op::Insertion(2)).to_le_bytes(),
-            u32::from(cigar::Op::Deletion(3)).to_le_bytes(),
-            u32::from(cigar::Op::Skip(5)).to_le_bytes(),
-            u32::from(cigar::Op::SoftClip(8)).to_le_bytes(),
-            u32::from(cigar::Op::HardClip(13)).to_le_bytes(),
-            u32::from(cigar::Op::Pad(21)).to_le_bytes(),
-            u32::from(cigar::Op::SeqMatch(34)).to_le_bytes(),
-            u32::from(cigar::Op::SeqMismatch(55)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Match, 1)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Insertion, 2)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Deletion, 3)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Skip, 5)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SoftClip, 8)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::HardClip, 13)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Pad, 21)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SeqMatch, 34)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SeqMismatch, 55)).to_le_bytes(),
         ];
 
         ops.iter().flat_map(|u| u).cloned().collect()
