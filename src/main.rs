@@ -13,6 +13,7 @@ use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
 use noodles_bam as bam;
 use noodles_squab::{
+    build_interval_trees,
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::{detect_specification, LibraryLayout},
@@ -197,7 +198,8 @@ async fn main() {
         value_t!(matches, "strand-specification", StrandSpecificationOption)
             .unwrap_or_else(|e| e.exit());
 
-    let (features, names) = read_features(annotations_src, feature_type, id).unwrap();
+    let feature_map = read_features(annotations_src, feature_type, id).unwrap();
+    let (features, names) = build_interval_trees(&feature_map);
 
     let file = File::open(&bam_src).unwrap();
     let mut reader = bam::Reader::new(file);

@@ -1,10 +1,12 @@
 pub use self::{
     count::{count_paired_end_records, count_single_end_records, Context},
+    feature::Feature,
     record_pairs::{PairPosition, RecordPairs},
 };
 
 pub mod count;
 pub mod detect;
+pub mod feature;
 pub mod record_pairs;
 pub mod writer;
 
@@ -31,13 +33,12 @@ pub fn read_features<P>(
     src: P,
     feature_type: &str,
     feature_id: &str,
-) -> io::Result<(Features, HashSet<String>)>
+) -> io::Result<HashMap<String, Vec<Feature>>>
 where
     P: AsRef<Path>,
 {
     let mut reader = gff::open(src)?;
-    let mut features = Features::new();
-    let mut names = HashSet::new();
+    let mut features: HashMap<String, Vec<Feature>> = HashMap::new();
 
     info!("reading features");
 
@@ -52,7 +53,7 @@ where
         }
 
         let seq_name = record.seq_name().map_err(invalid_data)?;
-        let start = record.start().map_err(invalid_data)? - 1;
+        let start = record.start().map_err(invalid_data)?;
         let end = record.end().map_err(invalid_data)?;
 
         let strand = record.strand().map_err(invalid_data)?;
@@ -65,15 +66,39 @@ where
             )
         })?;
 
-        let tree = features.entry(seq_name.to_string()).or_default();
-        tree.insert(start..end, Entry(id.to_string(), strand));
-
-        names.insert(id.to_string());
+        let list = features.entry(id.into()).or_default();
+        let feature = Feature::new(seq_name.into(), start, end, strand);
+        list.push(feature);
     }
 
-    info!("read {} features", names.len());
+    info!("read {} unique features", features.len());
 
-    Ok((features, names))
+    Ok(features)
+}
+
+pub fn build_interval_trees(
+    feature_map: &HashMap<String, Vec<Feature>>,
+) -> (Features, HashSet<String>) {
+    let mut interval_trees = Features::new();
+    let mut names = HashSet::new();
+
+    for (id, features) in feature_map {
+        for feature in features {
+            let reference_name = feature.reference_name();
+
+            let start = feature.start() - 1;
+            let end = feature.end();
+
+            let strand = feature.strand();
+
+            let tree = interval_trees.entry(reference_name.into()).or_default();
+            tree.insert(start..end, Entry(id.into(), strand));
+        }
+
+        names.insert(id.into());
+    }
+
+    (interval_trees, names)
 }
 
 fn invalid_data(e: gff::record::Error) -> io::Error {
