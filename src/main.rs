@@ -1,6 +1,12 @@
-use std::{convert::TryFrom, fs::File, io::BufWriter, path::Path, sync::Arc};
+use std::{
+    convert::TryFrom,
+    fs::File,
+    io::{self, BufWriter},
+    path::Path,
+    sync::Arc,
+};
 
-use clap::{crate_name, value_t, App, Arg, SubCommand};
+use clap::{crate_name, value_t, App, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
@@ -12,6 +18,7 @@ use noodles_squab::{
     detect::{detect_specification, LibraryLayout},
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
+    reader::read_counts,
     writer::{write_counts, write_normalized_count_values, write_stats},
     Context, Features, StrandSpecification, StrandSpecificationOption,
 };
@@ -134,6 +141,47 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .index(1),
         );
 
+    let normalize_cmd = SubCommand::with_name("normalize")
+        .about("Normalize counts")
+        .arg(
+            Arg::with_name("type")
+                .short("t")
+                .long("type")
+                .value_name("str")
+                .help("Feature type to count")
+                .default_value("exon"),
+        )
+        .arg(
+            Arg::with_name("id")
+                .short("i")
+                .long("id")
+                .value_name("str")
+                .help("Feature attribute to use as the feature identity")
+                .default_value("gene_id"),
+        )
+        .arg(
+            Arg::with_name("annotations")
+                .short("a")
+                .long("annotations")
+                .value_name("file")
+                .help("Input annotations file (GTF/GFFv2)")
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("method")
+                .long("method")
+                .value_name("str")
+                .help("Quantification normalization method")
+                .possible_values(&["fpkm", "tpm"])
+                .default_value("tpm"),
+        )
+        .arg(
+            Arg::with_name("counts")
+                .help("Input counts file")
+                .required(true)
+                .index(1),
+        );
+
     App::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
         .arg(
@@ -143,21 +191,12 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .help("Use verbose logging"),
         )
         .subcommand(quantify_cmd)
+        .subcommand(normalize_cmd)
         .get_matches()
 }
 
 #[allow(clippy::cognitive_complexity)]
-fn main() {
-    let matches = match_args_from_env();
-
-    if matches.is_present("verbose") {
-        env_logger::Builder::from_default_env()
-            .filter(Some("noodles_squab"), LevelFilter::Info)
-            .init();
-    } else {
-        env_logger::init();
-    }
-
+fn quantify(matches: &ArgMatches<'_>) {
     let bam_src = matches.value_of("bam").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
@@ -327,5 +366,60 @@ fn main() {
         info!("writing counts");
         write_counts(&mut writer, &ctx.counts, &feature_ids).unwrap();
         write_stats(&mut writer, &ctx).unwrap();
+    }
+}
+
+fn normalize(matches: &ArgMatches<'_>) {
+    let counts_src = matches.value_of("counts").unwrap();
+    let annotations_src = matches.value_of("annotations").unwrap();
+
+    let feature_type = matches.value_of("type").unwrap();
+    let id = matches.value_of("id").unwrap();
+
+    let method = value_t!(matches, "method", normalization::Method).unwrap_or_else(|e| e.exit());
+
+    let mut file = File::open(counts_src).unwrap();
+    let count_map = read_counts(&mut file).unwrap();
+
+    let feature_map = read_features(annotations_src, feature_type, id).unwrap();
+
+    let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
+
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
+    match method {
+        normalization::Method::Fpkm => {
+            info!("calculating fpkms");
+            let fpkms = calculate_fpkms(&count_map, &feature_map).unwrap();
+            info!("writing fpkms");
+            write_normalized_count_values(&mut handle, &fpkms, &feature_ids).unwrap();
+        }
+        normalization::Method::Tpm => {
+            info!("calculating tpms");
+            let tpms = calculate_tpms(&count_map, &feature_map).unwrap();
+            info!("writing tpms");
+            write_normalized_count_values(&mut handle, &tpms, &feature_ids).unwrap();
+        }
+    }
+}
+
+fn main() {
+    let matches = match_args_from_env();
+
+    if matches.is_present("verbose") {
+        env_logger::Builder::from_default_env()
+            .filter(Some("noodles_squab"), LevelFilter::Info)
+            .init();
+    } else {
+        env_logger::init();
+    }
+
+    if let Some(submatches) = matches.subcommand_matches("quantify") {
+        quantify(submatches);
+    } else if let Some(submatches) = matches.subcommand_matches("normalize") {
+        normalize(submatches);
+    } else {
+        unreachable!();
     }
 }
