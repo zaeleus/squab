@@ -1,6 +1,6 @@
 use std::{convert::TryFrom, fs::File, io::BufWriter, path::Path, sync::Arc};
 
-use clap::{crate_name, value_t, App, Arg};
+use clap::{crate_name, value_t, App, Arg, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
@@ -50,14 +50,8 @@ where
 }
 
 fn match_args_from_env() -> clap::ArgMatches<'static> {
-    App::new(crate_name!())
-        .version(render_testament!(TESTAMENT).as_str())
-        .arg(
-            Arg::with_name("verbose")
-                .short("v")
-                .long("verbose")
-                .help("Use verbose logging"),
-        )
+    let quantify_cmd = SubCommand::with_name("quantify")
+        .about("Gene expression quantification")
         .arg(
             Arg::with_name("with-secondary-records")
                 .long("with-secondary-records")
@@ -138,7 +132,17 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .help("Input alignment file")
                 .required(true)
                 .index(1),
+        );
+
+    App::new(crate_name!())
+        .version(render_testament!(TESTAMENT).as_str())
+        .arg(
+            Arg::with_name("verbose")
+                .short("v")
+                .long("verbose")
+                .help("Use verbose logging"),
         )
+        .subcommand(quantify_cmd)
         .get_matches()
 }
 
