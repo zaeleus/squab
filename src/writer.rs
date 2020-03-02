@@ -1,13 +1,14 @@
 use std::{
     collections::HashMap,
+    hash::BuildHasher,
     io::{self, Write},
 };
 
 use crate::count::Context;
 
-pub fn write_counts<W>(
+pub fn write_counts<W, S: BuildHasher>(
     writer: &mut W,
-    counts: &HashMap<String, u64>,
+    counts: &HashMap<String, u64, S>,
     ids: &[String],
 ) -> io::Result<()>
 where
@@ -33,9 +34,9 @@ where
     Ok(())
 }
 
-pub fn write_normalized_count_values<W>(
+pub fn write_normalized_count_values<W, S: BuildHasher>(
     writer: &mut W,
-    values: &HashMap<String, f64>,
+    values: &HashMap<String, f64, S>,
     ids: &[String],
 ) -> io::Result<()>
 where

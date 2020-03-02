@@ -142,6 +142,7 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
         .get_matches()
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn main() {
     let matches = match_args_from_env();
 

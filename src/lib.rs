@@ -14,6 +14,7 @@ pub mod writer;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
+    hash::BuildHasher,
     io,
     ops::Range,
     path::Path,
@@ -77,8 +78,8 @@ where
     Ok(features)
 }
 
-pub fn build_interval_trees(
-    feature_map: &HashMap<String, Vec<Feature>>,
+pub fn build_interval_trees<S: BuildHasher>(
+    feature_map: &HashMap<String, Vec<Feature>, S>,
 ) -> (Features, HashSet<String>) {
     let mut interval_trees = Features::new();
     let mut names = HashSet::new();

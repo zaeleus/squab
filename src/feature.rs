@@ -41,4 +41,8 @@ impl Feature {
     pub fn len(&self) -> u64 {
         self.end - self.start + 1
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
 }
