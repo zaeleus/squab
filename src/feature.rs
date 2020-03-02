@@ -1,6 +1,6 @@
 use noodles_gff as gff;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Feature {
     reference_name: String,
     start: u64,
