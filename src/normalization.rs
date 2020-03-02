@@ -1,9 +1,41 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error, fmt, str::FromStr};
 
 use crate::Feature;
 
 type Counts = HashMap<String, u64>;
 type Features = HashMap<String, Vec<Feature>>;
+
+/// Normalization method
+#[derive(Debug)]
+pub enum Method {
+    /// fragments per kilobase per million mapped reads
+    Fpkm,
+    /// transcripts per million
+    Tpm,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct ParseMethodError(String);
+
+impl fmt::Display for ParseMethodError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "invalid method: {}", self.0)
+    }
+}
+
+impl error::Error for ParseMethodError {}
+
+impl FromStr for Method {
+    type Err = ParseMethodError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "fpkm" => Ok(Self::Fpkm),
+            "tpm" => Ok(Self::Tpm),
+            _ => Err(ParseMethodError(s.into())),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum Error {
