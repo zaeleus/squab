@@ -223,31 +223,6 @@ async fn main() {
     info!("counting features");
 
     let ctx = match library_layout {
-        LibraryLayout::PairedEnd => {
-            let records = reader.records();
-            let (mut ctx1, mut pairs) = count_paired_end_records(
-                records,
-                &features,
-                &references,
-                &filter,
-                strand_specification,
-            )
-            .unwrap();
-
-            let singletons = pairs.singletons().map(Ok);
-            let ctx2 = count_paired_end_record_singletons(
-                singletons,
-                &features,
-                &references,
-                &filter,
-                strand_specification,
-            )
-            .unwrap();
-
-            ctx1.add(&ctx2);
-
-            ctx1
-        }
         LibraryLayout::SingleEnd => {
             let features = Arc::new(features);
             let references = Arc::new(references);
@@ -276,6 +251,31 @@ async fn main() {
             }
 
             ctx
+        }
+        LibraryLayout::PairedEnd => {
+            let records = reader.records();
+            let (mut ctx1, mut pairs) = count_paired_end_records(
+                records,
+                &features,
+                &references,
+                &filter,
+                strand_specification,
+            )
+            .unwrap();
+
+            let singletons = pairs.singletons().map(Ok);
+            let ctx2 = count_paired_end_record_singletons(
+                singletons,
+                &features,
+                &references,
+                &filter,
+                strand_specification,
+            )
+            .unwrap();
+
+            ctx1.add(&ctx2);
+
+            ctx1
         }
     };
 
