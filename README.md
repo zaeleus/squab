@@ -69,6 +69,10 @@ output from htseq-count, meaning it includes statistics in the trailer.
 
 ## References
 
+  * S Anders, T P Pyl, W Huber. HTSeq – A Python framework to work with
+    high-throughput sequencing data. _bioRxiv_ 2014.
+    https://doi.org/10.1101/002824
+
   * Wagner, G.P., Kin, K. & Lynch, V.J. Measurement of mRNA abundance using
     RNA-seq data: RPKM measure is inconsistent among samples. _Theory Biosci_.
     **131**, 281–285 (2012). https://doi.org/10.1007/s12064-012-0162-3
