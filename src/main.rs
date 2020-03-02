@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use clap::{crate_name, value_t, App, Arg, ArgMatches, SubCommand};
+use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::{info, warn, LevelFilter};
 use noodles::formats::bai;
@@ -184,6 +184,7 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
 
     App::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
+        .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(
             Arg::with_name("verbose")
                 .short("v")
@@ -419,7 +420,5 @@ fn main() {
         quantify(submatches);
     } else if let Some(submatches) = matches.subcommand_matches("normalize") {
         normalize(submatches);
-    } else {
-        unreachable!();
     }
 }
