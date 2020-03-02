@@ -49,8 +49,7 @@ where
     count_single_end_records(query, &features, &references, &filter, strand_specification).unwrap()
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let matches = App::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
         .arg(
@@ -129,6 +128,12 @@ async fn main() {
                 .required(true),
         )
         .arg(
+            Arg::with_name("threads")
+                .long("threads")
+                .value_name("uint")
+                .help("Force a specific number of threads"),
+        )
+        .arg(
             Arg::with_name("bam")
                 .help("Input alignment file")
                 .required(true)
@@ -160,6 +165,8 @@ async fn main() {
     let with_secondary_records = matches.is_present("with-secondary-records");
     let with_supplementary_records = matches.is_present("with-supplementary-records");
     let with_nonunique_records = matches.is_present("with-nonunique-records");
+
+    let threads = value_t!(matches, "threads", usize).unwrap_or_else(|_| num_cpus::get());
 
     let strand_specification_option =
         value_t!(matches, "strand-specification", StrandSpecificationOption)
@@ -224,33 +231,43 @@ async fn main() {
 
     let ctx = match library_layout {
         LibraryLayout::SingleEnd => {
+            info!("using {} thread(s)", threads);
+
+            let mut runtime = tokio::runtime::Builder::new()
+                .threaded_scheduler()
+                .core_threads(threads)
+                .build()
+                .unwrap();
+
             let features = Arc::new(features);
             let references = Arc::new(references);
 
-            let tasks: Vec<_> = references
-                .iter()
-                .enumerate()
-                .map(|(ref_id, reference)| {
-                    tokio::spawn(count_single_end_records_by_region(
-                        bam_src.to_string(),
-                        ref_id,
-                        reference.clone(),
-                        features.clone(),
-                        references.clone(),
-                        filter.clone(),
-                        strand_specification,
-                    ))
-                })
-                .collect();
+            runtime.block_on(async {
+                let tasks: Vec<_> = references
+                    .iter()
+                    .enumerate()
+                    .map(|(ref_id, reference)| {
+                        tokio::spawn(count_single_end_records_by_region(
+                            bam_src.to_string(),
+                            ref_id,
+                            reference.clone(),
+                            features.clone(),
+                            references.clone(),
+                            filter.clone(),
+                            strand_specification,
+                        ))
+                    })
+                    .collect();
 
-            let mut ctx = Context::default();
+                let mut ctx = Context::default();
 
-            for task in tasks {
-                let region_ctx = task.await.unwrap();
-                ctx.add(&region_ctx);
-            }
+                for task in tasks {
+                    let region_ctx = task.await.unwrap();
+                    ctx.add(&region_ctx);
+                }
 
-            ctx
+                ctx
+            })
         }
         LibraryLayout::PairedEnd => {
             let records = reader.records();

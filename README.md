@@ -27,7 +27,7 @@ $ cargo install --git https://github.com/zaeleus/noodles-squab.git
 ## Usage
 
 ```
-noodles-squab unknown (8376ed54e 2020-02-29)
+noodles-squab unknown (d1da57f85 2020-03-01)
 
 USAGE:
     noodles-squab [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
@@ -48,6 +48,7 @@ OPTIONS:
     -o, --output <file>                 Output destination for feature counts
         --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,
                                         auto]
+        --threads <uint>                Force a specific number of threads
     -t, --type <str>                    Feature type to count [default: exon]
 
 ARGS:

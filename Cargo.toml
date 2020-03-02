@@ -18,4 +18,5 @@ log = "0.4.5"
 noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "0d243ef282253754dd25ac7fc5ea6a74a770b8d9" }
 noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "0d243ef282253754dd25ac7fc5ea6a74a770b8d9" }
 noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "0d243ef282253754dd25ac7fc5ea6a74a770b8d9" }
-tokio = { version = "0.2.6", features = ["macros", "rt-threaded"] }
+num_cpus = "1.12.0"
+tokio = { version = "0.2.6", features = ["rt-threaded"] }
