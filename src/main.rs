@@ -49,8 +49,8 @@ where
     count_single_end_records(query, &features, &references, &filter, strand_specification).unwrap()
 }
 
-fn main() {
-    let matches = App::new(crate_name!())
+fn match_args_from_env() -> clap::ArgMatches<'static> {
+    App::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
         .arg(
             Arg::with_name("verbose")
@@ -139,7 +139,11 @@ fn main() {
                 .required(true)
                 .index(1),
         )
-        .get_matches();
+        .get_matches()
+}
+
+fn main() {
+    let matches = match_args_from_env();
 
     if matches.is_present("verbose") {
         env_logger::Builder::from_default_env()
