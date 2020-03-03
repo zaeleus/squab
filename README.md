@@ -101,6 +101,45 @@ ARGS:
 The output is a tab-delimited text file with two columns: the feature
 identifier (string) and the normalized value (double).
 
+## Examples
+
+### Count features (exons by gene ID)
+
+```
+$ noodles-squab \
+    --verbose \
+    quantify \
+    --annotations annoations.gtf.gz \
+    --output sample.counts.tsv \
+    sample.bam
+```
+
+### Count featues and normalize in FPKM (genes by gene name)
+
+```
+$ noodles-squab \
+    --verbose \
+    quantify \
+    --annotations annoations.gtf.gz \
+    --type gene \
+    --id gene_name \
+    --normalize fpkm \
+    --output sample.fpkm.tsv \
+    sample.bam
+```
+
+### Normalize counts in FPKM (exons by gene ID)
+
+```
+$ noodles-squab \
+    --verbose \
+    normalize \
+    --method fpkm \
+    --annotations annoations.gtf.gz \
+    sample.counts.tsv \
+    > sample.fpkm.tsv
+```
+
 ## Limitations
 
   * Counts are taken only as the union of matched feature sets, i.e., reads that
