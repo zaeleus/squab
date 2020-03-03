@@ -26,16 +26,23 @@ $ cargo install --git https://github.com/zaeleus/noodles-squab.git
 
 ## Usage
 
+noodles-squab has two subcommands: `quantify` and `normalize`.
+
+### `quantify`
+
+`quantify` performs gene expression quantification by counting the number of
+times aligned records intersect known gene annotations.
+
 ```
-noodles-squab unknown (d1da57f85 2020-03-01)
+noodles-squab-quantify
+Gene expression quantification
 
 USAGE:
-    noodles-squab [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
+    noodles-squab quantify [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
 
 FLAGS:
     -h, --help                          Prints help information
     -V, --version                       Prints version information
-    -v, --verbose                       Use verbose logging
         --with-nonunique-records        Count nonunique records (BAM data tag NH > 1)
         --with-secondary-records        Count secondary records (BAM flag 0x100)
         --with-supplementary-records    Count supplementary records (BAM flag 0x800)
@@ -55,10 +62,44 @@ ARGS:
     <bam>    Input alignment file
 ```
 
-The default output (`--quantification-method count`) is a tab-delimited text
-file with two columns: the feature identifier (string) and the number of reads
-(integer) from the input alignment that overlap it. This file is compatible as
-output from htseq-count, meaning it includes statistics in the trailer.
+The default output is a tab-delimited text file with two columns: the feature
+identifier (string) and the number of reads (integer) from the input alignment
+that overlap it. This file is compatible as output from htseq-count, meaning it
+includes statistics in the trailer.
+
+### `normalize`
+
+`normalize` takes raw counts and normalizes them by gene length, meaning the
+annotations used for quantification must be the same given here. To
+normalization methods are available: FPKM for single sample normalization and
+TPM for across samples normalization (default).
+
+Typically, this is only used when a sample was previously quanitifed, e.g.,
+using `noodles-squab quanitfy` or `htseq-count`.
+
+```
+noodles-squab-normalize
+Normalize counts
+
+USAGE:
+    noodles-squab normalize [OPTIONS] <counts> --annotations <file>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+    -a, --annotations <file>    Input annotations file (GTF/GFFv2)
+    -i, --id <str>              Feature attribute to use as the feature identity [default: gene_id]
+        --method <str>          Quantification normalization method [default: tpm]  [possible values: fpkm, tpm]
+    -t, --type <str>            Feature type to count [default: exon]
+
+ARGS:
+    <counts>    Input counts file
+```
+
+The output is a tab-delimited text file with two columns: the feature
+identifier (string) and the normalized value (double).
 
 ## Limitations
 
