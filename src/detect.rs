@@ -3,6 +3,7 @@ use std::{convert::TryFrom, fs::File, io, path::Path};
 use interval_tree::IntervalTree;
 use noodles_bam as bam;
 use noodles_gff as gff;
+use noodles_sam::{self as sam, header::ReferenceSequences};
 
 use crate::{count::get_tree, Context, Entry, Features, PairPosition, StrandSpecification};
 
@@ -29,9 +30,9 @@ enum Strand {
     Reverse,
 }
 
-impl From<bam::Flag> for Strand {
-    fn from(flag: bam::Flag) -> Self {
-        if flag.is_reverse() {
+impl From<sam::Flags> for Strand {
+    fn from(flags: sam::Flags) -> Self {
+        if flags.is_reverse() {
             Self::Reverse
         } else {
             Self::Forward
@@ -60,11 +61,11 @@ fn count_paired_end_record(
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = record.pos() as u64;
+    let start = record.position() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
     let pair_position = PairPosition::try_from(record).map_err(invalid_record_pair)?;
-    let record_strand = Strand::from(record.flag());
+    let record_strand = Strand::from(record.flags());
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
@@ -100,10 +101,10 @@ fn count_single_end_record(
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = record.pos() as u64;
+    let start = record.position() as u64;
     let end = start + record.cigar().mapped_len() as u64;
 
-    let record_strand = Strand::from(record.flag());
+    let record_strand = Strand::from(record.flags());
 
     for entry in tree.find(start..end) {
         let strand = entry.value.1;
@@ -130,7 +131,7 @@ fn count_single_end_record(
 
 pub fn detect_specification<P>(
     src: P,
-    references: &[bam::Reference],
+    reference_sequences: &ReferenceSequences,
     features: &Features,
 ) -> io::Result<(LibraryLayout, StrandSpecification, f64)>
 where
@@ -138,26 +139,30 @@ where
 {
     let file = File::open(src)?;
     let mut reader = bam::Reader::new(file);
-    reader.header()?;
+    reader.read_header()?;
 
     let mut counts = Counts::default();
     let mut _ctx = Context::default();
 
     for result in reader.records().take(MAX_RECORDS) {
         let record = result?;
-        let flag = record.flag();
+        let flags = record.flags();
 
-        if flag.is_unmapped() || flag.is_secondary() || flag.is_supplementary() {
+        if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
             continue;
         }
 
-        let ref_id = record.ref_id();
-        let tree = match get_tree(&mut _ctx, features, references, ref_id)? {
+        let tree = match get_tree(
+            &mut _ctx,
+            features,
+            reference_sequences,
+            record.reference_sequence_id(),
+        )? {
             Some(t) => t,
             None => continue,
         };
 
-        if flag.is_paired() {
+        if flags.is_paired() {
             counts.paired += 1;
             count_paired_end_record(&mut counts, tree, &record)?;
         } else {

@@ -26,6 +26,7 @@ use interval_tree::IntervalTree;
 use log::info;
 use noodles_bam::{self as bam, cigar};
 use noodles_gff as gff;
+use noodles_sam as sam;
 
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
@@ -118,7 +119,7 @@ impl<'a> CigarToIntervals<'a> {
     fn new(
         cigar: &'a bam::Cigar,
         start: u64,
-        flag: bam::Flag,
+        flag: sam::Flags,
         reverse: bool,
     ) -> CigarToIntervals<'a> {
         let ops = cigar.ops();
@@ -141,7 +142,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
     type Item = (Range<u64>, bool);
 
     fn next(&mut self) -> Option<Self::Item> {
-        use bam::cigar::op::Kind;
+        use sam::cigar::op::Kind;
 
         loop {
             let op = self.ops.next()?;
@@ -166,10 +167,8 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles_bam::{
-        self as bam,
-        cigar::{self, op},
-    };
+    use noodles_bam::{self as bam, cigar};
+    use noodles_sam::{self as sam, cigar::op};
 
     use super::CigarToIntervals;
 
@@ -196,20 +195,20 @@ mod tests {
 
         let start = 0;
 
-        let flag = bam::Flag::from(99);
-        let it = CigarToIntervals::new(&cigar, start, flag, false);
+        let flags = sam::Flags::from(99);
+        let it = CigarToIntervals::new(&cigar, start, flags, false);
         assert!(!it.is_reverse);
 
-        let flag = bam::Flag::from(99);
-        let it = CigarToIntervals::new(&cigar, start, flag, true);
+        let flags = sam::Flags::from(99);
+        let it = CigarToIntervals::new(&cigar, start, flags, true);
         assert!(it.is_reverse);
 
-        let flag = bam::Flag::from(147);
-        let it = CigarToIntervals::new(&cigar, start, flag, false);
+        let flags = sam::Flags::from(147);
+        let it = CigarToIntervals::new(&cigar, start, flags, false);
         assert!(it.is_reverse);
 
-        let flag = bam::Flag::from(147);
-        let it = CigarToIntervals::new(&cigar, start, flag, true);
+        let flags = sam::Flags::from(147);
+        let it = CigarToIntervals::new(&cigar, start, flags, true);
         assert!(!it.is_reverse);
     }
 
@@ -218,8 +217,8 @@ mod tests {
         let raw_cigar = build_raw_cigar();
         let cigar = bam::Cigar::new(&raw_cigar);
 
-        let flag = bam::Flag::from(99);
-        let mut it = CigarToIntervals::new(&cigar, 0, flag, false);
+        let flags = sam::Flags::from(99);
+        let mut it = CigarToIntervals::new(&cigar, 0, flags, false);
 
         let (interval, is_reverse) = it.next().unwrap();
         assert_eq!(interval, 0..1);

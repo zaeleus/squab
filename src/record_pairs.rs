@@ -6,6 +6,7 @@ use std::{
 
 use log::warn;
 use noodles_bam as bam;
+use noodles_sam as sam;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -26,17 +27,17 @@ impl<'a> TryFrom<&'a bam::Record> for PairPosition {
     type Error = ();
 
     fn try_from(record: &bam::Record) -> Result<Self, Self::Error> {
-        Self::try_from(record.flag())
+        Self::try_from(record.flags())
     }
 }
 
-impl TryFrom<bam::Flag> for PairPosition {
+impl TryFrom<sam::Flags> for PairPosition {
     type Error = ();
 
-    fn try_from(flag: bam::Flag) -> Result<Self, Self::Error> {
-        if flag.is_read_1() {
+    fn try_from(flags: sam::Flags) -> Result<Self, Self::Error> {
+        if flags.is_read_1() {
             Ok(PairPosition::First)
-        } else if flag.is_read_2() {
+        } else if flags.is_read_2() {
             Ok(PairPosition::Second)
         } else {
             Err(())
@@ -48,7 +49,7 @@ impl TryFrom<bam::Flag> for PairPosition {
 mod pair_position_tests {
     use std::convert::TryFrom;
 
-    use noodles_bam as bam;
+    use noodles_sam as sam;
 
     use super::PairPosition;
 
@@ -60,14 +61,14 @@ mod pair_position_tests {
 
     #[test]
     fn test_try_from_flag() {
-        let flag = bam::Flag::from(0x41);
-        assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::First));
+        let flags = sam::Flags::from(0x41);
+        assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::First));
 
-        let flag = bam::Flag::from(0x81);
-        assert_eq!(PairPosition::try_from(flag), Ok(PairPosition::Second));
+        let flags = sam::Flags::from(0x81);
+        assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
 
-        let flag = bam::Flag::from(0x01);
-        assert!(PairPosition::try_from(flag).is_err());
+        let flags = sam::Flags::from(0x01);
+        assert!(PairPosition::try_from(flags).is_err());
     }
 }
 
@@ -145,31 +146,31 @@ where
 }
 
 fn is_primary(record: &bam::Record) -> bool {
-    let flag = record.flag();
-    flag.is_secondary() || flag.is_supplementary()
+    let flags = record.flags();
+    flags.is_secondary() || flags.is_supplementary()
 }
 
 fn key(record: &bam::Record) -> RecordKey {
     (
-        record.read_name().to_vec(),
+        record.name().to_vec(),
         PairPosition::try_from(record).unwrap(),
-        record.ref_id(),
-        record.pos(),
-        record.next_ref_id(),
-        record.next_pos(),
-        record.tlen(),
+        record.reference_sequence_id(),
+        record.position(),
+        record.mate_reference_sequence_id(),
+        record.mate_position(),
+        record.template_len(),
     )
 }
 
 fn mate_key(record: &bam::Record) -> RecordKey {
     (
-        record.read_name().to_vec(),
+        record.name().to_vec(),
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
-        record.next_ref_id(),
-        record.next_pos(),
-        record.ref_id(),
-        record.pos(),
-        -record.tlen(),
+        record.mate_reference_sequence_id(),
+        record.mate_position(),
+        record.reference_sequence_id(),
+        record.position(),
+        -record.template_len(),
     )
 }
 

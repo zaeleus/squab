@@ -7,6 +7,7 @@ use std::{
 use interval_tree::IntervalTree;
 use noodles_bam as bam;
 use noodles_gff as gff;
+use noodles_sam::{self as sam, header::ReferenceSequences};
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
 
@@ -34,15 +35,15 @@ impl Filter {
     }
 
     pub fn filter(&self, ctx: &mut Context, record: &bam::Record) -> io::Result<bool> {
-        let flag = record.flag();
+        let flags = record.flags();
 
-        if flag.is_unmapped() {
+        if flags.is_unmapped() {
             ctx.unmapped += 1;
             return Ok(true);
         }
 
-        if (!self.with_secondary_records && flag.is_secondary())
-            || (!self.with_supplementary_records && flag.is_supplementary())
+        if (!self.with_secondary_records && flags.is_secondary())
+            || (!self.with_supplementary_records && flags.is_supplementary())
         {
             return Ok(true);
         }
@@ -52,7 +53,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if record.mapq() < self.min_mapq {
+        if record.mapping_quality() < self.min_mapq {
             ctx.low_quality += 1;
             return Ok(true);
         }
@@ -66,8 +67,8 @@ impl Filter {
         r1: &bam::Record,
         r2: &bam::Record,
     ) -> io::Result<bool> {
-        let f1 = r1.flag();
-        let f2 = r2.flag();
+        let f1 = r1.flags();
+        let f2 = r2.flags();
 
         if f1.is_unmapped() && f2.is_unmapped() {
             ctx.unmapped += 1;
@@ -87,7 +88,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if r1.mapq() < self.min_mapq || r2.mapq() < self.min_mapq {
+        if r1.mapping_quality() < self.min_mapq || r2.mapping_quality() < self.min_mapq {
             ctx.low_quality += 1;
             return Ok(true);
         }
@@ -124,7 +125,7 @@ impl Context {
 pub fn count_single_end_records<I>(
     records: I,
     features: &Features,
-    references: &[bam::Reference],
+    references: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<Context>
@@ -152,7 +153,7 @@ where
 pub fn count_single_end_record(
     ctx: &mut Context,
     features: &Features,
-    references: &[bam::Reference],
+    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     record: &bam::Record,
@@ -162,18 +163,22 @@ pub fn count_single_end_record(
     }
 
     let cigar = record.cigar();
-    let start = record.pos() as u64;
-    let flag = record.flag();
+    let start = record.position() as u64;
+    let flags = record.flags();
 
     let reverse = match strand_specification {
         StrandSpecification::Reverse => true,
         _ => false,
     };
 
-    let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
+    let intervals = CigarToIntervals::new(&cigar, start, flags, reverse);
 
-    let ref_id = record.ref_id();
-    let tree = match get_tree(ctx, features, references, ref_id)? {
+    let tree = match get_tree(
+        ctx,
+        features,
+        reference_sequences,
+        record.reference_sequence_id(),
+    )? {
         Some(t) => t,
         None => return Ok(()),
     };
@@ -188,7 +193,7 @@ pub fn count_single_end_record(
 pub fn count_paired_end_records<I>(
     records: I,
     features: &Features,
-    references: &[bam::Reference],
+    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<(Context, RecordPairs<I>)>
@@ -208,8 +213,8 @@ where
         }
 
         let cigar = r1.cigar();
-        let start = r1.pos() as u64;
-        let f1 = r1.flag();
+        let start = r1.position() as u64;
+        let f1 = r1.flags();
 
         let reverse = match strand_specification {
             StrandSpecification::Reverse => true,
@@ -218,8 +223,12 @@ where
 
         let intervals = CigarToIntervals::new(&cigar, start, f1, reverse);
 
-        let ref_id = r1.ref_id();
-        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
+        let tree = match get_tree(
+            &mut ctx,
+            features,
+            reference_sequences,
+            r1.reference_sequence_id(),
+        )? {
             Some(t) => t,
             None => continue,
         };
@@ -227,8 +236,8 @@ where
         let mut set = find(tree, intervals, strand_specification);
 
         let cigar = r2.cigar();
-        let start = r2.pos() as u64;
-        let f2 = r2.flag();
+        let start = r2.position() as u64;
+        let f2 = r2.flags();
 
         let reverse = match strand_specification {
             StrandSpecification::Reverse => false,
@@ -237,8 +246,12 @@ where
 
         let intervals = CigarToIntervals::new(&cigar, start, f2, reverse);
 
-        let ref_id = r2.ref_id();
-        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
+        let tree = match get_tree(
+            &mut ctx,
+            features,
+            reference_sequences,
+            r2.reference_sequence_id(),
+        )? {
             Some(t) => t,
             None => continue,
         };
@@ -256,7 +269,7 @@ where
 pub fn count_paired_end_record_singletons<I>(
     records: I,
     features: &Features,
-    references: &[bam::Reference],
+    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<Context>
@@ -273,7 +286,7 @@ where
         }
 
         let cigar = record.cigar();
-        let start = record.pos() as u64;
+        let start = record.position() as u64;
 
         let reverse = match PairPosition::try_from(&record) {
             Ok(PairPosition::First) => false,
@@ -291,11 +304,15 @@ where
             _ => reverse,
         };
 
-        let flag = record.flag();
-        let intervals = CigarToIntervals::new(&cigar, start, flag, reverse);
+        let flags = record.flags();
+        let intervals = CigarToIntervals::new(&cigar, start, flags, reverse);
 
-        let ref_id = record.ref_id();
-        let tree = match get_tree(&mut ctx, features, references, ref_id)? {
+        let tree = match get_tree(
+            &mut ctx,
+            features,
+            reference_sequences,
+            record.reference_sequence_id(),
+        )? {
             Some(t) => t,
             None => continue,
         };
@@ -355,9 +372,9 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
 }
 
 fn get_reference<'a>(
-    references: &'a [bam::Reference],
+    reference_sequences: &'a ReferenceSequences,
     ref_id: i32,
-) -> io::Result<&'a bam::Reference> {
+) -> io::Result<&'a sam::header::ReferenceSequence> {
     if ref_id < 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -365,12 +382,19 @@ fn get_reference<'a>(
         ));
     }
 
-    references.get(ref_id as usize).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("expected ref id < {}, got {}", references.len(), ref_id),
-        )
-    })
+    reference_sequences
+        .get_index(ref_id as usize)
+        .map(|(_, rs)| rs)
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "expected ref id < {}, got {}",
+                    reference_sequences.len(),
+                    ref_id
+                ),
+            )
+        })
 }
 
 fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
@@ -389,10 +413,10 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
 pub fn get_tree<'t>(
     ctx: &mut Context,
     features: &'t Features,
-    references: &[bam::Reference],
+    reference_sequences: &ReferenceSequences,
     ref_id: i32,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
-    let reference = get_reference(&references, ref_id)?;
+    let reference = get_reference(reference_sequences, ref_id)?;
     let name = reference.name();
 
     match features.get(name) {
@@ -406,30 +430,39 @@ pub fn get_tree<'t>(
 
 #[cfg(test)]
 mod tests {
-    use noodles_bam as bam;
-
     use super::*;
 
-    fn build_references() -> Vec<bam::Reference> {
-        return vec![
-            bam::Reference::new(String::from("chr1"), 7),
-            bam::Reference::new(String::from("chr2"), 12),
-            bam::Reference::new(String::from("chr3"), 148),
-        ];
+    fn build_reference_sequences() -> ReferenceSequences {
+        vec![
+            (
+                String::from("chr1"),
+                sam::header::ReferenceSequence::new(String::from("chr1"), 7),
+            ),
+            (
+                String::from("chr2"),
+                sam::header::ReferenceSequence::new(String::from("chr2"), 12),
+            ),
+            (
+                String::from("chr3"),
+                sam::header::ReferenceSequence::new(String::from("chr3"), 148),
+            ),
+        ]
+        .into_iter()
+        .collect()
     }
 
     #[test]
     fn test_get_reference() {
-        let references = build_references();
+        let reference_sequences = build_reference_sequences();
 
-        let reference = get_reference(&references, 1).unwrap();
+        let reference = get_reference(&reference_sequences, 1).unwrap();
         assert_eq!(reference.name(), "chr2");
         assert_eq!(reference.len(), 12);
 
-        let reference = get_reference(&references, -2);
+        let reference = get_reference(&reference_sequences, -2);
         assert!(reference.is_err());
 
-        let reference = get_reference(&references, 5);
+        let reference = get_reference(&reference_sequences, 5);
         assert!(reference.is_err());
     }
 }

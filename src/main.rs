@@ -9,8 +9,9 @@ use std::{
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::{info, warn, LevelFilter};
-use noodles::formats::bai;
-use noodles_bam as bam;
+use noodles::Region;
+use noodles_bam::{self as bam, bai};
+use noodles_sam as sam;
 use noodles_squab::{
     build_interval_trees,
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
@@ -27,10 +28,8 @@ git_testament!(TESTAMENT);
 
 async fn count_single_end_records_by_region<P>(
     bam_src: P,
-    ref_id: usize,
-    reference: bam::Reference,
+    reference_sequence_name: String,
     features: Arc<Features>,
-    references: Arc<Vec<bam::Reference>>,
     filter: Filter,
     strand_specification: StrandSpecification,
 ) -> Context
@@ -39,21 +38,27 @@ where
 {
     let file = File::open(bam_src.as_ref()).unwrap();
     let mut reader = bam::Reader::new(file);
+    let header: sam::Header = reader
+        .read_header()
+        .expect("could not read bam header")
+        .parse()
+        .expect("could not parse bam header");
+    let reference_sequences = header.reference_sequences();
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let bai_file = File::open(bai_src).unwrap();
-    let mut bai_reader = bai::Reader::new(bai_file);
-    bai_reader.header().unwrap();
-    let index = bai_reader.read_index().unwrap();
+    let index = bai::read(bai_src).unwrap();
 
-    let index_ref = &index.references[ref_id];
+    let region = Region::mapped(reference_sequence_name, 0, None);
+    let query = reader.query(reference_sequences, &index, &region).unwrap();
 
-    let start = 0;
-    let end = reference.len();
-
-    let query = reader.query(index_ref, start, end);
-
-    count_single_end_records(query, &features, &references, &filter, strand_specification).unwrap()
+    count_single_end_records(
+        query,
+        &features,
+        reference_sequences,
+        &filter,
+        strand_specification,
+    )
+    .unwrap()
 }
 
 fn match_args_from_env() -> clap::ArgMatches<'static> {
@@ -226,7 +231,12 @@ fn quantify(matches: &ArgMatches<'_>) {
 
     let file = File::open(&bam_src).unwrap();
     let mut reader = bam::Reader::new(file);
-    let (_, references) = reader.header().expect("failed to read bam header");
+    let header: sam::Header = reader
+        .read_header()
+        .expect("could not read bam header")
+        .parse()
+        .expect("could not parse bam header");
+    let reference_sequences = header.reference_sequences();
 
     let mut feature_ids = Vec::with_capacity(names.len());
     feature_ids.extend(names.into_iter());
@@ -235,7 +245,7 @@ fn quantify(matches: &ArgMatches<'_>) {
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, &references, &features).unwrap();
+        detect_specification(&bam_src, reference_sequences, &features).unwrap();
 
     match library_layout {
         LibraryLayout::SingleEnd => info!("library layout: single end"),
@@ -289,19 +299,15 @@ fn quantify(matches: &ArgMatches<'_>) {
                 .unwrap();
 
             let features = Arc::new(features);
-            let references = Arc::new(references);
 
             runtime.block_on(async {
-                let tasks: Vec<_> = references
-                    .iter()
-                    .enumerate()
-                    .map(|(ref_id, reference)| {
+                let tasks: Vec<_> = reference_sequences
+                    .values()
+                    .map(|reference_sequence| {
                         tokio::spawn(count_single_end_records_by_region(
                             bam_src.to_string(),
-                            ref_id,
-                            reference.clone(),
+                            reference_sequence.name().into(),
                             features.clone(),
-                            references.clone(),
                             filter.clone(),
                             strand_specification,
                         ))
@@ -323,7 +329,7 @@ fn quantify(matches: &ArgMatches<'_>) {
             let (mut ctx1, mut pairs) = count_paired_end_records(
                 records,
                 &features,
-                &references,
+                reference_sequences,
                 &filter,
                 strand_specification,
             )
@@ -333,7 +339,7 @@ fn quantify(matches: &ArgMatches<'_>) {
             let ctx2 = count_paired_end_record_singletons(
                 singletons,
                 &features,
-                &references,
+                reference_sequences,
                 &filter,
                 strand_specification,
             )
