@@ -334,8 +334,8 @@ fn find(
 
     for (interval, is_reverse) in intervals {
         for entry in tree.find(interval.clone()) {
-            let gene_name = &entry.value.0;
-            let strand = &entry.value.1;
+            let gene_name = &entry.get().0;
+            let strand = &entry.get().1;
 
             match strand_specification {
                 StrandSpecification::None => {

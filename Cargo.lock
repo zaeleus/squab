@@ -215,8 +215,8 @@ dependencies = [
 
 [[package]]
 name = "interval-tree"
-version = "0.1.0"
-source = "git+https://github.com/zaeleus/interval-tree.git?rev=2a0bab09e79766f3daf8b02725f27f66dbd9d009#2a0bab09e79766f3daf8b02725f27f66dbd9d009"
+version = "0.2.0"
+source = "git+https://github.com/zaeleus/interval-tree.git?tag=v0.2.0#fd15a404f54274cbf82bccb3ec10766538d87a08"
 
 [[package]]
 name = "itoa"

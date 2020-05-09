@@ -67,8 +67,8 @@ fn count_paired_end_record(
     let pair_position = PairPosition::try_from(record).map_err(invalid_record_pair)?;
     let record_strand = Strand::from(record.flags());
 
-    for entry in tree.find(start..end) {
-        let strand = entry.value.1;
+    for entry in tree.find(start..=end) {
+        let strand = entry.get().1;
 
         let feature_strand = match Strand::try_from(strand) {
             Ok(s) => s,
@@ -106,8 +106,8 @@ fn count_single_end_record(
 
     let record_strand = Strand::from(record.flags());
 
-    for entry in tree.find(start..end) {
-        let strand = entry.value.1;
+    for entry in tree.find(start..=end) {
+        let strand = entry.get().1;
 
         let feature_strand = match Strand::try_from(strand) {
             Ok(s) => s,

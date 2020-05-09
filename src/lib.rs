@@ -17,7 +17,7 @@ use std::{
     convert::TryFrom,
     hash::BuildHasher,
     io,
-    ops::Range,
+    ops::RangeInclusive,
     path::Path,
     str::FromStr,
 };
@@ -96,7 +96,7 @@ pub fn build_interval_trees<S: BuildHasher>(
             let strand = feature.strand();
 
             let tree = interval_trees.entry(reference_name.into()).or_default();
-            tree.insert(start..end, Entry(id.into(), strand));
+            tree.insert(start..=end, Entry(id.into(), strand));
         }
 
         names.insert(id.into());
@@ -139,7 +139,7 @@ impl<'a> CigarToIntervals<'a> {
 }
 
 impl<'a> Iterator for CigarToIntervals<'a> {
-    type Item = (Range<u64>, bool);
+    type Item = (RangeInclusive<u64>, bool);
 
     fn next(&mut self) -> Option<Self::Item> {
         use sam::cigar::op::Kind;
@@ -154,7 +154,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
                     let start = self.start;
                     let end = start + len;
                     self.start += len;
-                    return Some((start..end, self.is_reverse));
+                    return Some((start..=end, self.is_reverse));
                 }
                 Kind::Deletion | Kind::Skip => {}
                 _ => continue,
@@ -221,15 +221,15 @@ mod tests {
         let mut it = CigarToIntervals::new(&cigar, 0, flags, false);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 0..1);
+        assert_eq!(interval, 0..=1);
         assert!(!is_reverse);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 9..43);
+        assert_eq!(interval, 9..=43);
         assert!(!is_reverse);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 43..98);
+        assert_eq!(interval, 43..=98);
         assert!(!is_reverse);
 
         assert!(it.next().is_none());
