@@ -1,8 +1,9 @@
-use std::{
-    collections::{HashMap, HashSet},
-    convert::TryFrom,
-    io,
-};
+mod context;
+mod filter;
+
+pub use self::{context::Context, filter::Filter};
+
+use std::{collections::HashSet, convert::TryFrom, io};
 
 use interval_tree::IntervalTree;
 use noodles_bam as bam;
@@ -10,117 +11,6 @@ use noodles_gff as gff;
 use noodles_sam::{self as sam, header::ReferenceSequences};
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
-
-#[derive(Clone)]
-pub struct Filter {
-    min_mapq: u8,
-    with_secondary_records: bool,
-    with_supplementary_records: bool,
-    with_nonunique_records: bool,
-}
-
-impl Filter {
-    pub fn new(
-        min_mapq: u8,
-        with_secondary_records: bool,
-        with_supplementary_records: bool,
-        with_nonunique_records: bool,
-    ) -> Filter {
-        Self {
-            min_mapq,
-            with_secondary_records,
-            with_supplementary_records,
-            with_nonunique_records,
-        }
-    }
-
-    pub fn filter(&self, ctx: &mut Context, record: &bam::Record) -> io::Result<bool> {
-        let flags = record.flags();
-
-        if flags.is_unmapped() {
-            ctx.unmapped += 1;
-            return Ok(true);
-        }
-
-        if (!self.with_secondary_records && flags.is_secondary())
-            || (!self.with_supplementary_records && flags.is_supplementary())
-        {
-            return Ok(true);
-        }
-
-        if !self.with_nonunique_records && is_nonunique_record(&record)? {
-            ctx.nonunique += 1;
-            return Ok(true);
-        }
-
-        if record.mapping_quality() < self.min_mapq {
-            ctx.low_quality += 1;
-            return Ok(true);
-        }
-
-        Ok(false)
-    }
-
-    pub fn filter_pair(
-        &self,
-        ctx: &mut Context,
-        r1: &bam::Record,
-        r2: &bam::Record,
-    ) -> io::Result<bool> {
-        let f1 = r1.flags();
-        let f2 = r2.flags();
-
-        if f1.is_unmapped() && f2.is_unmapped() {
-            ctx.unmapped += 1;
-            return Ok(true);
-        }
-
-        if (!self.with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
-            || (!self.with_supplementary_records
-                && (f1.is_supplementary() || f2.is_supplementary()))
-        {
-            return Ok(true);
-        }
-
-        if !self.with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?)
-        {
-            ctx.nonunique += 1;
-            return Ok(true);
-        }
-
-        if r1.mapping_quality() < self.min_mapq || r2.mapping_quality() < self.min_mapq {
-            ctx.low_quality += 1;
-            return Ok(true);
-        }
-
-        Ok(false)
-    }
-}
-
-#[derive(Default)]
-pub struct Context {
-    pub counts: HashMap<String, u64>,
-    pub no_feature: u64,
-    pub ambiguous: u64,
-    pub low_quality: u64,
-    pub unmapped: u64,
-    pub nonunique: u64,
-}
-
-impl Context {
-    pub fn add(&mut self, other: &Context) {
-        for (name, count) in other.counts.iter() {
-            let entry = self.counts.entry(name.to_string()).or_insert(0);
-            *entry += count;
-        }
-
-        self.no_feature += other.no_feature;
-        self.ambiguous += other.ambiguous;
-        self.low_quality += other.low_quality;
-        self.unmapped += other.unmapped;
-        self.nonunique += other.nonunique;
-    }
-}
 
 pub fn count_single_end_records<I>(
     records: I,
@@ -202,7 +92,7 @@ where
 {
     let mut ctx = Context::default();
 
-    let primary_only = !filter.with_secondary_records && !filter.with_supplementary_records;
+    let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut pairs = RecordPairs::new(records, primary_only);
 
     for pair in &mut pairs {
@@ -353,22 +243,6 @@ fn find(
     }
 
     set
-}
-
-fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
-    let data = record.data();
-
-    for result in data.fields() {
-        let field = result?;
-
-        if field.tag() == "NH" {
-            if let bam::data::Value::Int8(n) = field.value() {
-                return Ok(*n > 1);
-            }
-        }
-    }
-
-    Ok(false)
 }
 
 fn get_reference<'a>(
