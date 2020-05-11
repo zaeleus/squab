@@ -42,6 +42,16 @@ pub enum Error {
     MissingFeature(String),
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingFeature(name) => write!(f, "missing feature: {}", name),
+        }
+    }
+}
+
+impl error::Error for Error {}
+
 pub fn calculate_tpms(
     counts: &Counts,
     feature_map: &FeatureMap,
