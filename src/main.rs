@@ -13,13 +13,12 @@ use noodles::Region;
 use noodles_bam::{self as bam, bai};
 use noodles_sam as sam;
 use noodles_squab::{
-    build_interval_trees,
+    build_interval_trees, commands,
     count::{count_paired_end_record_singletons, count_paired_end_records, Filter},
     count_single_end_records,
     detect::{detect_specification, LibraryLayout},
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
-    reader::read_counts,
     writer::{write_counts, write_normalized_count_values, write_stats},
     Context, Features, StrandSpecification, StrandSpecificationOption,
 };
@@ -376,7 +375,7 @@ fn quantify(matches: &ArgMatches<'_>) {
     }
 }
 
-fn normalize(matches: &ArgMatches<'_>) {
+fn normalize(matches: &ArgMatches<'_>) -> io::Result<()> {
     let counts_src = matches.value_of("counts").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
@@ -385,30 +384,7 @@ fn normalize(matches: &ArgMatches<'_>) {
 
     let method = value_t!(matches, "method", normalization::Method).unwrap_or_else(|e| e.exit());
 
-    let mut file = File::open(counts_src).unwrap();
-    let count_map = read_counts(&mut file).unwrap();
-
-    let feature_map = read_features(annotations_src, feature_type, id).unwrap();
-
-    let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
-
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-
-    match method {
-        normalization::Method::Fpkm => {
-            info!("calculating fpkms");
-            let fpkms = calculate_fpkms(&count_map, &feature_map).unwrap();
-            info!("writing fpkms");
-            write_normalized_count_values(&mut handle, &fpkms, &feature_ids).unwrap();
-        }
-        normalization::Method::Tpm => {
-            info!("calculating tpms");
-            let tpms = calculate_tpms(&count_map, &feature_map).unwrap();
-            info!("writing tpms");
-            write_normalized_count_values(&mut handle, &tpms, &feature_ids).unwrap();
-        }
-    }
+    commands::normalize(counts_src, annotations_src, feature_type, id, method)
 }
 
 fn main() {
@@ -425,6 +401,6 @@ fn main() {
     if let Some(submatches) = matches.subcommand_matches("quantify") {
         quantify(submatches);
     } else if let Some(submatches) = matches.subcommand_matches("normalize") {
-        normalize(submatches);
+        normalize(submatches).unwrap();
     }
 }

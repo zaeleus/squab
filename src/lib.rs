@@ -4,6 +4,7 @@ pub use self::{
     record_pairs::{PairPosition, RecordPairs},
 };
 
+pub mod commands;
 pub mod count;
 pub mod detect;
 pub mod feature;
