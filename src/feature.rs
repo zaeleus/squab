@@ -46,3 +46,51 @@ impl Feature {
         self.start == self.end
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn build_feature() -> Feature {
+        Feature::new(String::from("sq0"), 8, 13, gff::Strand::Forward)
+    }
+
+    #[test]
+    fn test_reference_name() {
+        let feature = build_feature();
+        assert_eq!(feature.reference_name(), "sq0");
+    }
+
+    #[test]
+    fn test_start() {
+        let feature = build_feature();
+        assert_eq!(feature.start(), 8);
+    }
+
+    #[test]
+    fn test_end() {
+        let feature = build_feature();
+        assert_eq!(feature.end(), 13);
+    }
+
+    #[test]
+    fn test_strand() {
+        let feature = build_feature();
+        assert_eq!(feature.strand(), gff::Strand::Forward);
+    }
+
+    #[test]
+    fn test_len() {
+        let feature = build_feature();
+        assert_eq!(feature.len(), 6);
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let feature = Feature::new(String::from("sq0"), 1, 1, gff::Strand::Forward);
+        assert!(feature.is_empty());
+
+        let feature = build_feature();
+        assert!(!feature.is_empty());
+    }
+}
