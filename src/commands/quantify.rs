@@ -24,7 +24,7 @@ use crate::{
     Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
-#[allow(clippy::cognitive_complexity)]
+#[allow(clippy::too_many_arguments)]
 pub fn quantify<P, Q, R>(
     bam_src: P,
     annotations_src: Q,
