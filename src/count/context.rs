@@ -24,3 +24,42 @@ impl Context {
         self.nonunique += other.nonunique;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add() {
+        let mut ctx_a = Context::default();
+
+        ctx_a.counts.insert(String::from("AADAT"), 2);
+        ctx_a.no_feature = 3;
+        ctx_a.ambiguous = 5;
+        ctx_a.low_quality = 8;
+        ctx_a.unmapped = 13;
+        ctx_a.nonunique = 21;
+
+        let mut ctx_b = Context::default();
+
+        ctx_b.counts.insert(String::from("AADAT"), 2);
+        ctx_b.counts.insert(String::from("CLN3"), 3);
+        ctx_b.no_feature = 5;
+        ctx_b.ambiguous = 8;
+        ctx_b.low_quality = 13;
+        ctx_b.unmapped = 21;
+        ctx_b.nonunique = 34;
+
+        ctx_a.add(&ctx_b);
+
+        assert_eq!(ctx_a.counts.len(), 2);
+        assert_eq!(ctx_a.counts["AADAT"], 4);
+        assert_eq!(ctx_a.counts["CLN3"], 3);
+
+        assert_eq!(ctx_a.no_feature, 8);
+        assert_eq!(ctx_a.ambiguous, 13);
+        assert_eq!(ctx_a.low_quality, 21);
+        assert_eq!(ctx_a.unmapped, 34);
+        assert_eq!(ctx_a.nonunique, 55);
+    }
+}
