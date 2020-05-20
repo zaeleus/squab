@@ -13,17 +13,17 @@ use noodles_bam as bam;
 
 type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
 
-pub struct RecordPairs<R: Iterator<Item = io::Result<bam::Record>>> {
-    records: R,
+pub struct RecordPairs<I> {
+    records: I,
     buf: HashMap<RecordKey, bam::Record>,
     primary_only: bool,
 }
 
-impl<R> RecordPairs<R>
+impl<I> RecordPairs<I>
 where
-    R: Iterator<Item = io::Result<bam::Record>>,
+    I: Iterator<Item = io::Result<bam::Record>>,
 {
-    pub fn new(records: R, primary_only: bool) -> RecordPairs<R> {
+    pub fn new(records: I, primary_only: bool) -> RecordPairs<I> {
         RecordPairs {
             records,
             buf: HashMap::new(),
@@ -73,9 +73,9 @@ where
     }
 }
 
-impl<R> Iterator for RecordPairs<R>
+impl<I> Iterator for RecordPairs<I>
 where
-    R: Iterator<Item = io::Result<bam::Record>>,
+    I: Iterator<Item = io::Result<bam::Record>>,
 {
     type Item = io::Result<(bam::Record, bam::Record)>;
 
