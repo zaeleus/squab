@@ -15,7 +15,6 @@ pub mod writer;
 
 use std::{
     collections::{HashMap, HashSet},
-    convert::TryFrom,
     hash::BuildHasher,
     io,
     ops::RangeInclusive,
@@ -264,17 +263,4 @@ pub enum StrandSpecification {
     None,
     Forward,
     Reverse,
-}
-
-impl TryFrom<StrandSpecificationOption> for StrandSpecification {
-    type Error = ();
-
-    fn try_from(option: StrandSpecificationOption) -> Result<Self, Self::Error> {
-        match option {
-            StrandSpecificationOption::None => Ok(Self::None),
-            StrandSpecificationOption::Forward => Ok(Self::Forward),
-            StrandSpecificationOption::Reverse => Ok(Self::Reverse),
-            _ => Err(()),
-        }
-    }
 }

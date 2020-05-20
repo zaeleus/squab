@@ -1,5 +1,4 @@
 use std::{
-    convert::TryFrom,
     fs::File,
     io::{self, BufWriter},
     path::Path,
@@ -47,13 +46,14 @@ where
     let feature_map = read_features(annotations_src, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let file = File::open(&bam_src)?;
-    let mut reader = bam::Reader::new(file);
+    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+
     let header: sam::Header = reader
-        .read_header()
-        .expect("could not read bam header")
+        .read_header()?
         .parse()
-        .expect("could not parse bam header");
+        // TODO: Pass `sam::header::ParseError` as error.
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+
     let reference_sequences = header.reference_sequences();
 
     let mut feature_ids = Vec::with_capacity(names.len());
@@ -86,8 +86,10 @@ where
     }
 
     let strand_specification = match strand_specification_option {
+        StrandSpecificationOption::None => StrandSpecification::None,
+        StrandSpecificationOption::Forward => StrandSpecification::Forward,
+        StrandSpecificationOption::Reverse => StrandSpecification::Reverse,
         StrandSpecificationOption::Auto => detected_strand_specification,
-        _ => StrandSpecification::try_from(strand_specification_option).unwrap(),
     };
 
     if strand_specification != detected_strand_specification {
@@ -111,8 +113,7 @@ where
     let mut runtime = tokio::runtime::Builder::new()
         .threaded_scheduler()
         .core_threads(threads)
-        .build()
-        .unwrap();
+        .build()?;
 
     let features = Arc::new(features);
 
@@ -134,12 +135,12 @@ where
             let mut ctx = Context::default();
 
             for task in tasks {
-                let region_ctx = task.await.unwrap();
+                let region_ctx = task.await??;
                 ctx.add(&region_ctx);
             }
 
-            ctx
-        }),
+            Ok::<Context, io::Error>(ctx)
+        })?,
         LibraryLayout::PairedEnd => runtime.block_on(async {
             let tasks: Vec<_> = reference_sequences
                 .values()
@@ -158,7 +159,7 @@ where
             let mut pairs = Vec::with_capacity(reference_sequences.len());
 
             for task in tasks {
-                let (region_ctx, region_pairs) = task.await.unwrap();
+                let (region_ctx, region_pairs) = task.await??;
                 ctx1.add(&region_ctx);
                 pairs.push(region_pairs);
             }
@@ -170,8 +171,7 @@ where
                 reference_sequences,
                 &filter,
                 strand_specification,
-            )
-            .unwrap();
+            )?;
 
             let singletons = pairs.singletons().map(Ok);
             let ctx3 = count_paired_end_record_singletons(
@@ -180,30 +180,30 @@ where
                 reference_sequences,
                 &filter,
                 strand_specification,
-            )
-            .unwrap();
+            )?;
 
             ctx1.add(&ctx2);
             ctx1.add(&ctx3);
 
-            ctx1
-        }),
+            Ok::<Context, io::Error>(ctx1)
+        })?,
     };
 
-    let file = File::create(results_dst)?;
-    let mut writer = BufWriter::new(file);
+    let mut writer = File::create(results_dst).map(BufWriter::new)?;
 
     if let Some(normalization_method) = normalize {
         match normalization_method {
             normalization::Method::Fpkm => {
                 info!("calculating fpkms");
-                let fpkms = calculate_fpkms(&ctx.counts, &feature_map).unwrap();
+                let fpkms = calculate_fpkms(&ctx.counts, &feature_map)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
                 info!("writing fpkms");
                 write_normalized_count_values(&mut writer, &fpkms, &feature_ids)?;
             }
             normalization::Method::Tpm => {
                 info!("calculating tpms");
-                let tpms = calculate_tpms(&ctx.counts, &feature_map).unwrap();
+                let tpms = calculate_tpms(&ctx.counts, &feature_map)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
                 info!("writing tpms");
                 write_normalized_count_values(&mut writer, &tpms, &feature_ids)?;
             }
@@ -223,24 +223,25 @@ async fn count_single_end_records_by_region<P>(
     features: Arc<Features>,
     filter: Filter,
     strand_specification: StrandSpecification,
-) -> Context
+) -> io::Result<Context>
 where
     P: AsRef<Path>,
 {
-    let file = File::open(bam_src.as_ref()).unwrap();
-    let mut reader = bam::Reader::new(file);
+    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+
     let header: sam::Header = reader
-        .read_header()
-        .expect("could not read bam header")
+        .read_header()?
         .parse()
-        .expect("could not parse bam header");
+        // TODO: Pass `sam::header::ParseError` as error.
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+
     let reference_sequences = header.reference_sequences();
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index = bai::read(bai_src).unwrap();
+    let index = bai::read(bai_src)?;
 
     let region = Region::mapped(reference_sequence_name, 0, None);
-    let query = reader.query(reference_sequences, &index, &region).unwrap();
+    let query = reader.query(reference_sequences, &index, &region)?;
 
     count_single_end_records(
         query,
@@ -249,7 +250,6 @@ where
         &filter,
         strand_specification,
     )
-    .unwrap()
 }
 
 async fn count_paired_end_records_by_region<P>(
@@ -258,24 +258,25 @@ async fn count_paired_end_records_by_region<P>(
     features: Arc<Features>,
     filter: Filter,
     strand_specification: StrandSpecification,
-) -> (Context, Vec<bam::Record>)
+) -> io::Result<(Context, Vec<bam::Record>)>
 where
     P: AsRef<Path>,
 {
-    let file = File::open(bam_src.as_ref()).unwrap();
-    let mut reader = bam::Reader::new(file);
+    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+
     let header: sam::Header = reader
-        .read_header()
-        .expect("could not read bam header")
+        .read_header()?
         .parse()
-        .expect("could not parse bam header");
+        // TODO: Pass `sam::header::ParseError` as error.
+        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+
     let reference_sequences = header.reference_sequences();
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index = bai::read(bai_src).unwrap();
+    let index = bai::read(bai_src)?;
 
     let region = Region::mapped(reference_sequence_name, 1, None);
-    let query = reader.query(reference_sequences, &index, &region).unwrap();
+    let query = reader.query(reference_sequences, &index, &region)?;
 
     let (ctx, mut pairs) = count_paired_end_records(
         query,
@@ -283,8 +284,7 @@ where
         reference_sequences,
         &filter,
         strand_specification,
-    )
-    .unwrap();
+    )?;
 
-    (ctx, pairs.singletons().collect())
+    Ok((ctx, pairs.singletons().collect()))
 }
