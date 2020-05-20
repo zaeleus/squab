@@ -1,6 +1,7 @@
 use std::io;
 
 use noodles_bam as bam;
+use noodles_sam as sam;
 
 use super::Context;
 
@@ -114,8 +115,8 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
     for result in data.fields() {
         let field = result?;
 
-        if field.tag() == "NH" {
-            if let bam::data::Value::Int8(n) = field.value() {
+        if field.tag() == &sam::record::data::field::Tag::AlignmentHitCount {
+            if let bam::record::data::Value::Int8(n) = field.value() {
                 return Ok(*n > 1);
             }
         }

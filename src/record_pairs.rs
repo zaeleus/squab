@@ -31,10 +31,10 @@ impl<'a> TryFrom<&'a bam::Record> for PairPosition {
     }
 }
 
-impl TryFrom<sam::Flags> for PairPosition {
+impl TryFrom<sam::record::Flags> for PairPosition {
     type Error = ();
 
-    fn try_from(flags: sam::Flags) -> Result<Self, Self::Error> {
+    fn try_from(flags: sam::record::Flags) -> Result<Self, Self::Error> {
         if flags.is_read_1() {
             Ok(PairPosition::First)
         } else if flags.is_read_2() {
@@ -61,13 +61,13 @@ mod pair_position_tests {
 
     #[test]
     fn test_try_from_flag() {
-        let flags = sam::Flags::from(0x41);
+        let flags = sam::record::Flags::from(0x41);
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::First));
 
-        let flags = sam::Flags::from(0x81);
+        let flags = sam::record::Flags::from(0x81);
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
 
-        let flags = sam::Flags::from(0x01);
+        let flags = sam::record::Flags::from(0x01);
         assert!(PairPosition::try_from(flags).is_err());
     }
 }

@@ -264,7 +264,7 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=306620781a079a451b473950d4f0a1f1d0e478a7#306620781a079a451b473950d4f0a1f1d0e478a7"
+source = "git+https://github.com/zaeleus/noodles.git?rev=27f8c25b937ebb50d5cd44f730385f33d69eb4b3#27f8c25b937ebb50d5cd44f730385f33d69eb4b3"
 dependencies = [
  "noodles-sam",
 ]
@@ -272,7 +272,7 @@ dependencies = [
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=306620781a079a451b473950d4f0a1f1d0e478a7#306620781a079a451b473950d4f0a1f1d0e478a7"
+source = "git+https://github.com/zaeleus/noodles.git?rev=27f8c25b937ebb50d5cd44f730385f33d69eb4b3#27f8c25b937ebb50d5cd44f730385f33d69eb4b3"
 dependencies = [
  "bit-vec",
  "byteorder",
@@ -284,7 +284,7 @@ dependencies = [
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=306620781a079a451b473950d4f0a1f1d0e478a7#306620781a079a451b473950d4f0a1f1d0e478a7"
+source = "git+https://github.com/zaeleus/noodles.git?rev=27f8c25b937ebb50d5cd44f730385f33d69eb4b3#27f8c25b937ebb50d5cd44f730385f33d69eb4b3"
 dependencies = [
  "byteorder",
  "flate2",
@@ -293,7 +293,7 @@ dependencies = [
 [[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=306620781a079a451b473950d4f0a1f1d0e478a7#306620781a079a451b473950d4f0a1f1d0e478a7"
+source = "git+https://github.com/zaeleus/noodles.git?rev=27f8c25b937ebb50d5cd44f730385f33d69eb4b3#27f8c25b937ebb50d5cd44f730385f33d69eb4b3"
 dependencies = [
  "csv",
  "flate2",
@@ -302,7 +302,7 @@ dependencies = [
 [[package]]
 name = "noodles-sam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=306620781a079a451b473950d4f0a1f1d0e478a7#306620781a079a451b473950d4f0a1f1d0e478a7"
+source = "git+https://github.com/zaeleus/noodles.git?rev=27f8c25b937ebb50d5cd44f730385f33d69eb4b3#27f8c25b937ebb50d5cd44f730385f33d69eb4b3"
 dependencies = [
  "indexmap",
 ]

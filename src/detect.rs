@@ -30,8 +30,8 @@ enum Strand {
     Reverse,
 }
 
-impl From<sam::Flags> for Strand {
-    fn from(flags: sam::Flags) -> Self {
+impl From<sam::record::Flags> for Strand {
+    fn from(flags: sam::record::Flags) -> Self {
         if flags.is_reverse() {
             Self::Reverse
         } else {
