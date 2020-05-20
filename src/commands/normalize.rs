@@ -1,11 +1,15 @@
-use std::{fs::File, io, path::Path};
+use std::{
+    fs::File,
+    io::{self, BufReader},
+    path::Path,
+};
 
 use log::info;
 
 use crate::{
+    count,
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
-    reader::read_counts,
     writer::write_normalized_count_values,
 };
 
@@ -20,8 +24,8 @@ where
     P: AsRef<Path>,
     Q: AsRef<Path>,
 {
-    let mut file = File::open(counts_src)?;
-    let count_map = read_counts(&mut file)?;
+    let mut reader = File::open(counts_src).map(|f| count::Reader::new(BufReader::new(f)))?;
+    let count_map = reader.read_counts()?;
 
     let feature_map = read_features(annotations_src, feature_type, id)?;
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();

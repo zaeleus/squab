@@ -1,7 +1,8 @@
 mod context;
 mod filter;
+mod reader;
 
-pub use self::{context::Context, filter::Filter};
+pub use self::{context::Context, filter::Filter, reader::Reader};
 
 use std::{collections::HashSet, convert::TryFrom, io};
 

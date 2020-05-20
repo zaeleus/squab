@@ -9,7 +9,6 @@ pub mod count;
 pub mod detect;
 pub mod feature;
 pub mod normalization;
-pub mod reader;
 pub mod record_pairs;
 pub mod writer;
 
