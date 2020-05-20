@@ -13,13 +13,13 @@ use noodles_sam as sam;
 use crate::{
     build_interval_trees,
     count::{
-        count_paired_end_record_singletons, count_paired_end_records, count_single_end_records,
-        Filter,
+        self, count_paired_end_record_singletons, count_paired_end_records,
+        count_single_end_records, Filter,
     },
     detect::{detect_specification, LibraryLayout},
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
-    writer::{write_counts, write_normalized_count_values, write_stats},
+    writer::write_normalized_count_values,
     Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
@@ -210,8 +210,10 @@ where
         }
     } else {
         info!("writing counts");
-        write_counts(&mut writer, &ctx.counts, &feature_ids)?;
-        write_stats(&mut writer, &ctx)?;
+
+        let mut count_writer = count::Writer::new(writer);
+        count_writer.write_counts(&feature_ids, &ctx.counts)?;
+        count_writer.write_stats(&ctx)?;
     }
 
     Ok(())
