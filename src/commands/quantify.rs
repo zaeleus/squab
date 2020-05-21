@@ -18,9 +18,7 @@ use crate::{
     },
     detect::{detect_specification, LibraryLayout},
     normalization::{self, calculate_fpkms, calculate_tpms},
-    read_features,
-    writer::write_normalized_count_values,
-    Context, Features, StrandSpecification, StrandSpecificationOption,
+    read_features, Context, Features, StrandSpecification, StrandSpecificationOption,
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -189,23 +187,25 @@ where
         })?,
     };
 
-    let mut writer = File::create(results_dst).map(BufWriter::new)?;
+    let writer = File::create(results_dst).map(BufWriter::new)?;
 
     if let Some(normalization_method) = normalize {
+        let mut value_writer = normalization::Writer::new(writer);
+
         match normalization_method {
             normalization::Method::Fpkm => {
                 info!("calculating fpkms");
                 let fpkms = calculate_fpkms(&ctx.counts, &feature_map)
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
                 info!("writing fpkms");
-                write_normalized_count_values(&mut writer, &fpkms, &feature_ids)?;
+                value_writer.write_values(&feature_ids, &fpkms)?;
             }
             normalization::Method::Tpm => {
                 info!("calculating tpms");
                 let tpms = calculate_tpms(&ctx.counts, &feature_map)
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
                 info!("writing tpms");
-                write_normalized_count_values(&mut writer, &tpms, &feature_ids)?;
+                value_writer.write_values(&feature_ids, &tpms)?;
             }
         }
     } else {

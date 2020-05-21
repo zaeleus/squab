@@ -10,7 +10,6 @@ use crate::{
     count,
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
-    writer::write_normalized_count_values,
 };
 
 pub fn normalize<P, Q>(
@@ -31,7 +30,8 @@ where
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
 
     let stdout = io::stdout();
-    let mut handle = stdout.lock();
+    let handle = stdout.lock();
+    let mut writer = normalization::Writer::new(handle);
 
     let values = match method {
         normalization::Method::Fpkm => {
@@ -46,8 +46,7 @@ where
         }
     };
 
-    info!("writing values");
-    write_normalized_count_values(&mut handle, &values, &feature_ids)?;
+    writer.write_values(&feature_ids, &values)?;
 
     Ok(())
 }
