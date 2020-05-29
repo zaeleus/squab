@@ -242,7 +242,7 @@ where
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
     let index = bai::read(bai_src)?;
 
-    let region = Region::mapped(reference_sequence_name, 0, None);
+    let region = Region::mapped(reference_sequence_name, 1, None);
     let query = reader.query(reference_sequences, &index, &region)?;
 
     count_single_end_records(
