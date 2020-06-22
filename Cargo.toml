@@ -15,9 +15,9 @@ env_logger = "0.7.1"
 git-testament = "0.1.6"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", tag = "v0.2.0" }
 log = "0.4.5"
-noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "27f8c25b937ebb50d5cd44f730385f33d69eb4b3" }
-noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "27f8c25b937ebb50d5cd44f730385f33d69eb4b3" }
-noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "27f8c25b937ebb50d5cd44f730385f33d69eb4b3" }
-noodles-sam = { git = "https://github.com/zaeleus/noodles.git", rev = "27f8c25b937ebb50d5cd44f730385f33d69eb4b3" }
+noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "df7f99536b74d1e3be4c7d47587402f0fe0043d0" }
+noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "df7f99536b74d1e3be4c7d47587402f0fe0043d0" }
+noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "df7f99536b74d1e3be4c7d47587402f0fe0043d0" }
+noodles-sam = { git = "https://github.com/zaeleus/noodles.git", rev = "df7f99536b74d1e3be4c7d47587402f0fe0043d0" }
 num_cpus = "1.12.0"
 tokio = { version = "0.2.6", features = ["rt-threaded"] }

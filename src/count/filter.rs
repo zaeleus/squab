@@ -65,7 +65,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if record.mapping_quality() < self.min_mapq {
+        if u8::from(record.mapping_quality()) < self.min_mapq {
             ctx.low_quality += 1;
             return Ok(true);
         }
@@ -100,7 +100,9 @@ impl Filter {
             return Ok(true);
         }
 
-        if r1.mapping_quality() < self.min_mapq || r2.mapping_quality() < self.min_mapq {
+        if u8::from(r1.mapping_quality()) < self.min_mapq
+            || u8::from(r2.mapping_quality()) < self.min_mapq
+        {
             ctx.low_quality += 1;
             return Ok(true);
         }
@@ -110,13 +112,16 @@ impl Filter {
 }
 
 fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
+    use bam::record::data::field::Value;
+    use sam::record::data::field::Tag;
+
     let data = record.data();
 
     for result in data.fields() {
         let field = result?;
 
-        if field.tag() == &sam::record::data::field::Tag::AlignmentHitCount {
-            if let bam::record::data::Value::Int8(n) = field.value() {
+        if field.tag() == &Tag::AlignmentHitCount {
+            if let Value::Int8(n) = field.value() {
                 return Ok(*n > 1);
             }
         }

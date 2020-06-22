@@ -91,7 +91,7 @@ fn is_primary(record: &bam::Record) -> bool {
 
 fn key(record: &bam::Record) -> RecordKey {
     (
-        record.name().to_vec(),
+        record.read_name().to_vec(),
         PairPosition::try_from(record).unwrap(),
         record.reference_sequence_id(),
         record.position(),
@@ -103,7 +103,7 @@ fn key(record: &bam::Record) -> RecordKey {
 
 fn mate_key(record: &bam::Record) -> RecordKey {
     (
-        record.name().to_vec(),
+        record.read_name().to_vec(),
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
         record.mate_reference_sequence_id(),
         record.mate_position(),
