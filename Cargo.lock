@@ -315,6 +315,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "env_logger",
+ "flate2",
  "git-testament",
  "interval-tree",
  "log",

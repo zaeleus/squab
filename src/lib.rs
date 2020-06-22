@@ -8,6 +8,7 @@ pub mod commands;
 pub mod count;
 pub mod detect;
 pub mod feature;
+mod gff;
 pub mod normalization;
 pub mod record_pairs;
 
@@ -23,13 +24,12 @@ use std::{
 use interval_tree::IntervalTree;
 use log::info;
 use noodles_bam::{self as bam, record::cigar};
-use noodles_gff as gff;
 use noodles_sam as sam;
 
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
 #[derive(Default)]
-pub struct Entry(pub String, pub gff::Strand);
+pub struct Entry(pub String, pub noodles_gff::Strand);
 
 pub fn read_features<P>(
     src: P,
@@ -46,7 +46,7 @@ where
 
     for result in reader.records() {
         let row = result?;
-        let record = gff::Record::new(row);
+        let record = noodles_gff::Record::new(row);
 
         let ty = record.feature().map_err(invalid_data)?;
 
@@ -103,7 +103,7 @@ pub fn build_interval_trees<S: BuildHasher>(
     (interval_trees, names)
 }
 
-fn invalid_data(e: gff::record::Error) -> io::Error {
+fn invalid_data(e: noodles_gff::record::Error) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, e)
 }
 
