@@ -1,12 +1,12 @@
 use std::{
     fs::File,
-    io::{self, Read},
+    io::{self, BufRead, BufReader},
     path::Path,
 };
 
 use flate2::read::MultiGzDecoder;
 
-pub fn open<P>(src: P) -> io::Result<noodles_gff::Reader<Box<dyn Read>>>
+pub fn open<P>(src: P) -> io::Result<noodles_gff::Reader<Box<dyn BufRead>>>
 where
     P: AsRef<Path>,
 {
@@ -17,8 +17,12 @@ where
     match extension.and_then(|ext| ext.to_str()) {
         Some("gz") => {
             let decoder = MultiGzDecoder::new(file);
-            Ok(noodles_gff::Reader::new(Box::new(decoder)))
+            let reader = BufReader::new(decoder);
+            Ok(noodles_gff::Reader::new(Box::new(reader)))
         }
-        _ => Ok(noodles_gff::Reader::new(Box::new(file))),
+        _ => {
+            let reader = BufReader::new(file);
+            Ok(noodles_gff::Reader::new(Box::new(reader)))
+        }
     }
 }

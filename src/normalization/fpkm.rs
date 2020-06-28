@@ -51,7 +51,7 @@ mod tests {
 
     fn build_feature_map() -> FeatureMap {
         let reference_name = String::from("chr1");
-        let strand = gff::Strand::Forward;
+        let strand = gff::record::Strand::Forward;
 
         let features = [
             (

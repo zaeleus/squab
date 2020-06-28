@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn test_sum_nonoverlapping_feature_lengths() {
         let reference_name = String::from("chr1");
-        let strand = gff::Strand::Forward;
+        let strand = gff::record::Strand::Forward;
 
         let features = [
             Feature::new(reference_name.clone(), 2, 5, strand),
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn test_merge_features() {
         let reference_name = String::from("chr1");
-        let strand = gff::Strand::Forward;
+        let strand = gff::record::Strand::Forward;
 
         let features = [
             Feature::new(reference_name.clone(), 2, 5, strand),

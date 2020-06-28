@@ -234,8 +234,8 @@ fn find(
                     set.insert(gene_name.to_string());
                 }
                 StrandSpecification::Forward | StrandSpecification::Reverse => {
-                    if (strand == &gff::Strand::Reverse && is_reverse)
-                        || (strand == &gff::Strand::Forward && !is_reverse)
+                    if (strand == &gff::record::Strand::Reverse && is_reverse)
+                        || (strand == &gff::record::Strand::Forward && !is_reverse)
                     {
                         set.insert(gene_name.to_string());
                     }

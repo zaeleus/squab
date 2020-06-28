@@ -54,18 +54,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
-name = "bstr"
-version = "0.2.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31accafdb70df7871592c058eca3985b71104e15ac32f64706022c58867da931"
-dependencies = [
- "lazy_static",
- "memchr",
- "regex-automata",
- "serde",
-]
-
-[[package]]
 name = "byteorder"
 version = "1.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -116,28 +104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba125de2af0df55319f41944744ad91c71113bf74a4646efff39afe1f6842db1"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "csv"
-version = "1.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00affe7f6ab566df61b4be3ce8cf16bc2576bca0963ceb0955e45d514bf9a279"
-dependencies = [
- "bstr",
- "csv-core",
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
-name = "csv-core"
-version = "0.1.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
-dependencies = [
- "memchr",
 ]
 
 [[package]]
@@ -220,12 +186,6 @@ version = "0.2.0"
 source = "git+https://github.com/zaeleus/interval-tree.git?tag=v0.2.0#fd15a404f54274cbf82bccb3ec10766538d87a08"
 
 [[package]]
-name = "itoa"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
-
-[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -264,7 +224,7 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df7f99536b74d1e3be4c7d47587402f0fe0043d0#df7f99536b74d1e3be4c7d47587402f0fe0043d0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=797798e40c1712f9bb24d73c46941c7ee1a57d57#797798e40c1712f9bb24d73c46941c7ee1a57d57"
 dependencies = [
  "noodles-sam",
 ]
@@ -272,7 +232,7 @@ dependencies = [
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df7f99536b74d1e3be4c7d47587402f0fe0043d0#df7f99536b74d1e3be4c7d47587402f0fe0043d0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=797798e40c1712f9bb24d73c46941c7ee1a57d57#797798e40c1712f9bb24d73c46941c7ee1a57d57"
 dependencies = [
  "bit-vec",
  "byteorder",
@@ -284,7 +244,7 @@ dependencies = [
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df7f99536b74d1e3be4c7d47587402f0fe0043d0#df7f99536b74d1e3be4c7d47587402f0fe0043d0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=797798e40c1712f9bb24d73c46941c7ee1a57d57#797798e40c1712f9bb24d73c46941c7ee1a57d57"
 dependencies = [
  "byteorder",
  "flate2",
@@ -293,16 +253,12 @@ dependencies = [
 [[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df7f99536b74d1e3be4c7d47587402f0fe0043d0#df7f99536b74d1e3be4c7d47587402f0fe0043d0"
-dependencies = [
- "csv",
- "flate2",
-]
+source = "git+https://github.com/zaeleus/noodles.git?rev=797798e40c1712f9bb24d73c46941c7ee1a57d57#797798e40c1712f9bb24d73c46941c7ee1a57d57"
 
 [[package]]
 name = "noodles-sam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df7f99536b74d1e3be4c7d47587402f0fe0043d0#df7f99536b74d1e3be4c7d47587402f0fe0043d0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=797798e40c1712f9bb24d73c46941c7ee1a57d57#797798e40c1712f9bb24d73c46941c7ee1a57d57"
 dependencies = [
  "bitflags",
  "indexmap",
@@ -399,31 +355,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "regex-automata"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae1ded71d66a4a97f5e961fd0cb25a5f366a42a41570d16a763a69c092c26ae4"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
 name = "regex-syntax"
 version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fe5bd57d1d7414c6b5ed48563a2c855d995ff777729dcd91c369ec7fea395ae"
-
-[[package]]
-name = "ryu"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed3d612bc64430efeb3f7ee6ef26d590dce0c43249217bddc62112540c7941e1"
-
-[[package]]
-name = "serde"
-version = "1.0.110"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99e7b308464d16b56eba9964e4972a3eee817760ab60d88c3f86e1fecb08204c"
 
 [[package]]
 name = "strsim"

@@ -5,11 +5,11 @@ pub struct Feature {
     reference_name: String,
     start: u64,
     end: u64,
-    strand: gff::Strand,
+    strand: gff::record::Strand,
 }
 
 impl Feature {
-    pub fn new(reference_name: String, start: u64, end: u64, strand: gff::Strand) -> Self {
+    pub fn new(reference_name: String, start: u64, end: u64, strand: gff::record::Strand) -> Self {
         Self {
             reference_name,
             start,
@@ -34,7 +34,7 @@ impl Feature {
         &mut self.end
     }
 
-    pub fn strand(&self) -> gff::Strand {
+    pub fn strand(&self) -> gff::record::Strand {
         self.strand
     }
 
@@ -52,7 +52,7 @@ mod tests {
     use super::*;
 
     fn build_feature() -> Feature {
-        Feature::new(String::from("sq0"), 8, 13, gff::Strand::Forward)
+        Feature::new(String::from("sq0"), 8, 13, gff::record::Strand::Forward)
     }
 
     #[test]
@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn test_strand() {
         let feature = build_feature();
-        assert_eq!(feature.strand(), gff::Strand::Forward);
+        assert_eq!(feature.strand(), gff::record::Strand::Forward);
     }
 
     #[test]
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_is_empty() {
-        let feature = Feature::new(String::from("sq0"), 1, 1, gff::Strand::Forward);
+        let feature = Feature::new(String::from("sq0"), 1, 1, gff::record::Strand::Forward);
         assert!(feature.is_empty());
 
         let feature = build_feature();

@@ -29,7 +29,7 @@ use noodles_sam as sam;
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
 #[derive(Default)]
-pub struct Entry(pub String, pub noodles_gff::Strand);
+pub struct Entry(pub String, pub noodles_gff::record::Strand);
 
 pub fn read_features<P>(
     src: P,
@@ -45,31 +45,41 @@ where
     info!("reading features");
 
     for result in reader.records() {
-        let row = result?;
-        let record = noodles_gff::Record::new(row);
+        let record = result?;
 
-        let ty = record.feature().map_err(invalid_data)?;
+        let ty = record.ty();
 
         if ty != feature_type {
             continue;
         }
 
-        let seq_name = record.seq_name().map_err(invalid_data)?;
-        let start = record.start().map_err(invalid_data)?;
-        let end = record.end().map_err(invalid_data)?;
+        let reference_sequence_name = record.reference_sequence_name();
+        let start = record.start();
+        let end = record.end();
 
-        let strand = record.strand().map_err(invalid_data)?;
+        let strand = record.strand();
 
-        let attributes = record.attributes().map_err(invalid_data)?;
-        let id = attributes.get(feature_id).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("missing attribute '{}'", feature_id),
-            )
-        })?;
+        let attributes = record.attributes();
+        let id = attributes
+            .iter()
+            .find(|e| e.key() == feature_id)
+            .map(|e| e.value())
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("missing attribute '{}'", feature_id),
+                )
+            })?;
 
         let list = features.entry(id.into()).or_default();
-        let feature = Feature::new(seq_name.into(), start, end, strand);
+
+        let feature = Feature::new(
+            reference_sequence_name.into(),
+            start as u64,
+            end as u64,
+            strand,
+        );
+
         list.push(feature);
     }
 
@@ -101,10 +111,6 @@ pub fn build_interval_trees<S: BuildHasher>(
     }
 
     (interval_trees, names)
-}
-
-fn invalid_data(e: noodles_gff::record::Error) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, e)
 }
 
 pub struct CigarToIntervals<'a> {
