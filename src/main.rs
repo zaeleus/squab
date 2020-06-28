@@ -76,7 +76,7 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .short("a")
                 .long("annotations")
                 .value_name("file")
-                .help("Input annotations file (GTF/GFFv2)")
+                .help("Input annotations file (GFF3)")
                 .required(true),
         )
         .arg(
@@ -115,7 +115,7 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .short("a")
                 .long("annotations")
                 .value_name("file")
-                .help("Input annotations file (GTF/GFFv2)")
+                .help("Input annotations file (GFF3)")
                 .required(true),
         )
         .arg(

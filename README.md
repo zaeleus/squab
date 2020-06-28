@@ -48,7 +48,7 @@ FLAGS:
         --with-supplementary-records    Count supplementary records (BAM flag 0x800)
 
 OPTIONS:
-    -a, --annotations <file>            Input annotations file (GTF/GFFv2)
+    -a, --annotations <file>            Input annotations file (GFF3)
     -t, --feature-type <str>            Feature type to count [default: exon]
     -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
         --min-mapq <u8>                 Minimum mapping quality to consider an alignment [default: 10]
@@ -89,7 +89,7 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -a, --annotations <file>    Input annotations file (GTF/GFFv2)
+    -a, --annotations <file>    Input annotations file (GFF3)
     -t, --feature-type <str>    Feature type to count [default: exon]
     -i, --id <str>              Feature attribute to use as the feature identity [default: gene_id]
         --method <str>          Quantification normalization method [default: tpm]  [possible values: fpkm, tpm]
