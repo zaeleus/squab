@@ -34,9 +34,9 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .default_value("auto"),
         )
         .arg(
-            Arg::with_name("type")
+            Arg::with_name("feature-type")
                 .short("t")
-                .long("type")
+                .long("feature-type")
                 .value_name("str")
                 .help("Feature type to count")
                 .default_value("exon"),
@@ -95,9 +95,9 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
     let normalize_cmd = SubCommand::with_name("normalize")
         .about("Normalize counts")
         .arg(
-            Arg::with_name("type")
+            Arg::with_name("feature-type")
                 .short("t")
-                .long("type")
+                .long("feature-type")
                 .value_name("str")
                 .help("Feature type to count")
                 .default_value("exon"),
@@ -157,7 +157,7 @@ fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
 
     let results_dst = matches.value_of("output").unwrap();
 
-    let feature_type = matches.value_of("type").unwrap();
+    let feature_type = matches.value_of("feature-type").unwrap();
     let id = matches.value_of("id").unwrap();
     let min_mapq = value_t!(matches, "min-mapq", u8).unwrap_or_else(|e| e.exit());
 
@@ -191,7 +191,7 @@ fn normalize(matches: &ArgMatches<'_>) -> io::Result<()> {
     let counts_src = matches.value_of("counts").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
-    let feature_type = matches.value_of("type").unwrap();
+    let feature_type = matches.value_of("feature-type").unwrap();
     let id = matches.value_of("id").unwrap();
 
     let method = value_t!(matches, "method", normalization::Method).unwrap_or_else(|e| e.exit());

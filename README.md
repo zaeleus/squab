@@ -49,6 +49,7 @@ FLAGS:
 
 OPTIONS:
     -a, --annotations <file>            Input annotations file (GTF/GFFv2)
+    -t, --feature-type <str>            Feature type to count [default: exon]
     -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
         --min-mapq <u8>                 Minimum mapping quality to consider an alignment [default: 10]
         --normalize <str>               Quantification normalization method [possible values: fpkm, tpm]
@@ -56,7 +57,6 @@ OPTIONS:
         --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,
                                         auto]
         --threads <uint>                Force a specific number of threads
-    -t, --type <str>                    Feature type to count [default: exon]
 
 ARGS:
     <bam>    Input alignment file
@@ -90,9 +90,9 @@ FLAGS:
 
 OPTIONS:
     -a, --annotations <file>    Input annotations file (GTF/GFFv2)
+    -t, --feature-type <str>    Feature type to count [default: exon]
     -i, --id <str>              Feature attribute to use as the feature identity [default: gene_id]
         --method <str>          Quantification normalization method [default: tpm]  [possible values: fpkm, tpm]
-    -t, --type <str>            Feature type to count [default: exon]
 
 ARGS:
     <counts>    Input counts file
@@ -121,7 +121,7 @@ $ noodles-squab \
     --verbose \
     quantify \
     --annotations annoations.gtf.gz \
-    --type gene \
+    --feature-type gene \
     --id gene_name \
     --normalize fpkm \
     --output sample.fpkm.tsv \
