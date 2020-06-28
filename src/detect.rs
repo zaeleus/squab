@@ -140,6 +140,7 @@ where
     let file = File::open(src)?;
     let mut reader = bam::Reader::new(file);
     reader.read_header()?;
+    reader.read_reference_sequences()?;
 
     let mut counts = Counts::default();
     let mut _ctx = Context::default();
