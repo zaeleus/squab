@@ -47,7 +47,7 @@ where
                 }
             };
 
-            if self.primary_only && is_primary(&record) {
+            if self.primary_only && is_not_primary(&record) {
                 continue;
             }
 
@@ -84,7 +84,7 @@ where
     }
 }
 
-fn is_primary(record: &bam::Record) -> bool {
+fn is_not_primary(record: &bam::Record) -> bool {
     let flags = record.flags();
     flags.is_secondary() || flags.is_supplementary()
 }
