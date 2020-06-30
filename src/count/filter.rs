@@ -7,15 +7,15 @@ use super::Context;
 
 #[derive(Clone)]
 pub struct Filter {
-    min_mapq: u8,
+    min_mapping_quality: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
     with_nonunique_records: bool,
 }
 
 impl Filter {
-    pub fn min_mapq(&self) -> u8 {
-        self.min_mapq
+    pub fn min_mapping_quality(&self) -> u8 {
+        self.min_mapping_quality
     }
 
     pub fn with_secondary_records(&self) -> bool {
@@ -33,13 +33,13 @@ impl Filter {
 
 impl Filter {
     pub fn new(
-        min_mapq: u8,
+        min_mapping_quality: u8,
         with_secondary_records: bool,
         with_supplementary_records: bool,
         with_nonunique_records: bool,
     ) -> Filter {
         Self {
-            min_mapq,
+            min_mapping_quality,
             with_secondary_records,
             with_supplementary_records,
             with_nonunique_records,
@@ -65,7 +65,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if u8::from(record.mapping_quality()) < self.min_mapq {
+        if u8::from(record.mapping_quality()) < self.min_mapping_quality {
             ctx.low_quality += 1;
             return Ok(true);
         }
@@ -100,8 +100,8 @@ impl Filter {
             return Ok(true);
         }
 
-        if u8::from(r1.mapping_quality()) < self.min_mapq
-            || u8::from(r2.mapping_quality()) < self.min_mapq
+        if u8::from(r1.mapping_quality()) < self.min_mapping_quality
+            || u8::from(r2.mapping_quality()) < self.min_mapping_quality
         {
             ctx.low_quality += 1;
             return Ok(true);

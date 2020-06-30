@@ -51,7 +51,7 @@ OPTIONS:
     -a, --annotations <file>            Input annotations file (GFF3)
     -t, --feature-type <str>            Feature type to count [default: exon]
     -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
-        --min-mapq <u8>                 Minimum mapping quality to consider an alignment [default: 10]
+        --min-mapping-quality <u8>      Minimum mapping quality to consider an alignment [default: 10]
         --normalize <str>               Quantification normalization method [possible values: fpkm, tpm]
     -o, --output <file>                 Output destination for feature counts
         --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,

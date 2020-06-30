@@ -27,7 +27,7 @@ pub fn quantify<P, Q, R>(
     annotations_src: Q,
     feature_type: &str,
     id: &str,
-    min_mapq: u8,
+    min_mapping_quality: u8,
     with_secondary_records: bool,
     with_supplementary_records: bool,
     with_nonunique_records: bool,
@@ -98,7 +98,7 @@ where
     }
 
     let filter = Filter::new(
-        min_mapq,
+        min_mapping_quality,
         with_secondary_records,
         with_supplementary_records,
         with_nonunique_records,

@@ -50,8 +50,8 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .default_value("gene_id"),
         )
         .arg(
-            Arg::with_name("min-mapq")
-                .long("min-mapq")
+            Arg::with_name("min-mapping-quality")
+                .long("min-mapping-quality")
                 .value_name("u8")
                 .help("Minimum mapping quality to consider an alignment")
                 .default_value("10"),
@@ -159,7 +159,8 @@ fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
 
     let feature_type = matches.value_of("feature-type").unwrap();
     let id = matches.value_of("id").unwrap();
-    let min_mapq = value_t!(matches, "min-mapq", u8).unwrap_or_else(|e| e.exit());
+    let min_mapping_quality =
+        value_t!(matches, "min-mapping-quality", u8).unwrap_or_else(|e| e.exit());
 
     let with_secondary_records = matches.is_present("with-secondary-records");
     let with_supplementary_records = matches.is_present("with-supplementary-records");
@@ -176,7 +177,7 @@ fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
         annotations_src,
         feature_type,
         id,
-        min_mapq,
+        min_mapping_quality,
         with_secondary_records,
         with_supplementary_records,
         with_nonunique_records,
