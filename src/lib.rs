@@ -98,7 +98,7 @@ pub fn build_interval_trees<S: BuildHasher>(
         for feature in features {
             let reference_name = feature.reference_name();
 
-            let start = feature.start() - 1;
+            let start = feature.start();
             let end = feature.end();
 
             let strand = feature.strand();
@@ -150,21 +150,20 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
         loop {
             let op = self.ops.next()?;
-
             let len = u64::from(op.len());
 
             match op.kind() {
                 Kind::Match | Kind::SeqMatch | Kind::SeqMismatch => {
                     let start = self.start;
-                    let end = start + len;
+                    let end = start + len - 1;
                     self.start += len;
                     return Some((start..=end, self.is_reverse));
                 }
-                Kind::Deletion | Kind::Skip => {}
+                Kind::Deletion | Kind::Skip => {
+                    self.start += len;
+                }
                 _ => continue,
             }
-
-            self.start += len;
         }
     }
 }
@@ -181,15 +180,15 @@ mod tests {
             u32::from(cigar::Op::new(op::Kind::Match, 1)).to_le_bytes(),
             u32::from(cigar::Op::new(op::Kind::Insertion, 2)).to_le_bytes(),
             u32::from(cigar::Op::new(op::Kind::Deletion, 3)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Skip, 5)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SoftClip, 8)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::HardClip, 13)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Pad, 21)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMatch, 34)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMismatch, 55)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Skip, 4)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SoftClip, 5)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::HardClip, 6)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::Pad, 7)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SeqMatch, 8)).to_le_bytes(),
+            u32::from(cigar::Op::new(op::Kind::SeqMismatch, 9)).to_le_bytes(),
         ];
 
-        ops.iter().flat_map(|u| u).cloned().collect()
+        ops.iter().flatten().copied().collect()
     }
 
     #[test]
@@ -197,7 +196,7 @@ mod tests {
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
-        let start = 0;
+        let start = 1;
 
         let flags = sam::record::Flags::from(99);
         let it = CigarToIntervals::new(&cigar, start, flags, false);
@@ -221,19 +220,20 @@ mod tests {
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
+        let start = 1;
         let flags = sam::record::Flags::from(99);
-        let mut it = CigarToIntervals::new(&cigar, 0, flags, false);
+        let mut it = CigarToIntervals::new(&cigar, start, flags, false);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 0..=1);
+        assert_eq!(interval, 1..=1);
         assert!(!is_reverse);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 9..=43);
+        assert_eq!(interval, 9..=16);
         assert!(!is_reverse);
 
         let (interval, is_reverse) = it.next().unwrap();
-        assert_eq!(interval, 43..=98);
+        assert_eq!(interval, 17..=25);
         assert!(!is_reverse);
 
         assert!(it.next().is_none());

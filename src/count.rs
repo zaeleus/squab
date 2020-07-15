@@ -55,7 +55,7 @@ pub fn count_single_end_record(
     }
 
     let cigar = record.cigar();
-    let start = record.position() as u64;
+    let start = (record.position() + 1) as u64;
     let flags = record.flags();
 
     let reverse = match strand_specification {
@@ -105,7 +105,7 @@ where
         }
 
         let cigar = r1.cigar();
-        let start = r1.position() as u64;
+        let start = (r1.position() + 1) as u64;
         let f1 = r1.flags();
 
         let reverse = match strand_specification {
@@ -128,7 +128,7 @@ where
         let mut set = find(tree, intervals, strand_specification);
 
         let cigar = r2.cigar();
-        let start = r2.position() as u64;
+        let start = (r2.position() + 1) as u64;
         let f2 = r2.flags();
 
         let reverse = match strand_specification {
@@ -178,7 +178,7 @@ where
         }
 
         let cigar = record.cigar();
-        let start = record.position() as u64;
+        let start = (record.position() + 1) as u64;
 
         let reverse = match PairPosition::try_from(&record) {
             Ok(PairPosition::First) => false,
