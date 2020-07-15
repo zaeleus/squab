@@ -205,7 +205,7 @@ dependencies = [
 [[package]]
 name = "interval-tree"
 version = "0.2.0"
-source = "git+https://github.com/zaeleus/interval-tree.git?tag=v0.2.0#fd15a404f54274cbf82bccb3ec10766538d87a08"
+source = "git+https://github.com/zaeleus/interval-tree.git?rev=e303d7254d53de5c418d6079d4b66c30c10958d4#e303d7254d53de5c418d6079d4b66c30c10958d4"
 
 [[package]]
 name = "lazy_static"

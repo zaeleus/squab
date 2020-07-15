@@ -14,7 +14,7 @@ clap = "2.32.0"
 env_logger = "0.7.1"
 flate2 = "1.0.14"
 git-testament = "0.1.6"
-interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", tag = "v0.2.0" }
+interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
 log = "0.4.5"
 noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "797798e40c1712f9bb24d73c46941c7ee1a57d57" }
 noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "797798e40c1712f9bb24d73c46941c7ee1a57d57" }
