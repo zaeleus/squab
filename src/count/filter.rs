@@ -3,7 +3,7 @@ use std::io;
 use noodles_bam as bam;
 use noodles_sam as sam;
 
-use super::Context;
+use super::{context::Event, Context};
 
 #[derive(Clone)]
 pub struct Filter {
@@ -50,7 +50,7 @@ impl Filter {
         let flags = record.flags();
 
         if flags.is_unmapped() {
-            ctx.unmapped += 1;
+            ctx.add_event(Event::Unmapped);
             return Ok(true);
         }
 
@@ -61,12 +61,12 @@ impl Filter {
         }
 
         if !self.with_nonunique_records && is_nonunique_record(&record)? {
-            ctx.nonunique += 1;
+            ctx.add_event(Event::Nonunique);
             return Ok(true);
         }
 
         if u8::from(record.mapping_quality()) < self.min_mapping_quality {
-            ctx.low_quality += 1;
+            ctx.add_event(Event::LowQuality);
             return Ok(true);
         }
 
@@ -83,7 +83,7 @@ impl Filter {
         let f2 = r2.flags();
 
         if f1.is_unmapped() && f2.is_unmapped() {
-            ctx.unmapped += 1;
+            ctx.add_event(Event::Unmapped);
             return Ok(true);
         }
 
@@ -96,14 +96,14 @@ impl Filter {
 
         if !self.with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?)
         {
-            ctx.nonunique += 1;
+            ctx.add_event(Event::Nonunique);
             return Ok(true);
         }
 
         if u8::from(r1.mapping_quality()) < self.min_mapping_quality
             || u8::from(r2.mapping_quality()) < self.min_mapping_quality
         {
-            ctx.low_quality += 1;
+            ctx.add_event(Event::LowQuality);
             return Ok(true);
         }
 

@@ -1,3 +1,7 @@
+mod event;
+
+pub use self::event::Event;
+
 use std::collections::HashMap;
 
 #[derive(Default)]
@@ -22,6 +26,16 @@ impl Context {
         self.low_quality += other.low_quality;
         self.unmapped += other.unmapped;
         self.nonunique += other.nonunique;
+    }
+
+    pub fn add_event(&mut self, event: Event) {
+        match event {
+            Event::NoFeature => self.no_feature += 1,
+            Event::Ambiguous => self.ambiguous += 1,
+            Event::LowQuality => self.low_quality += 1,
+            Event::Unmapped => self.unmapped += 1,
+            Event::Nonunique => self.nonunique += 1,
+        }
     }
 }
 

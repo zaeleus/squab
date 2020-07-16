@@ -14,6 +14,8 @@ use noodles_sam::{self as sam, header::ReferenceSequences};
 
 use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
 
+use self::context::Event;
+
 pub fn count_single_end_records<I>(
     records: I,
     features: &Features,
@@ -275,14 +277,14 @@ fn get_reference<'a>(
 
 fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
     if intersections.is_empty() {
-        ctx.no_feature += 1;
+        ctx.add_event(Event::NoFeature);
     } else if intersections.len() == 1 {
         for name in intersections {
             let count = ctx.counts.entry(name).or_insert(0);
             *count += 1;
         }
     } else if intersections.len() > 1 {
-        ctx.ambiguous += 1;
+        ctx.add_event(Event::Ambiguous);
     }
 }
 
@@ -298,7 +300,7 @@ pub fn get_tree<'t>(
     match features.get(name) {
         Some(t) => Ok(Some(t)),
         None => {
-            ctx.no_feature += 1;
+            ctx.add_event(Event::NoFeature);
             Ok(None)
         }
     }
