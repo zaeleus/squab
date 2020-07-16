@@ -48,7 +48,7 @@ impl Feature {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.start == self.end
+        false
     }
 }
 
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn test_is_empty() {
         let feature = Feature::new(String::from("sq0"), 1, 1, gff::record::Strand::Forward);
-        assert!(feature.is_empty());
+        assert!(!feature.is_empty());
 
         let feature = build_feature();
         assert!(!feature.is_empty());
