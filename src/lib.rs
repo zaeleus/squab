@@ -15,9 +15,8 @@ pub mod record_pairs;
 use std::{
     collections::{HashMap, HashSet},
     hash::BuildHasher,
-    io,
+    io::{self, BufRead},
     ops::RangeInclusive,
-    path::Path,
     str::FromStr,
 };
 
@@ -31,15 +30,14 @@ pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 #[derive(Default)]
 pub struct Entry(pub String, pub noodles_gff::record::Strand);
 
-pub fn read_features<P>(
-    src: P,
+pub fn read_features<R>(
+    reader: &mut noodles_gff::Reader<R>,
     feature_type: &str,
     feature_id: &str,
 ) -> io::Result<HashMap<String, Vec<Feature>>>
 where
-    P: AsRef<Path>,
+    R: BufRead,
 {
-    let mut reader = gff::open(src)?;
     let mut features: HashMap<String, Vec<Feature>> = HashMap::new();
 
     info!("reading features");
@@ -115,6 +113,40 @@ pub fn build_interval_trees<S: BuildHasher>(
     (interval_trees, names)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_read_features() -> io::Result<()> {
+        use noodles_gff::record::Strand;
+
+        let data = b"##gff-version 3
+sq0\t.\texon\t1\t10\t.\t+\t.\tID=exon0;gene_id=gene0;gene_name=NDLS_gene0
+sq0\t.\texon\t21\t30\t.\t+\t.\tID=exon1;gene_id=gene0;gene_name=NDLS_gene0
+sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
+";
+        let mut reader = noodles_gff::Reader::new(&data[..]);
+
+        let features = read_features(&mut reader, "exon", "gene_id")?;
+
+        assert_eq!(features.len(), 2);
+        assert_eq!(
+            features["gene0"],
+            [
+                Feature::new(String::from("sq0"), 1, 10, Strand::Forward),
+                Feature::new(String::from("sq0"), 21, 30, Strand::Forward),
+            ]
+        );
+        assert_eq!(
+            features["gene1"],
+            [Feature::new(String::from("sq1"), 41, 50, Strand::Reverse),]
+        );
+
+        Ok(())
+    }
+}
+
 pub struct CigarToIntervals<'a> {
     ops: cigar::Ops<'a>,
     start: u64,
@@ -171,7 +203,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test_cigar_to_intervals {
     use noodles_bam::{self as bam, record::cigar};
     use noodles_sam::{self as sam, record::cigar::op};
 

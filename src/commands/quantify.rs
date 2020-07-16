@@ -41,7 +41,8 @@ where
     Q: AsRef<Path>,
     R: AsRef<Path>,
 {
-    let feature_map = read_features(annotations_src, feature_type, id)?;
+    let mut gff_reader = crate::gff::open(annotations_src)?;
+    let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
     let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;

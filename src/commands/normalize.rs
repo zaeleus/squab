@@ -1,10 +1,9 @@
+use log::info;
 use std::{
     fs::File,
     io::{self, BufReader},
     path::Path,
 };
-
-use log::info;
 
 use crate::{
     count,
@@ -26,7 +25,8 @@ where
     let mut reader = File::open(counts_src).map(|f| count::Reader::new(BufReader::new(f)))?;
     let count_map = reader.read_counts()?;
 
-    let feature_map = read_features(annotations_src, feature_type, id)?;
+    let mut gff_reader = crate::gff::open(annotations_src)?;
+    let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
 
     let stdout = io::stdout();
