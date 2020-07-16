@@ -56,13 +56,15 @@ mod tests {
 
     #[test]
     fn test_try_from_flag() {
-        let flags = sam::record::Flags::from(0x41);
+        use sam::record::Flags;
+
+        let flags = Flags::PAIRED | Flags::READ_1;
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::First));
 
-        let flags = sam::record::Flags::from(0x81);
+        let flags = Flags::PAIRED | Flags::READ_2;
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
 
-        let flags = sam::record::Flags::from(0x01);
+        let flags = Flags::PAIRED;
         assert!(PairPosition::try_from(flags).is_err());
     }
 }

@@ -193,35 +193,39 @@ mod tests {
 
     #[test]
     fn test_new() {
+        use sam::record::Flags;
+
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;
 
-        let flags = sam::record::Flags::from(99);
+        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
         let it = CigarToIntervals::new(&cigar, start, flags, false);
         assert!(!it.is_reverse);
 
-        let flags = sam::record::Flags::from(99);
+        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
         let it = CigarToIntervals::new(&cigar, start, flags, true);
         assert!(it.is_reverse);
 
-        let flags = sam::record::Flags::from(147);
+        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::REVERSE | Flags::READ_2;
         let it = CigarToIntervals::new(&cigar, start, flags, false);
         assert!(it.is_reverse);
 
-        let flags = sam::record::Flags::from(147);
+        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::REVERSE | Flags::READ_2;
         let it = CigarToIntervals::new(&cigar, start, flags, true);
         assert!(!it.is_reverse);
     }
 
     #[test]
     fn test_next() {
+        use sam::record::Flags;
+
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;
-        let flags = sam::record::Flags::from(99);
+        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
         let mut it = CigarToIntervals::new(&cigar, start, flags, false);
 
         let (interval, is_reverse) = it.next().unwrap();
