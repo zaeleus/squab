@@ -2,24 +2,29 @@ use noodles_gff as gff;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Feature {
-    reference_name: String,
+    reference_sequence_name: String,
     start: u64,
     end: u64,
     strand: gff::record::Strand,
 }
 
 impl Feature {
-    pub fn new(reference_name: String, start: u64, end: u64, strand: gff::record::Strand) -> Self {
+    pub fn new(
+        reference_sequence_name: String,
+        start: u64,
+        end: u64,
+        strand: gff::record::Strand,
+    ) -> Self {
         Self {
-            reference_name,
+            reference_sequence_name,
             start,
             end,
             strand,
         }
     }
 
-    pub fn reference_name(&self) -> &str {
-        &self.reference_name
+    pub fn reference_sequence_name(&self) -> &str {
+        &self.reference_sequence_name
     }
 
     pub fn start(&self) -> u64 {
@@ -56,9 +61,9 @@ mod tests {
     }
 
     #[test]
-    fn test_reference_name() {
+    fn test_reference_sequence_name() {
         let feature = build_feature();
-        assert_eq!(feature.reference_name(), "sq0");
+        assert_eq!(feature.reference_sequence_name(), "sq0");
     }
 
     #[test]

@@ -96,14 +96,16 @@ pub fn build_interval_trees<S: BuildHasher>(
 
     for (id, features) in feature_map {
         for feature in features {
-            let reference_name = feature.reference_name();
+            let reference_sequence_name = feature.reference_sequence_name();
 
             let start = feature.start();
             let end = feature.end();
 
             let strand = feature.strand();
 
-            let tree = interval_trees.entry(reference_name.into()).or_default();
+            let tree = interval_trees
+                .entry(reference_sequence_name.into())
+                .or_default();
             tree.insert(start..=end, Entry(id.into(), strand));
         }
 
