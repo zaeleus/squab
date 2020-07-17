@@ -1,4 +1,4 @@
-FROM rust:1.42.0-buster as builder
+FROM rust:1.45.0-buster as builder
 
 COPY Cargo.lock Cargo.toml /tmp/noodles-squab/
 COPY src/ /tmp/noodles-squab/src/
