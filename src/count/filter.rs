@@ -121,8 +121,10 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
         let field = result?;
 
         if field.tag() == &Tag::AlignmentHitCount {
-            if let Value::Int8(n) = field.value() {
-                return Ok(*n > 1);
+            match field.value() {
+                Value::Int8(n) => return Ok(*n > 1),
+                Value::UInt8(n) => return Ok(*n > 1),
+                _ => {}
             }
         }
     }
