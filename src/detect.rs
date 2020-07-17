@@ -177,7 +177,12 @@ where
         LibraryLayout::SingleEnd
     };
 
+    if counts.matches == 0 {
+        return Ok((library_layout, StrandSpecification::None, 0.0));
+    }
+
     let matches = counts.matches as f64;
+
     let forward_pct = counts.forward as f64 / matches;
     let reverse_pct = counts.reverse as f64 / matches;
 
