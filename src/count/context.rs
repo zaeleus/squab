@@ -30,6 +30,10 @@ impl Context {
 
     pub fn add_event(&mut self, event: Event) {
         match event {
+            Event::Hit(id) => {
+                let count = self.counts.entry(id).or_insert(0);
+                *count += 1;
+            }
             Event::NoFeature => self.no_feature += 1,
             Event::Ambiguous => self.ambiguous += 1,
             Event::LowQuality => self.low_quality += 1,

@@ -280,8 +280,7 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
         ctx.add_event(Event::NoFeature);
     } else if intersections.len() == 1 {
         for name in intersections {
-            let count = ctx.counts.entry(name).or_insert(0);
-            *count += 1;
+            ctx.add_event(Event::Hit(name));
         }
     } else if intersections.len() > 1 {
         ctx.add_event(Event::Ambiguous);
