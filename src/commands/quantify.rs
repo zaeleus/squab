@@ -50,8 +50,7 @@ where
     let header: sam::Header = reader
         .read_header()?
         .parse()
-        // TODO: Pass `sam::header::ParseError` as error.
-        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     let reference_sequences = header.reference_sequences();
 
@@ -235,8 +234,7 @@ where
     let header: sam::Header = reader
         .read_header()?
         .parse()
-        // TODO: Pass `sam::header::ParseError` as error.
-        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     let reference_sequences = header.reference_sequences();
 
@@ -270,8 +268,7 @@ where
     let header: sam::Header = reader
         .read_header()?
         .parse()
-        // TODO: Pass `sam::header::ParseError` as error.
-        .map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?;
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
     let reference_sequences = header.reference_sequences();
 
