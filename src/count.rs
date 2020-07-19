@@ -57,7 +57,7 @@ pub fn count_single_end_record(
     }
 
     let cigar = record.cigar();
-    let start = (record.position() + 1) as u64;
+    let start = i32::from(record.position()) as u64;
     let flags = record.flags();
 
     let reverse = match strand_specification {
@@ -107,7 +107,7 @@ where
         }
 
         let cigar = r1.cigar();
-        let start = (r1.position() + 1) as u64;
+        let start = i32::from(r1.position()) as u64;
         let f1 = r1.flags();
 
         let reverse = match strand_specification {
@@ -130,7 +130,7 @@ where
         let mut set = find(tree, intervals, strand_specification);
 
         let cigar = r2.cigar();
-        let start = (r2.position() + 1) as u64;
+        let start = i32::from(r2.position()) as u64;
         let f2 = r2.flags();
 
         let reverse = match strand_specification {
@@ -180,7 +180,7 @@ where
         }
 
         let cigar = record.cigar();
-        let start = (record.position() + 1) as u64;
+        let start = i32::from(record.position()) as u64;
 
         let reverse = match PairPosition::try_from(&record) {
             Ok(PairPosition::First) => false,
@@ -251,26 +251,14 @@ fn find(
 
 fn get_reference<'a>(
     reference_sequences: &'a ReferenceSequences,
-    ref_id: i32,
+    reference_sequence_id: bam::record::ReferenceSequenceId,
 ) -> io::Result<&'a sam::header::ReferenceSequence> {
-    if ref_id < 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("expected ref id >= 0, got {}", ref_id),
-        ));
-    }
-
-    reference_sequences
-        .get_index(ref_id as usize)
-        .map(|(_, rs)| rs)
+    reference_sequence_id
+        .and_then(|id| reference_sequences.get_index(id as usize).map(|(_, rs)| rs))
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!(
-                    "expected ref id < {}, got {}",
-                    reference_sequences.len(),
-                    ref_id
-                ),
+                format!("invalid reference sequence ID: {:?}", reference_sequence_id),
             )
         })
 }
@@ -291,9 +279,9 @@ pub fn get_tree<'t>(
     ctx: &mut Context,
     features: &'t Features,
     reference_sequences: &ReferenceSequences,
-    ref_id: i32,
+    reference_sequence_id: bam::record::ReferenceSequenceId,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
-    let reference = get_reference(reference_sequences, ref_id)?;
+    let reference = get_reference(reference_sequences, reference_sequence_id)?;
     let name = reference.name();
 
     match features.get(name) {
@@ -332,14 +320,18 @@ mod tests {
     fn test_get_reference() {
         let reference_sequences = build_reference_sequences();
 
-        let reference = get_reference(&reference_sequences, 1).unwrap();
-        assert_eq!(reference.name(), "chr2");
-        assert_eq!(reference.len(), 12);
+        let reference_sequence_id = bam::record::ReferenceSequenceId::from(1);
+        let reference_sequence =
+            get_reference(&reference_sequences, reference_sequence_id).unwrap();
+        assert_eq!(reference_sequence.name(), "chr2");
+        assert_eq!(reference_sequence.len(), 12);
 
-        let reference = get_reference(&reference_sequences, -2);
-        assert!(reference.is_err());
+        let reference_sequence_id = bam::record::ReferenceSequenceId::from(-1);
+        let reference_sequence = get_reference(&reference_sequences, reference_sequence_id);
+        assert!(reference_sequence.is_err());
 
-        let reference = get_reference(&reference_sequences, 5);
-        assert!(reference.is_err());
+        let reference_sequence_id = bam::record::ReferenceSequenceId::from(5);
+        let reference_sequence = get_reference(&reference_sequences, reference_sequence_id);
+        assert!(reference_sequence.is_err());
     }
 }

@@ -93,10 +93,10 @@ fn key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).unwrap(),
-        record.reference_sequence_id(),
-        record.position(),
-        record.mate_reference_sequence_id(),
-        record.mate_position(),
+        i32::from(record.reference_sequence_id()),
+        i32::from(record.position()),
+        i32::from(record.mate_reference_sequence_id()),
+        i32::from(record.mate_position()),
         record.template_len(),
     )
 }
@@ -105,10 +105,10 @@ fn mate_key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
-        record.mate_reference_sequence_id(),
-        record.mate_position(),
-        record.reference_sequence_id(),
-        record.position(),
+        i32::from(record.mate_reference_sequence_id()),
+        i32::from(record.mate_position()),
+        i32::from(record.reference_sequence_id()),
+        i32::from(record.position()),
         -record.template_len(),
     )
 }
