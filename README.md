@@ -70,7 +70,7 @@ includes statistics in the trailer.
 ### `normalize`
 
 `normalize` takes raw counts and normalizes them by gene length, meaning the
-annotations used for quantification must be the same given here. To
+annotations used for quantification must be the same given here. Two
 normalization methods are available: FPKM for single sample normalization and
 TPM for across samples normalization (default).
 
