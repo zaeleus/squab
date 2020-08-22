@@ -80,4 +80,24 @@ mod tests {
         assert_eq!(ctx_a.unmapped, 34);
         assert_eq!(ctx_a.nonunique, 55);
     }
+
+    #[test]
+    fn test_add_event() {
+        let mut ctx = Context::default();
+        ctx.add_event(Event::Hit(String::from("AADAT")));
+        ctx.add_event(Event::NoFeature);
+        ctx.add_event(Event::Ambiguous);
+        ctx.add_event(Event::LowQuality);
+        ctx.add_event(Event::Unmapped);
+        ctx.add_event(Event::Nonunique);
+
+        assert_eq!(ctx.counts.len(), 1);
+        assert_eq!(ctx.counts["AADAT"], 1);
+
+        assert_eq!(ctx.no_feature, 1);
+        assert_eq!(ctx.ambiguous, 1);
+        assert_eq!(ctx.low_quality, 1);
+        assert_eq!(ctx.unmapped, 1);
+        assert_eq!(ctx.nonunique, 1);
+    }
 }
