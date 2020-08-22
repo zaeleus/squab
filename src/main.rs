@@ -3,7 +3,7 @@ use std::io;
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::LevelFilter;
-use noodles_squab::{commands, normalization, StrandSpecificationOption};
+use noodles_squab::{commands, count::Filter, normalization, StrandSpecificationOption};
 
 git_testament!(TESTAMENT);
 
@@ -172,15 +172,19 @@ fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
         value_t!(matches, "strand-specification", StrandSpecificationOption)
             .unwrap_or_else(|e| e.exit());
 
+    let filter = Filter::new(
+        min_mapping_quality,
+        with_secondary_records,
+        with_supplementary_records,
+        with_nonunique_records,
+    );
+
     commands::quantify(
         bam_src,
         annotations_src,
         feature_type,
         id,
-        min_mapping_quality,
-        with_secondary_records,
-        with_supplementary_records,
-        with_nonunique_records,
+        filter,
         strand_specification_option,
         threads,
         normalize,

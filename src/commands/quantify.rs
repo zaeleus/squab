@@ -27,10 +27,7 @@ pub fn quantify<P, Q, R>(
     annotations_src: Q,
     feature_type: &str,
     id: &str,
-    min_mapping_quality: u8,
-    with_secondary_records: bool,
-    with_supplementary_records: bool,
-    with_nonunique_records: bool,
+    filter: Filter,
     strand_specification_option: StrandSpecificationOption,
     threads: usize,
     normalize: Option<normalization::Method>,
@@ -96,13 +93,6 @@ where
             strand_specification, detected_strand_specification,
         );
     }
-
-    let filter = Filter::new(
-        min_mapping_quality,
-        with_secondary_records,
-        with_supplementary_records,
-        with_nonunique_records,
-    );
 
     info!("counting features");
 
