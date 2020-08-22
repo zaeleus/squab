@@ -32,7 +32,7 @@ enum Strand {
 
 impl From<sam::record::Flags> for Strand {
     fn from(flags: sam::record::Flags) -> Self {
-        if flags.is_reverse() {
+        if flags.is_reverse_complemented() {
             Self::Reverse
         } else {
             Self::Forward

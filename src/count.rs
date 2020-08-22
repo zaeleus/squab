@@ -61,8 +61,8 @@ pub fn count_single_end_record(
     let flags = record.flags();
 
     let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => !flags.is_reverse(),
-        _ => flags.is_reverse(),
+        StrandSpecification::Reverse => !flags.is_reverse_complemented(),
+        _ => flags.is_reverse_complemented(),
     };
 
     let intervals = CigarToIntervals::new(&cigar, start);
@@ -111,8 +111,8 @@ where
         let f1 = r1.flags();
 
         let is_reverse = match strand_specification {
-            StrandSpecification::Reverse => !f1.is_reverse(),
-            _ => f1.is_reverse(),
+            StrandSpecification::Reverse => !f1.is_reverse_complemented(),
+            _ => f1.is_reverse_complemented(),
         };
 
         let intervals = CigarToIntervals::new(&cigar, start);
@@ -134,8 +134,8 @@ where
         let f2 = r2.flags();
 
         let is_reverse = match strand_specification {
-            StrandSpecification::Reverse => f2.is_reverse(),
-            _ => !f2.is_reverse(),
+            StrandSpecification::Reverse => f2.is_reverse_complemented(),
+            _ => !f2.is_reverse_complemented(),
         };
 
         let intervals = CigarToIntervals::new(&cigar, start);
@@ -185,12 +185,12 @@ where
 
         let is_reverse = match PairPosition::try_from(&record) {
             Ok(PairPosition::First) => match strand_specification {
-                StrandSpecification::Reverse => !flags.is_reverse(),
-                _ => flags.is_reverse(),
+                StrandSpecification::Reverse => !flags.is_reverse_complemented(),
+                _ => flags.is_reverse_complemented(),
             },
             Ok(PairPosition::Second) => match strand_specification {
-                StrandSpecification::Reverse => flags.is_reverse(),
-                _ => !flags.is_reverse(),
+                StrandSpecification::Reverse => flags.is_reverse_complemented(),
+                _ => !flags.is_reverse_complemented(),
             },
             Err(_) => {
                 return Err(io::Error::new(
