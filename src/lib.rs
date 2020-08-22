@@ -1,4 +1,5 @@
 pub use self::{
+    commands::StrandSpecificationOption,
     count::{count_paired_end_records, count_single_end_records, Context},
     feature::Feature,
     record_pairs::{PairPosition, RecordPairs},
@@ -17,7 +18,6 @@ use std::{
     hash::BuildHasher,
     io::{self, BufRead},
     ops::RangeInclusive,
-    str::FromStr,
 };
 
 use interval_tree::IntervalTree;
@@ -222,28 +222,6 @@ mod test_cigar_to_intervals {
         assert_eq!(it.next(), Some(9..=16));
         assert_eq!(it.next(), Some(17..=25));
         assert!(it.next().is_none());
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum StrandSpecificationOption {
-    None,
-    Forward,
-    Reverse,
-    Auto,
-}
-
-impl FromStr for StrandSpecificationOption {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "none" => Ok(Self::None),
-            "forward" => Ok(Self::Forward),
-            "reverse" => Ok(Self::Reverse),
-            "auto" => Ok(Self::Auto),
-            _ => Err(()),
-        }
     }
 }
 
