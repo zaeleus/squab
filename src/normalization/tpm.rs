@@ -89,11 +89,11 @@ mod tests {
         features.iter().cloned().collect()
     }
     #[test]
-    fn test_calculate_tpms() {
+    fn test_calculate_tpms() -> Result<(), Error> {
         let counts = build_counts();
         let feature_map = build_feature_map();
 
-        let tpms = calculate_tpms(&counts, &feature_map).unwrap();
+        let tpms = calculate_tpms(&counts, &feature_map)?;
 
         assert_eq!(tpms.len(), 3);
 
@@ -108,6 +108,8 @@ mod tests {
         let a = tpms["RPL37AP1"];
         let b = 998190.972628282;
         assert!((a - b).abs() < f64::EPSILON);
+
+        Ok(())
     }
 
     #[test]

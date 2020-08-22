@@ -318,12 +318,12 @@ mod tests {
     }
 
     #[test]
-    fn test_get_reference() {
+    fn test_get_reference() -> io::Result<()> {
         let reference_sequences = build_reference_sequences();
 
         let reference_sequence_id = bam::record::ReferenceSequenceId::from(1);
         let reference_sequence =
-            get_reference_sequence(&reference_sequences, reference_sequence_id).unwrap();
+            get_reference_sequence(&reference_sequences, reference_sequence_id)?;
         assert_eq!(reference_sequence.name(), "sq1");
         assert_eq!(reference_sequence.len(), 13);
 
@@ -336,5 +336,7 @@ mod tests {
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());
+
+        Ok(())
     }
 }

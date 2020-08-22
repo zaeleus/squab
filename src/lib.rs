@@ -218,15 +218,9 @@ mod test_cigar_to_intervals {
         let start = 1;
         let mut it = CigarToIntervals::new(&cigar, start);
 
-        let interval = it.next().unwrap();
-        assert_eq!(interval, 1..=1);
-
-        let interval = it.next().unwrap();
-        assert_eq!(interval, 9..=16);
-
-        let interval = it.next().unwrap();
-        assert_eq!(interval, 17..=25);
-
+        assert_eq!(it.next(), Some(1..=1));
+        assert_eq!(it.next(), Some(9..=16));
+        assert_eq!(it.next(), Some(17..=25));
         assert!(it.next().is_none());
     }
 }

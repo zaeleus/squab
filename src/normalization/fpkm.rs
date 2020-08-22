@@ -87,11 +87,11 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_fpkms() {
+    fn test_calculate_fpkms() -> Result<(), Error> {
         let counts = build_counts();
         let feature_map = build_feature_map();
 
-        let fpkms = calculate_fpkms(&counts, &feature_map).unwrap();
+        let fpkms = calculate_fpkms(&counts, &feature_map)?;
 
         assert_eq!(fpkms.len(), 3);
 
@@ -106,6 +106,8 @@ mod tests {
         let a = fpkms["RPL37AP1"];
         let b = 3220170.8708099457;
         assert!((a - b).abs() < f64::EPSILON);
+
+        Ok(())
     }
 
     #[test]
