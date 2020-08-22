@@ -10,6 +10,7 @@ lto = "fat"
 codegen-units = 1
 
 [dependencies]
+anyhow = "1.0.32"
 clap = "2.32.0"
 env_logger = "0.7.1"
 flate2 = "1.0.14"

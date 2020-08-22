@@ -1,5 +1,3 @@
-use std::io;
-
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use log::LevelFilter;
@@ -147,7 +145,7 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
         .get_matches()
 }
 
-fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
+fn quantify(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
     let bam_src = matches.value_of("bam").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
@@ -192,7 +190,7 @@ fn quantify(matches: &ArgMatches<'_>) -> io::Result<()> {
     )
 }
 
-fn normalize(matches: &ArgMatches<'_>) -> io::Result<()> {
+fn normalize(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
     let counts_src = matches.value_of("counts").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
@@ -204,7 +202,7 @@ fn normalize(matches: &ArgMatches<'_>) -> io::Result<()> {
     commands::normalize(counts_src, annotations_src, feature_type, id, method)
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let matches = match_args_from_env();
 
     if matches.is_present("verbose") {
@@ -216,8 +214,10 @@ fn main() {
     }
 
     if let Some(submatches) = matches.subcommand_matches("quantify") {
-        quantify(submatches).unwrap();
+        quantify(submatches)
     } else if let Some(submatches) = matches.subcommand_matches("normalize") {
-        normalize(submatches).unwrap();
+        normalize(submatches)
+    } else {
+        unreachable!()
     }
 }

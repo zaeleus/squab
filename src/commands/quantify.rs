@@ -5,6 +5,7 @@ use std::{
     sync::Arc,
 };
 
+use anyhow::Context as AnyhowContext;
 use log::{info, warn};
 use noodles::Region;
 use noodles_bam::{self as bam, bai};
@@ -32,7 +33,7 @@ pub fn quantify<P, Q, R>(
     threads: usize,
     normalize: Option<normalization::Method>,
     results_dst: R,
-) -> io::Result<()>
+) -> anyhow::Result<()>
 where
     P: AsRef<Path>,
     Q: AsRef<Path>,
@@ -42,7 +43,9 @@ where
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+    let mut reader = File::open(bam_src.as_ref())
+        .map(bam::Reader::new)
+        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header: sam::Header = reader
         .read_header()?
@@ -105,79 +108,83 @@ where
 
     let features = Arc::new(features);
 
-    let ctx = match library_layout {
-        LibraryLayout::SingleEnd => runtime.block_on(async {
-            let tasks: Vec<_> = reference_sequences
-                .values()
-                .map(|reference_sequence| {
-                    tokio::spawn(count_single_end_records_by_region(
-                        bam_src.as_ref().to_path_buf(),
-                        reference_sequence.name().into(),
-                        features.clone(),
-                        filter.clone(),
-                        strand_specification,
-                    ))
-                })
-                .collect();
+    let ctx = runtime.block_on(async {
+        match library_layout {
+            LibraryLayout::SingleEnd => {
+                let tasks: Vec<_> = reference_sequences
+                    .values()
+                    .map(|reference_sequence| {
+                        tokio::spawn(count_single_end_records_by_region(
+                            bam_src.as_ref().to_path_buf(),
+                            reference_sequence.name().into(),
+                            features.clone(),
+                            filter.clone(),
+                            strand_specification,
+                        ))
+                    })
+                    .collect();
 
-            let mut ctx = Context::default();
+                let mut ctx = Context::default();
 
-            for task in tasks {
-                let region_ctx = task.await??;
-                ctx.add(&region_ctx);
+                for task in tasks {
+                    let region_ctx = task.await??;
+                    ctx.add(&region_ctx);
+                }
+
+                Ok::<Context, anyhow::Error>(ctx)
             }
+            LibraryLayout::PairedEnd => {
+                let tasks: Vec<_> = reference_sequences
+                    .values()
+                    .map(|reference_sequence| {
+                        tokio::spawn(count_paired_end_records_by_region(
+                            bam_src.as_ref().to_path_buf(),
+                            reference_sequence.name().into(),
+                            features.clone(),
+                            filter.clone(),
+                            strand_specification,
+                        ))
+                    })
+                    .collect();
 
-            Ok::<Context, io::Error>(ctx)
-        })?,
-        LibraryLayout::PairedEnd => runtime.block_on(async {
-            let tasks: Vec<_> = reference_sequences
-                .values()
-                .map(|reference_sequence| {
-                    tokio::spawn(count_paired_end_records_by_region(
-                        bam_src.as_ref().to_path_buf(),
-                        reference_sequence.name().into(),
-                        features.clone(),
-                        filter.clone(),
-                        strand_specification,
-                    ))
-                })
-                .collect();
+                let mut ctx1 = Context::default();
+                let mut pairs = Vec::with_capacity(reference_sequences.len());
 
-            let mut ctx1 = Context::default();
-            let mut pairs = Vec::with_capacity(reference_sequences.len());
+                for task in tasks {
+                    let (region_ctx, region_pairs) = task.await??;
+                    ctx1.add(&region_ctx);
+                    pairs.push(region_pairs);
+                }
 
-            for task in tasks {
-                let (region_ctx, region_pairs) = task.await??;
-                ctx1.add(&region_ctx);
-                pairs.push(region_pairs);
+                let records = pairs.into_iter().flat_map(|r| r.into_iter()).map(Ok);
+                let (ctx2, mut pairs) = count_paired_end_records(
+                    records,
+                    &features,
+                    reference_sequences,
+                    &filter,
+                    strand_specification,
+                )?;
+
+                let singletons = pairs.singletons().map(Ok);
+                let ctx3 = count_paired_end_record_singletons(
+                    singletons,
+                    &features,
+                    reference_sequences,
+                    &filter,
+                    strand_specification,
+                )?;
+
+                ctx1.add(&ctx2);
+                ctx1.add(&ctx3);
+
+                Ok::<Context, anyhow::Error>(ctx1)
             }
+        }
+    })?;
 
-            let records = pairs.into_iter().flat_map(|r| r.into_iter()).map(Ok);
-            let (ctx2, mut pairs) = count_paired_end_records(
-                records,
-                &features,
-                reference_sequences,
-                &filter,
-                strand_specification,
-            )?;
-
-            let singletons = pairs.singletons().map(Ok);
-            let ctx3 = count_paired_end_record_singletons(
-                singletons,
-                &features,
-                reference_sequences,
-                &filter,
-                strand_specification,
-            )?;
-
-            ctx1.add(&ctx2);
-            ctx1.add(&ctx3);
-
-            Ok::<Context, io::Error>(ctx1)
-        })?,
-    };
-
-    let writer = File::create(results_dst).map(BufWriter::new)?;
+    let writer = File::create(results_dst.as_ref())
+        .map(BufWriter::new)
+        .with_context(|| format!("Could not open {}", results_dst.as_ref().display()))?;
 
     if let Some(normalization_method) = normalize {
         let mut value_writer = normalization::Writer::new(writer);
@@ -215,11 +222,13 @@ async fn count_single_end_records_by_region<P>(
     features: Arc<Features>,
     filter: Filter,
     strand_specification: StrandSpecification,
-) -> io::Result<Context>
+) -> anyhow::Result<Context>
 where
     P: AsRef<Path>,
 {
-    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+    let mut reader = File::open(bam_src.as_ref())
+        .map(bam::Reader::new)
+        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header: sam::Header = reader
         .read_header()?
@@ -229,18 +238,21 @@ where
     let reference_sequences = header.reference_sequences();
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index = bai::read(bai_src)?;
+    let index =
+        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let region = Region::mapped(reference_sequence_name, 1, None);
     let query = reader.query(reference_sequences, &index, &region)?;
 
-    count_single_end_records(
+    let ctx = count_single_end_records(
         query,
         &features,
         reference_sequences,
         &filter,
         strand_specification,
-    )
+    )?;
+
+    Ok(ctx)
 }
 
 async fn count_paired_end_records_by_region<P>(
@@ -249,11 +261,13 @@ async fn count_paired_end_records_by_region<P>(
     features: Arc<Features>,
     filter: Filter,
     strand_specification: StrandSpecification,
-) -> io::Result<(Context, Vec<bam::Record>)>
+) -> anyhow::Result<(Context, Vec<bam::Record>)>
 where
     P: AsRef<Path>,
 {
-    let mut reader = File::open(bam_src.as_ref()).map(bam::Reader::new)?;
+    let mut reader = File::open(bam_src.as_ref())
+        .map(bam::Reader::new)
+        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header: sam::Header = reader
         .read_header()?
@@ -263,7 +277,8 @@ where
     let reference_sequences = header.reference_sequences();
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index = bai::read(bai_src)?;
+    let index =
+        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let region = Region::mapped(reference_sequence_name, 1, None);
     let query = reader.query(reference_sequences, &index, &region)?;
