@@ -147,35 +147,22 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 
 pub struct CigarToIntervals<'a> {
     ops: cigar::Ops<'a>,
-    start: u64,
-    is_reverse: bool,
+    prev_start: u64,
 }
 
 impl<'a> CigarToIntervals<'a> {
-    fn new(
-        cigar: &'a bam::record::Cigar,
-        start: u64,
-        flag: sam::record::Flags,
-        reverse: bool,
-    ) -> CigarToIntervals<'a> {
+    fn new(cigar: &'a bam::record::Cigar, initial_start: u64) -> CigarToIntervals<'a> {
         let ops = cigar.ops();
-
-        let is_reverse = if reverse {
-            !flag.is_reverse()
-        } else {
-            flag.is_reverse()
-        };
 
         CigarToIntervals {
             ops,
-            start,
-            is_reverse,
+            prev_start: initial_start,
         }
     }
 }
 
 impl<'a> Iterator for CigarToIntervals<'a> {
-    type Item = (RangeInclusive<u64>, bool);
+    type Item = RangeInclusive<u64>;
 
     fn next(&mut self) -> Option<Self::Item> {
         use sam::record::cigar::op::Kind;
@@ -186,13 +173,13 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 
             match op.kind() {
                 Kind::Match | Kind::SeqMatch | Kind::SeqMismatch => {
-                    let start = self.start;
+                    let start = self.prev_start;
                     let end = start + len - 1;
-                    self.start += len;
-                    return Some((start..=end, self.is_reverse));
+                    self.prev_start += len;
+                    return Some(start..=end);
                 }
                 Kind::Deletion | Kind::Skip => {
-                    self.start += len;
+                    self.prev_start += len;
                 }
                 _ => continue,
             }
@@ -203,7 +190,7 @@ impl<'a> Iterator for CigarToIntervals<'a> {
 #[cfg(test)]
 mod test_cigar_to_intervals {
     use noodles_bam::{self as bam, record::cigar};
-    use noodles_sam::{self as sam, record::cigar::op};
+    use noodles_sam::record::cigar::op;
 
     use super::CigarToIntervals;
 
@@ -224,53 +211,21 @@ mod test_cigar_to_intervals {
     }
 
     #[test]
-    fn test_new() {
-        use sam::record::Flags;
-
-        let raw_cigar = build_raw_cigar();
-        let cigar = bam::record::Cigar::new(&raw_cigar);
-
-        let start = 1;
-
-        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
-        let it = CigarToIntervals::new(&cigar, start, flags, false);
-        assert!(!it.is_reverse);
-
-        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
-        let it = CigarToIntervals::new(&cigar, start, flags, true);
-        assert!(it.is_reverse);
-
-        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::REVERSE | Flags::READ_2;
-        let it = CigarToIntervals::new(&cigar, start, flags, false);
-        assert!(it.is_reverse);
-
-        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::REVERSE | Flags::READ_2;
-        let it = CigarToIntervals::new(&cigar, start, flags, true);
-        assert!(!it.is_reverse);
-    }
-
-    #[test]
     fn test_next() {
-        use sam::record::Flags;
-
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;
-        let flags = Flags::PAIRED | Flags::PROPER_PAIR | Flags::MATE_REVERSE | Flags::READ_1;
-        let mut it = CigarToIntervals::new(&cigar, start, flags, false);
+        let mut it = CigarToIntervals::new(&cigar, start);
 
-        let (interval, is_reverse) = it.next().unwrap();
+        let interval = it.next().unwrap();
         assert_eq!(interval, 1..=1);
-        assert!(!is_reverse);
 
-        let (interval, is_reverse) = it.next().unwrap();
+        let interval = it.next().unwrap();
         assert_eq!(interval, 9..=16);
-        assert!(!is_reverse);
 
-        let (interval, is_reverse) = it.next().unwrap();
+        let interval = it.next().unwrap();
         assert_eq!(interval, 17..=25);
-        assert!(!is_reverse);
 
         assert!(it.next().is_none());
     }

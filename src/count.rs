@@ -60,12 +60,12 @@ pub fn count_single_end_record(
     let start = i32::from(record.position()) as u64;
     let flags = record.flags();
 
-    let reverse = match strand_specification {
-        StrandSpecification::Reverse => true,
-        _ => false,
+    let is_reverse = match strand_specification {
+        StrandSpecification::Reverse => !flags.is_reverse(),
+        _ => flags.is_reverse(),
     };
 
-    let intervals = CigarToIntervals::new(&cigar, start, flags, reverse);
+    let intervals = CigarToIntervals::new(&cigar, start);
 
     let tree = match get_tree(
         ctx,
@@ -77,7 +77,7 @@ pub fn count_single_end_record(
         None => return Ok(()),
     };
 
-    let set = find(tree, intervals, strand_specification);
+    let set = find(tree, intervals, strand_specification, is_reverse);
 
     update_intersections(ctx, set);
 
@@ -110,12 +110,12 @@ where
         let start = i32::from(r1.position()) as u64;
         let f1 = r1.flags();
 
-        let reverse = match strand_specification {
-            StrandSpecification::Reverse => true,
-            _ => false,
+        let is_reverse = match strand_specification {
+            StrandSpecification::Reverse => !f1.is_reverse(),
+            _ => f1.is_reverse(),
         };
 
-        let intervals = CigarToIntervals::new(&cigar, start, f1, reverse);
+        let intervals = CigarToIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -127,18 +127,18 @@ where
             None => continue,
         };
 
-        let mut set = find(tree, intervals, strand_specification);
+        let mut set = find(tree, intervals, strand_specification, is_reverse);
 
         let cigar = r2.cigar();
         let start = i32::from(r2.position()) as u64;
         let f2 = r2.flags();
 
-        let reverse = match strand_specification {
-            StrandSpecification::Reverse => false,
-            _ => true,
+        let is_reverse = match strand_specification {
+            StrandSpecification::Reverse => f2.is_reverse(),
+            _ => !f2.is_reverse(),
         };
 
-        let intervals = CigarToIntervals::new(&cigar, start, f2, reverse);
+        let intervals = CigarToIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -150,7 +150,7 @@ where
             None => continue,
         };
 
-        let set2 = find(tree, intervals, strand_specification);
+        let set2 = find(tree, intervals, strand_specification, is_reverse);
 
         set.extend(set2.into_iter());
 
@@ -181,10 +181,17 @@ where
 
         let cigar = record.cigar();
         let start = i32::from(record.position()) as u64;
+        let flags = record.flags();
 
-        let reverse = match PairPosition::try_from(&record) {
-            Ok(PairPosition::First) => false,
-            Ok(PairPosition::Second) => true,
+        let is_reverse = match PairPosition::try_from(&record) {
+            Ok(PairPosition::First) => match strand_specification {
+                StrandSpecification::Reverse => !flags.is_reverse(),
+                _ => flags.is_reverse(),
+            },
+            Ok(PairPosition::Second) => match strand_specification {
+                StrandSpecification::Reverse => flags.is_reverse(),
+                _ => !flags.is_reverse(),
+            },
             Err(_) => {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
@@ -193,13 +200,7 @@ where
             }
         };
 
-        let reverse = match strand_specification {
-            StrandSpecification::Reverse => !reverse,
-            _ => reverse,
-        };
-
-        let flags = record.flags();
-        let intervals = CigarToIntervals::new(&cigar, start, flags, reverse);
+        let intervals = CigarToIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -211,7 +212,7 @@ where
             None => continue,
         };
 
-        let set = find(tree, intervals, strand_specification);
+        let set = find(tree, intervals, strand_specification, is_reverse);
 
         update_intersections(&mut ctx, set);
     }
@@ -223,10 +224,11 @@ fn find(
     tree: &IntervalTree<u64, Entry>,
     intervals: CigarToIntervals,
     strand_specification: StrandSpecification,
+    is_reverse: bool,
 ) -> HashSet<String> {
     let mut set = HashSet::new();
 
-    for (interval, is_reverse) in intervals {
+    for interval in intervals {
         for entry in tree.find(interval.clone()) {
             let (gene_name, strand) = entry.get();
 
