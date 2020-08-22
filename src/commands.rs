@@ -26,3 +26,19 @@ impl FromStr for StrandSpecificationOption {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_str() {
+        assert_eq!("none".parse(), Ok(StrandSpecificationOption::None));
+        assert_eq!("forward".parse(), Ok(StrandSpecificationOption::Forward));
+        assert_eq!("reverse".parse(), Ok(StrandSpecificationOption::Reverse));
+        assert_eq!("auto".parse(), Ok(StrandSpecificationOption::Auto));
+
+        assert_eq!("".parse::<StrandSpecificationOption>(), Err(()));
+        assert_eq!("noodles".parse::<StrandSpecificationOption>(), Err(()));
+    }
+}
