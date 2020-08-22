@@ -249,7 +249,7 @@ fn find(
     set
 }
 
-fn get_reference<'a>(
+fn get_reference_sequence<'a>(
     reference_sequences: &'a ReferenceSequences,
     reference_sequence_id: bam::record::ReferenceSequenceId,
 ) -> io::Result<&'a sam::header::ReferenceSequence> {
@@ -281,8 +281,8 @@ pub fn get_tree<'t>(
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: bam::record::ReferenceSequenceId,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
-    let reference = get_reference(reference_sequences, reference_sequence_id)?;
-    let name = reference.name();
+    let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
+    let name = reference_sequence.name();
 
     match features.get(name) {
         Some(t) => Ok(Some(t)),
@@ -300,16 +300,16 @@ mod tests {
     fn build_reference_sequences() -> ReferenceSequences {
         vec![
             (
-                String::from("chr1"),
-                sam::header::ReferenceSequence::new(String::from("chr1"), 7),
+                String::from("sq0"),
+                sam::header::ReferenceSequence::new(String::from("sq0"), 8),
             ),
             (
-                String::from("chr2"),
-                sam::header::ReferenceSequence::new(String::from("chr2"), 12),
+                String::from("sq1"),
+                sam::header::ReferenceSequence::new(String::from("sq1"), 13),
             ),
             (
-                String::from("chr3"),
-                sam::header::ReferenceSequence::new(String::from("chr3"), 148),
+                String::from("sq2"),
+                sam::header::ReferenceSequence::new(String::from("sq2"), 21),
             ),
         ]
         .into_iter()
@@ -322,16 +322,18 @@ mod tests {
 
         let reference_sequence_id = bam::record::ReferenceSequenceId::from(1);
         let reference_sequence =
-            get_reference(&reference_sequences, reference_sequence_id).unwrap();
-        assert_eq!(reference_sequence.name(), "chr2");
-        assert_eq!(reference_sequence.len(), 12);
+            get_reference_sequence(&reference_sequences, reference_sequence_id).unwrap();
+        assert_eq!(reference_sequence.name(), "sq1");
+        assert_eq!(reference_sequence.len(), 13);
 
         let reference_sequence_id = bam::record::ReferenceSequenceId::from(-1);
-        let reference_sequence = get_reference(&reference_sequences, reference_sequence_id);
+        let reference_sequence =
+            get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());
 
         let reference_sequence_id = bam::record::ReferenceSequenceId::from(5);
-        let reference_sequence = get_reference(&reference_sequences, reference_sequence_id);
+        let reference_sequence =
+            get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());
     }
 }
