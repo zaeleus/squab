@@ -9,7 +9,7 @@ use anyhow::Context as AnyhowContext;
 use log::{info, warn};
 use noodles::Region;
 use noodles_bam::{self as bam, bai};
-use noodles_sam as sam;
+use noodles_sam::{self as sam, header::ReferenceSequences};
 
 use crate::{
     build_interval_trees,
@@ -52,7 +52,7 @@ where
         .parse()
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
-    let reference_sequences = header.reference_sequences();
+    let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
     feature_ids.extend(names.into_iter());
@@ -61,7 +61,7 @@ where
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, reference_sequences, &features)?;
+        detect_specification(&bam_src, &reference_sequences, &features)?;
 
     match library_layout {
         LibraryLayout::SingleEnd => info!("library layout: single end"),
@@ -106,6 +106,7 @@ where
         .core_threads(threads)
         .build()?;
 
+    let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
     let ctx = runtime.block_on(async {
@@ -116,6 +117,7 @@ where
                     .map(|reference_sequence| {
                         tokio::spawn(count_single_end_records_by_region(
                             bam_src.as_ref().to_path_buf(),
+                            reference_sequences.clone(),
                             reference_sequence.name().into(),
                             features.clone(),
                             filter.clone(),
@@ -139,6 +141,7 @@ where
                     .map(|reference_sequence| {
                         tokio::spawn(count_paired_end_records_by_region(
                             bam_src.as_ref().to_path_buf(),
+                            reference_sequences.clone(),
                             reference_sequence.name().into(),
                             features.clone(),
                             filter.clone(),
@@ -160,7 +163,7 @@ where
                 let (ctx2, mut pairs) = count_paired_end_records(
                     records,
                     &features,
-                    reference_sequences,
+                    &reference_sequences,
                     &filter,
                     strand_specification,
                 )?;
@@ -169,7 +172,7 @@ where
                 let ctx3 = count_paired_end_record_singletons(
                     singletons,
                     &features,
-                    reference_sequences,
+                    &reference_sequences,
                     &filter,
                     strand_specification,
                 )?;
@@ -218,6 +221,7 @@ where
 
 async fn count_single_end_records_by_region<P>(
     bam_src: P,
+    reference_sequences: Arc<ReferenceSequences>,
     reference_sequence_name: String,
     features: Arc<Features>,
     filter: Filter,
@@ -230,24 +234,17 @@ where
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header: sam::Header = reader
-        .read_header()?
-        .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-    let reference_sequences = header.reference_sequences();
-
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
     let index =
         bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let region = Region::mapped(reference_sequence_name, 1, None);
-    let query = reader.query(reference_sequences, &index, &region)?;
+    let query = reader.query(&reference_sequences, &index, &region)?;
 
     let ctx = count_single_end_records(
         query,
         &features,
-        reference_sequences,
+        &reference_sequences,
         &filter,
         strand_specification,
     )?;
@@ -257,6 +254,7 @@ where
 
 async fn count_paired_end_records_by_region<P>(
     bam_src: P,
+    reference_sequences: Arc<ReferenceSequences>,
     reference_sequence_name: String,
     features: Arc<Features>,
     filter: Filter,
@@ -269,24 +267,17 @@ where
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header: sam::Header = reader
-        .read_header()?
-        .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-    let reference_sequences = header.reference_sequences();
-
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
     let index =
         bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let region = Region::mapped(reference_sequence_name, 1, None);
-    let query = reader.query(reference_sequences, &index, &region)?;
+    let query = reader.query(&reference_sequences, &index, &region)?;
 
     let (ctx, mut pairs) = count_paired_end_records(
         query,
         &features,
-        reference_sequences,
+        &reference_sequences,
         &filter,
         strand_specification,
     )?;
