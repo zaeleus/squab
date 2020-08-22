@@ -1,17 +1,17 @@
 pub use self::{
-    cigar_to_intervals::CigarToIntervals,
     commands::StrandSpecificationOption,
     count::{count_paired_end_records, count_single_end_records, Context},
     feature::Feature,
+    match_intervals::MatchIntervals,
     record_pairs::{PairPosition, RecordPairs},
 };
 
-mod cigar_to_intervals;
 pub mod commands;
 pub mod count;
 pub mod detect;
 pub mod feature;
 mod gff;
+mod match_intervals;
 pub mod normalization;
 pub mod record_pairs;
 

@@ -12,7 +12,7 @@ use noodles_bam as bam;
 use noodles_gff as gff;
 use noodles_sam::{self as sam, header::ReferenceSequences};
 
-use crate::{CigarToIntervals, Entry, Features, PairPosition, RecordPairs, StrandSpecification};
+use crate::{Entry, Features, MatchIntervals, PairPosition, RecordPairs, StrandSpecification};
 
 use self::context::Event;
 
@@ -65,7 +65,7 @@ pub fn count_single_end_record(
         _ => flags.is_reverse_complemented(),
     };
 
-    let intervals = CigarToIntervals::new(&cigar, start);
+    let intervals = MatchIntervals::new(&cigar, start);
 
     let tree = match get_tree(
         ctx,
@@ -115,7 +115,7 @@ where
             _ => f1.is_reverse_complemented(),
         };
 
-        let intervals = CigarToIntervals::new(&cigar, start);
+        let intervals = MatchIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -138,7 +138,7 @@ where
             _ => !f2.is_reverse_complemented(),
         };
 
-        let intervals = CigarToIntervals::new(&cigar, start);
+        let intervals = MatchIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -200,7 +200,7 @@ where
             }
         };
 
-        let intervals = CigarToIntervals::new(&cigar, start);
+        let intervals = MatchIntervals::new(&cigar, start);
 
         let tree = match get_tree(
             &mut ctx,
@@ -222,7 +222,7 @@ where
 
 fn find(
     tree: &IntervalTree<u64, Entry>,
-    intervals: CigarToIntervals,
+    intervals: MatchIntervals,
     strand_specification: StrandSpecification,
     is_reverse: bool,
 ) -> HashSet<String> {

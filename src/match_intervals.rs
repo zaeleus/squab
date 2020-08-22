@@ -3,23 +3,21 @@ use std::ops::RangeInclusive;
 use noodles_bam::{self as bam, record::cigar};
 use noodles_sam as sam;
 
-pub struct CigarToIntervals<'a> {
+pub struct MatchIntervals<'a> {
     ops: cigar::Ops<'a>,
     prev_start: u64,
 }
 
-impl<'a> CigarToIntervals<'a> {
-    pub fn new(cigar: &'a bam::record::Cigar, initial_start: u64) -> CigarToIntervals<'a> {
-        let ops = cigar.ops();
-
-        CigarToIntervals {
-            ops,
+impl<'a> MatchIntervals<'a> {
+    pub fn new(cigar: &'a bam::record::Cigar, initial_start: u64) -> Self {
+        Self {
+            ops: cigar.ops(),
             prev_start: initial_start,
         }
     }
 }
 
-impl<'a> Iterator for CigarToIntervals<'a> {
+impl<'a> Iterator for MatchIntervals<'a> {
     type Item = RangeInclusive<u64>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -50,7 +48,7 @@ mod tests {
     use noodles_bam::{self as bam, record::cigar};
     use noodles_sam::record::cigar::op;
 
-    use super::CigarToIntervals;
+    use super::*;
 
     fn build_raw_cigar() -> Vec<u8> {
         let ops = [
@@ -74,7 +72,7 @@ mod tests {
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;
-        let mut it = CigarToIntervals::new(&cigar, start);
+        let mut it = MatchIntervals::new(&cigar, start);
 
         assert_eq!(it.next(), Some(1..=1));
         assert_eq!(it.next(), Some(9..=16));
