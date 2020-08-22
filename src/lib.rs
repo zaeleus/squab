@@ -1,10 +1,12 @@
 pub use self::{
+    cigar_to_intervals::CigarToIntervals,
     commands::StrandSpecificationOption,
     count::{count_paired_end_records, count_single_end_records, Context},
     feature::Feature,
     record_pairs::{PairPosition, RecordPairs},
 };
 
+mod cigar_to_intervals;
 pub mod commands;
 pub mod count;
 pub mod detect;
@@ -17,16 +19,20 @@ use std::{
     collections::{HashMap, HashSet},
     hash::BuildHasher,
     io::{self, BufRead},
-    ops::RangeInclusive,
 };
 
 use interval_tree::IntervalTree;
 use log::info;
-use noodles_bam::{self as bam, record::cigar};
-use noodles_sam as sam;
 
 pub type Entry = (String, noodles_gff::record::Strand);
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum StrandSpecification {
+    None,
+    Forward,
+    Reverse,
+}
 
 pub fn read_features<R>(
     reader: &mut noodles_gff::Reader<R>,
@@ -143,91 +149,4 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 
         Ok(())
     }
-}
-
-pub struct CigarToIntervals<'a> {
-    ops: cigar::Ops<'a>,
-    prev_start: u64,
-}
-
-impl<'a> CigarToIntervals<'a> {
-    fn new(cigar: &'a bam::record::Cigar, initial_start: u64) -> CigarToIntervals<'a> {
-        let ops = cigar.ops();
-
-        CigarToIntervals {
-            ops,
-            prev_start: initial_start,
-        }
-    }
-}
-
-impl<'a> Iterator for CigarToIntervals<'a> {
-    type Item = RangeInclusive<u64>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        use sam::record::cigar::op::Kind;
-
-        loop {
-            let op = self.ops.next()?;
-            let len = u64::from(op.len());
-
-            match op.kind() {
-                Kind::Match | Kind::SeqMatch | Kind::SeqMismatch => {
-                    let start = self.prev_start;
-                    let end = start + len - 1;
-                    self.prev_start += len;
-                    return Some(start..=end);
-                }
-                Kind::Deletion | Kind::Skip => {
-                    self.prev_start += len;
-                }
-                _ => continue,
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod test_cigar_to_intervals {
-    use noodles_bam::{self as bam, record::cigar};
-    use noodles_sam::record::cigar::op;
-
-    use super::CigarToIntervals;
-
-    fn build_raw_cigar() -> Vec<u8> {
-        let ops = [
-            u32::from(cigar::Op::new(op::Kind::Match, 1)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Insertion, 2)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Deletion, 3)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Skip, 4)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SoftClip, 5)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::HardClip, 6)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Pad, 7)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMatch, 8)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMismatch, 9)).to_le_bytes(),
-        ];
-
-        ops.iter().flatten().copied().collect()
-    }
-
-    #[test]
-    fn test_next() {
-        let raw_cigar = build_raw_cigar();
-        let cigar = bam::record::Cigar::new(&raw_cigar);
-
-        let start = 1;
-        let mut it = CigarToIntervals::new(&cigar, start);
-
-        assert_eq!(it.next(), Some(1..=1));
-        assert_eq!(it.next(), Some(9..=16));
-        assert_eq!(it.next(), Some(17..=25));
-        assert!(it.next().is_none());
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum StrandSpecification {
-    None,
-    Forward,
-    Reverse,
 }
