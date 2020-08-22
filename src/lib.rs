@@ -25,10 +25,8 @@ use log::info;
 use noodles_bam::{self as bam, record::cigar};
 use noodles_sam as sam;
 
+pub type Entry = (String, noodles_gff::record::Strand);
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
-
-#[derive(Default)]
-pub struct Entry(pub String, pub noodles_gff::record::Strand);
 
 pub fn read_features<R>(
     reader: &mut noodles_gff::Reader<R>,
@@ -104,7 +102,7 @@ pub fn build_interval_trees<S: BuildHasher>(
             let tree = interval_trees
                 .entry(reference_sequence_name.into())
                 .or_default();
-            tree.insert(start..=end, Entry(id.into(), strand));
+            tree.insert(start..=end, (id.into(), strand));
         }
 
         names.insert(id.into());
