@@ -50,7 +50,8 @@ where
     let header: sam::Header = reader
         .read_header()?
         .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+        .context("Could not parse BAM header")?;
 
     let reference_sequences = header.reference_sequences().clone();
 
