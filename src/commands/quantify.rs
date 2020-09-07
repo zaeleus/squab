@@ -239,7 +239,17 @@ where
     let index =
         bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
-    let region = Region::mapped(reference_sequence_name, 1, None);
+    let reference_sequence_len = reference_sequences
+        .get(&reference_sequence_name)
+        .map(|rs| rs.len() as u64)
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid reference sequence name",
+            )
+        })?;
+
+    let region = Region::mapped(reference_sequence_name, 1, reference_sequence_len);
     let query = reader.query(&reference_sequences, &index, &region)?;
 
     let ctx = count_single_end_records(
@@ -272,7 +282,17 @@ where
     let index =
         bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
-    let region = Region::mapped(reference_sequence_name, 1, None);
+    let reference_sequence_len = reference_sequences
+        .get(&reference_sequence_name)
+        .map(|rs| rs.len() as u64)
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid reference sequence name",
+            )
+        })?;
+
+    let region = Region::mapped(reference_sequence_name, 1, reference_sequence_len);
     let query = reader.query(&reference_sequences, &index, &region)?;
 
     let (ctx, mut pairs) = count_paired_end_records(
