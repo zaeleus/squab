@@ -53,6 +53,10 @@ where
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         .context("Could not parse BAM header")?;
 
+    let bai_src = bam_src.as_ref().with_extension("bam.bai");
+    let index =
+        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
+
     let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
@@ -107,6 +111,7 @@ where
         .core_threads(threads)
         .build()?;
 
+    let index = Arc::new(index);
     let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
@@ -118,6 +123,7 @@ where
                     .map(|reference_sequence| {
                         tokio::spawn(count_single_end_records_by_region(
                             bam_src.as_ref().to_path_buf(),
+                            index.clone(),
                             reference_sequences.clone(),
                             reference_sequence.name().into(),
                             features.clone(),
@@ -142,6 +148,7 @@ where
                     .map(|reference_sequence| {
                         tokio::spawn(count_paired_end_records_by_region(
                             bam_src.as_ref().to_path_buf(),
+                            index.clone(),
                             reference_sequences.clone(),
                             reference_sequence.name().into(),
                             features.clone(),
@@ -222,6 +229,7 @@ where
 
 async fn count_single_end_records_by_region<P>(
     bam_src: P,
+    index: Arc<bai::Index>,
     reference_sequences: Arc<ReferenceSequences>,
     reference_sequence_name: String,
     features: Arc<Features>,
@@ -234,10 +242,6 @@ where
     let mut reader = File::open(bam_src.as_ref())
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
-
-    let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index =
-        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let reference_sequence_len = reference_sequences
         .get(&reference_sequence_name)
@@ -265,6 +269,7 @@ where
 
 async fn count_paired_end_records_by_region<P>(
     bam_src: P,
+    index: Arc<bai::Index>,
     reference_sequences: Arc<ReferenceSequences>,
     reference_sequence_name: String,
     features: Arc<Features>,
@@ -277,10 +282,6 @@ where
     let mut reader = File::open(bam_src.as_ref())
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
-
-    let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index =
-        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let reference_sequence_len = reference_sequences
         .get(&reference_sequence_name)
