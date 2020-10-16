@@ -106,9 +106,8 @@ where
 
     info!("using {} thread(s)", threads);
 
-    let mut runtime = tokio::runtime::Builder::new()
-        .threaded_scheduler()
-        .core_threads(threads)
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(threads)
         .build()?;
 
     let index = Arc::new(index);
