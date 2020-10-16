@@ -8,7 +8,7 @@ raw counts or normalized counts in TPM (transcripts per million) or FPKM
 (fragments per kilobase per million mapped reads).
 
 The original goal of this project is to provide a faster alternative to
-[htseq-count]. It uses the same counting rules and outputs a compatible data
+[htseq-count]. It uses similar counting rules and outputs a compatible data
 table.
 
 [htseq-count]: https://htseq.readthedocs.io/en/master/count.html
