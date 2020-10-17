@@ -1,5 +1,6 @@
 FROM rust:1.47.0-buster as builder
 
+COPY .git/ /tmp/noodles-squab/.git/
 COPY Cargo.lock Cargo.toml /tmp/noodles-squab/
 COPY src/ /tmp/noodles-squab/src/
 
