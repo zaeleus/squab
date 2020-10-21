@@ -12,7 +12,7 @@ codegen-units = 1
 [dependencies]
 anyhow = "1.0.32"
 clap = "2.32.0"
-env_logger = "0.7.1"
+env_logger = "0.8.1"
 flate2 = "1.0.14"
 git-testament = "0.1.6"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
