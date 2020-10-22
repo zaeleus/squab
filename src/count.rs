@@ -57,7 +57,11 @@ pub fn count_single_end_record(
     }
 
     let cigar = record.cigar();
-    let start = i32::from(record.position()) as u64;
+    let start = record
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
     let flags = record.flags();
 
     let is_reverse = match strand_specification {
@@ -77,7 +81,7 @@ pub fn count_single_end_record(
         None => return Ok(()),
     };
 
-    let set = find(tree, intervals, strand_specification, is_reverse);
+    let set = find(tree, intervals, strand_specification, is_reverse)?;
 
     update_intersections(ctx, set);
 
@@ -107,7 +111,11 @@ where
         }
 
         let cigar = r1.cigar();
-        let start = i32::from(r1.position()) as u64;
+        let start = r1
+            .position()
+            .map(i32::from)
+            .map(|n| n as u64)
+            .expect("record cannot be unmapped");
         let f1 = r1.flags();
 
         let is_reverse = match strand_specification {
@@ -127,10 +135,14 @@ where
             None => continue,
         };
 
-        let mut set = find(tree, intervals, strand_specification, is_reverse);
+        let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
         let cigar = r2.cigar();
-        let start = i32::from(r2.position()) as u64;
+        let start = r2
+            .position()
+            .map(i32::from)
+            .map(|n| n as u64)
+            .expect("record cannot be unmapped");
         let f2 = r2.flags();
 
         let is_reverse = match strand_specification {
@@ -150,7 +162,7 @@ where
             None => continue,
         };
 
-        let set2 = find(tree, intervals, strand_specification, is_reverse);
+        let set2 = find(tree, intervals, strand_specification, is_reverse)?;
 
         set.extend(set2.into_iter());
 
@@ -180,7 +192,11 @@ where
         }
 
         let cigar = record.cigar();
-        let start = i32::from(record.position()) as u64;
+        let start = record
+            .position()
+            .map(i32::from)
+            .map(|n| n as u64)
+            .expect("record cannot be unmapped");
         let flags = record.flags();
 
         let is_reverse = match PairPosition::try_from(&record) {
@@ -212,7 +228,7 @@ where
             None => continue,
         };
 
-        let set = find(tree, intervals, strand_specification, is_reverse);
+        let set = find(tree, intervals, strand_specification, is_reverse)?;
 
         update_intersections(&mut ctx, set);
     }
@@ -225,10 +241,12 @@ fn find(
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
     is_reverse: bool,
-) -> HashSet<String> {
+) -> io::Result<HashSet<String>> {
     let mut set = HashSet::new();
 
-    for interval in intervals {
+    for result in intervals {
+        let interval = result?;
+
         for entry in tree.find(interval.clone()) {
             let (gene_name, strand) = entry.get();
 
@@ -247,7 +265,7 @@ fn find(
         }
     }
 
-    set
+    Ok(set)
 }
 
 fn get_reference_sequence<'a>(

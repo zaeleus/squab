@@ -11,7 +11,15 @@ use std::{
 use log::warn;
 use noodles_bam as bam;
 
-type RecordKey = (Vec<u8>, PairPosition, i32, i32, i32, i32, i32);
+type RecordKey = (
+    Vec<u8>,
+    PairPosition,
+    Option<i32>,
+    Option<i32>,
+    Option<i32>,
+    Option<i32>,
+    i32,
+);
 
 pub struct RecordPairs<I> {
     records: I,
@@ -93,11 +101,11 @@ fn key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).unwrap(),
-        i32::from(record.reference_sequence_id()),
-        i32::from(record.position()),
-        i32::from(record.mate_reference_sequence_id()),
-        i32::from(record.mate_position()),
-        record.template_len(),
+        record.reference_sequence_id().map(i32::from),
+        record.position().map(i32::from),
+        record.mate_reference_sequence_id().map(i32::from),
+        record.mate_position().map(i32::from),
+        record.template_length(),
     )
 }
 
@@ -105,11 +113,11 @@ fn mate_key(record: &bam::Record) -> RecordKey {
     (
         record.read_name().to_vec(),
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
-        i32::from(record.mate_reference_sequence_id()),
-        i32::from(record.mate_position()),
-        i32::from(record.reference_sequence_id()),
-        i32::from(record.position()),
-        -record.template_len(),
+        record.mate_reference_sequence_id().map(i32::from),
+        record.mate_position().map(i32::from),
+        record.reference_sequence_id().map(i32::from),
+        record.position().map(i32::from),
+        -record.template_length(),
     )
 }
 

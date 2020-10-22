@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{io, ops::RangeInclusive};
 
 use noodles_bam::{self as bam, record::cigar};
 use noodles_sam as sam;
@@ -18,13 +18,18 @@ impl<'a> MatchIntervals<'a> {
 }
 
 impl<'a> Iterator for MatchIntervals<'a> {
-    type Item = RangeInclusive<u64>;
+    type Item = io::Result<RangeInclusive<u64>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         use sam::record::cigar::op::Kind;
 
         loop {
-            let op = self.ops.next()?;
+            let op = match self.ops.next() {
+                Some(Ok(o)) => o,
+                Some(Err(e)) => return Some(Err(e)),
+                None => return None,
+            };
+
             let len = u64::from(op.len());
 
             match op.kind() {
@@ -32,7 +37,7 @@ impl<'a> Iterator for MatchIntervals<'a> {
                     let start = self.prev_start;
                     let end = start + len - 1;
                     self.prev_start += len;
-                    return Some(start..=end);
+                    return Some(Ok(start..=end));
                 }
                 Kind::Deletion | Kind::Skip => {
                     self.prev_start += len;
@@ -67,16 +72,18 @@ mod tests {
     }
 
     #[test]
-    fn test_next() {
+    fn test_next() -> io::Result<()> {
         let raw_cigar = build_raw_cigar();
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;
         let mut it = MatchIntervals::new(&cigar, start);
 
-        assert_eq!(it.next(), Some(1..=1));
-        assert_eq!(it.next(), Some(9..=16));
-        assert_eq!(it.next(), Some(17..=25));
-        assert!(it.next().is_none());
+        assert_eq!(it.next().transpose()?, Some(1..=1));
+        assert_eq!(it.next().transpose()?, Some(9..=16));
+        assert_eq!(it.next().transpose()?, Some(17..=25));
+        assert_eq!(it.next().transpose()?, None);
+
+        Ok(())
     }
 }

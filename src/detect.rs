@@ -61,8 +61,12 @@ fn count_paired_end_record(
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = i32::from(record.position()) as u64;
-    let reference_len = record.cigar().reference_len() as u64;
+    let start = record
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
+    let reference_len = record.cigar().reference_len()? as u64;
     let end = start + reference_len - 1;
 
     let pair_position = PairPosition::try_from(record).map_err(invalid_record_pair)?;
@@ -102,8 +106,12 @@ fn count_single_end_record(
     tree: &IntervalTree<u64, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = i32::from(record.position()) as u64;
-    let reference_len = record.cigar().reference_len() as u64;
+    let start = record
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
+    let reference_len = record.cigar().reference_len()? as u64;
     let end = start + reference_len - 1;
 
     let record_strand = Strand::from(record.flags());
