@@ -75,7 +75,7 @@ normalization methods are available: FPKM for single sample normalization and
 TPM for across samples normalization (default).
 
 Typically, this is only used when a sample was previously quanitifed, e.g.,
-using `noodles-squab quanitfy` or `htseq-count`.
+using `noodles-squab quantify` or `htseq-count`.
 
 ```
 noodles-squab-normalize
