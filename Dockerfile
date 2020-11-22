@@ -1,12 +1,12 @@
 FROM rust:1.48.0-buster as builder
 
-COPY .git/ /tmp/noodles-squab/.git/
-COPY Cargo.lock Cargo.toml /tmp/noodles-squab/
-COPY src/ /tmp/noodles-squab/src/
+WORKDIR /tmp/noodles-squab/
 
-RUN cargo build \
-      --release \
-      --manifest-path /tmp/noodles-squab/Cargo.toml
+COPY .git/ .git/
+COPY Cargo.lock Cargo.toml ./
+COPY src/ src/
+
+RUN cargo build --release
 
 FROM debian:buster
 
