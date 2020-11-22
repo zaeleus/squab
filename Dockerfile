@@ -1,4 +1,4 @@
-FROM rust:1.47.0-buster as builder
+FROM rust:1.48.0-buster as builder
 
 COPY .git/ /tmp/noodles-squab/.git/
 COPY Cargo.lock Cargo.toml /tmp/noodles-squab/
