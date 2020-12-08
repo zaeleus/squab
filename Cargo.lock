@@ -237,7 +237,7 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=e1714d9234f3435201bee56d13e48a73f86d1673#e1714d9234f3435201bee56d13e48a73f86d1673"
+source = "git+https://github.com/zaeleus/noodles.git?rev=ae57109d9868e60aaa444315397b51007bf2bf12#ae57109d9868e60aaa444315397b51007bf2bf12"
 dependencies = [
  "noodles-sam",
 ]
@@ -245,7 +245,7 @@ dependencies = [
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=e1714d9234f3435201bee56d13e48a73f86d1673#e1714d9234f3435201bee56d13e48a73f86d1673"
+source = "git+https://github.com/zaeleus/noodles.git?rev=ae57109d9868e60aaa444315397b51007bf2bf12#ae57109d9868e60aaa444315397b51007bf2bf12"
 dependencies = [
  "bit-vec",
  "byteorder",
@@ -257,7 +257,7 @@ dependencies = [
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=e1714d9234f3435201bee56d13e48a73f86d1673#e1714d9234f3435201bee56d13e48a73f86d1673"
+source = "git+https://github.com/zaeleus/noodles.git?rev=ae57109d9868e60aaa444315397b51007bf2bf12#ae57109d9868e60aaa444315397b51007bf2bf12"
 dependencies = [
  "byteorder",
  "flate2",
@@ -266,12 +266,12 @@ dependencies = [
 [[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=e1714d9234f3435201bee56d13e48a73f86d1673#e1714d9234f3435201bee56d13e48a73f86d1673"
+source = "git+https://github.com/zaeleus/noodles.git?rev=ae57109d9868e60aaa444315397b51007bf2bf12#ae57109d9868e60aaa444315397b51007bf2bf12"
 
 [[package]]
 name = "noodles-sam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=e1714d9234f3435201bee56d13e48a73f86d1673#e1714d9234f3435201bee56d13e48a73f86d1673"
+source = "git+https://github.com/zaeleus/noodles.git?rev=ae57109d9868e60aaa444315397b51007bf2bf12#ae57109d9868e60aaa444315397b51007bf2bf12"
 dependencies = [
  "bitflags",
  "indexmap",

@@ -59,7 +59,10 @@ where
                 continue;
             }
 
-            let mate_key = mate_key(&record);
+            let mate_key = match mate_key(&record) {
+                Ok(k) => k,
+                Err(e) => return Some(Err(e)),
+            };
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
@@ -68,7 +71,10 @@ where
                 };
             }
 
-            let key = key(&record);
+            let key = match key(&record) {
+                Ok(k) => k,
+                Err(e) => return Some(Err(e)),
+            };
 
             self.buf.insert(key, record.clone());
         }
@@ -97,28 +103,34 @@ fn is_not_primary(record: &bam::Record) -> bool {
     flags.is_secondary() || flags.is_supplementary()
 }
 
-fn key(record: &bam::Record) -> RecordKey {
-    (
-        record.read_name().to_vec(),
+fn key(record: &bam::Record) -> io::Result<RecordKey> {
+    Ok((
+        record
+            .read_name()
+            .map(|s| s.to_bytes().to_vec())
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         PairPosition::try_from(record).unwrap(),
         record.reference_sequence_id().map(i32::from),
         record.position().map(i32::from),
         record.mate_reference_sequence_id().map(i32::from),
         record.mate_position().map(i32::from),
         record.template_length(),
-    )
+    ))
 }
 
-fn mate_key(record: &bam::Record) -> RecordKey {
-    (
-        record.read_name().to_vec(),
+fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
+    Ok((
+        record
+            .read_name()
+            .map(|s| s.to_bytes().to_vec())
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
         record.mate_reference_sequence_id().map(i32::from),
         record.mate_position().map(i32::from),
         record.reference_sequence_id().map(i32::from),
         record.position().map(i32::from),
         -record.template_length(),
-    )
+    ))
 }
 
 pub struct Singletons<'a> {

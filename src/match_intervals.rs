@@ -55,25 +55,32 @@ mod tests {
 
     use super::*;
 
-    fn build_raw_cigar() -> Vec<u8> {
-        let ops = [
-            u32::from(cigar::Op::new(op::Kind::Match, 1)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Insertion, 2)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Deletion, 3)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Skip, 4)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SoftClip, 5)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::HardClip, 6)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::Pad, 7)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMatch, 8)).to_le_bytes(),
-            u32::from(cigar::Op::new(op::Kind::SeqMismatch, 9)).to_le_bytes(),
+    fn build_raw_cigar() -> io::Result<Vec<u8>> {
+        fn build_raw_op(kind: op::Kind, len: u32) -> io::Result<[u8; 4]> {
+            cigar::Op::new(kind, len)
+                .map(u32::from)
+                .map(|n| n.to_le_bytes())
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+        }
+
+        let raw_ops = [
+            build_raw_op(op::Kind::Match, 1)?,
+            build_raw_op(op::Kind::Insertion, 2)?,
+            build_raw_op(op::Kind::Deletion, 3)?,
+            build_raw_op(op::Kind::Skip, 4)?,
+            build_raw_op(op::Kind::SoftClip, 5)?,
+            build_raw_op(op::Kind::HardClip, 6)?,
+            build_raw_op(op::Kind::Pad, 7)?,
+            build_raw_op(op::Kind::SeqMatch, 8)?,
+            build_raw_op(op::Kind::SeqMismatch, 9)?,
         ];
 
-        ops.iter().flatten().copied().collect()
+        Ok(raw_ops.iter().flatten().copied().collect())
     }
 
     #[test]
     fn test_next() -> io::Result<()> {
-        let raw_cigar = build_raw_cigar();
+        let raw_cigar = build_raw_cigar()?;
         let cigar = bam::record::Cigar::new(&raw_cigar);
 
         let start = 1;

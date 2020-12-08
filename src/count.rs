@@ -270,10 +270,14 @@ fn find(
 
 fn get_reference_sequence<'a>(
     reference_sequences: &'a ReferenceSequences,
-    reference_sequence_id: bam::record::ReferenceSequenceId,
+    reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
 ) -> io::Result<&'a sam::header::ReferenceSequence> {
     reference_sequence_id
-        .and_then(|id| reference_sequences.get_index(id as usize).map(|(_, rs)| rs))
+        .and_then(|id| {
+            reference_sequences
+                .get_index(i32::from(id) as usize)
+                .map(|(_, rs)| rs)
+        })
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -298,7 +302,7 @@ pub fn get_tree<'t>(
     ctx: &mut Context,
     features: &'t Features,
     reference_sequences: &ReferenceSequences,
-    reference_sequence_id: bam::record::ReferenceSequenceId,
+    reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
     let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
     let name = reference_sequence.name();
@@ -336,21 +340,21 @@ mod tests {
     }
 
     #[test]
-    fn test_get_reference() -> io::Result<()> {
+    fn test_get_reference() -> Result<(), Box<dyn std::error::Error>> {
         let reference_sequences = build_reference_sequences();
 
-        let reference_sequence_id = bam::record::ReferenceSequenceId::from(1);
+        let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(1)?);
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
         assert_eq!(reference_sequence.name(), "sq1");
         assert_eq!(reference_sequence.len(), 13);
 
-        let reference_sequence_id = bam::record::ReferenceSequenceId::from(-1);
+        let reference_sequence_id = None;
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());
 
-        let reference_sequence_id = bam::record::ReferenceSequenceId::from(5);
+        let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(5)?);
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());

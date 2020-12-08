@@ -17,9 +17,9 @@ flate2 = "1.0.14"
 git-testament = "0.1.6"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
 log = "0.4.5"
-noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "e1714d9234f3435201bee56d13e48a73f86d1673" }
-noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "e1714d9234f3435201bee56d13e48a73f86d1673" }
-noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "e1714d9234f3435201bee56d13e48a73f86d1673" }
-noodles-sam = { git = "https://github.com/zaeleus/noodles.git", rev = "e1714d9234f3435201bee56d13e48a73f86d1673" }
+noodles = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
+noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
+noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
+noodles-sam = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
 num_cpus = "1.12.0"
 tokio = { version = "0.3.0", features = ["rt-multi-thread"] }

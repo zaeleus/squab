@@ -244,7 +244,7 @@ where
 
     let reference_sequence_len = reference_sequences
         .get(&reference_sequence_name)
-        .map(|rs| rs.len() as u64)
+        .map(|rs| rs.len())
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -284,7 +284,7 @@ where
 
     let reference_sequence_len = reference_sequences
         .get(&reference_sequence_name)
-        .map(|rs| rs.len() as u64)
+        .map(|rs| rs.len())
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
