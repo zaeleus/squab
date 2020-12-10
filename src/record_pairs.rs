@@ -144,3 +144,99 @@ impl<'a> Iterator for Singletons<'a> {
         self.drain.next().map(|(_, r)| r)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use noodles_sam as sam;
+
+    use super::*;
+
+    fn build_record_pair() -> Result<(bam::Record, bam::Record), Box<dyn std::error::Error>> {
+        use sam::record::{Flags, Position, ReadName, ReferenceSequenceName};
+
+        let read_name: ReadName = "r0".parse()?;
+        let reference_sequence_name: ReferenceSequenceName = "sq0".parse()?;
+        let position = Position::try_from(8)?;
+        let mate_reference_sequence_name: ReferenceSequenceName = "sq1".parse()?;
+        let mate_position = Position::try_from(13)?;
+
+        let reference_sequences = vec![
+            (
+                String::from("sq0"),
+                sam::header::ReferenceSequence::new(String::from("sq0"), 8),
+            ),
+            (
+                String::from("sq1"),
+                sam::header::ReferenceSequence::new(String::from("sq1"), 13),
+            ),
+        ]
+        .into_iter()
+        .collect();
+
+        let s1 = sam::Record::builder()
+            .set_read_name(read_name.clone())
+            .set_flags(Flags::PAIRED | Flags::READ_1)
+            .set_reference_sequence_name(reference_sequence_name.clone())
+            .set_position(position)
+            .set_mate_reference_sequence_name(mate_reference_sequence_name.clone())
+            .set_mate_position(mate_position)
+            .set_template_length(144)
+            .build();
+
+        let r1 = bam::Record::try_from_sam_record(&reference_sequences, &s1)?;
+
+        let s2 = sam::Record::builder()
+            .set_read_name(read_name)
+            .set_flags(Flags::PAIRED | Flags::READ_2)
+            .set_reference_sequence_name(mate_reference_sequence_name)
+            .set_position(mate_position)
+            .set_mate_reference_sequence_name(reference_sequence_name)
+            .set_mate_position(position)
+            .set_template_length(-144)
+            .build();
+
+        let r2 = bam::Record::try_from_sam_record(&reference_sequences, &s2)?;
+
+        Ok((r1, r2))
+    }
+
+    #[test]
+    fn test_key() -> Result<(), Box<dyn std::error::Error>> {
+        let (r1, _) = build_record_pair()?;
+
+        let actual = key(&r1)?;
+        let expected = (
+            b"r0".to_vec(),
+            PairPosition::First,
+            Some(0),
+            Some(8),
+            Some(1),
+            Some(13),
+            144,
+        );
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_mate_key() -> Result<(), Box<dyn std::error::Error>> {
+        let (r1, _) = build_record_pair()?;
+
+        let actual = mate_key(&r1)?;
+        let expected = (
+            b"r0".to_vec(),
+            PairPosition::Second,
+            Some(1),
+            Some(13),
+            Some(0),
+            Some(8),
+            -144,
+        );
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+}
