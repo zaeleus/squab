@@ -109,7 +109,8 @@ fn key(record: &bam::Record) -> io::Result<RecordKey> {
             .read_name()
             .map(|s| s.to_bytes().to_vec())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        PairPosition::try_from(record).unwrap(),
+        PairPosition::try_from(record)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id().map(i32::from),
         record.position().map(i32::from),
         record.mate_reference_sequence_id().map(i32::from),
@@ -124,7 +125,9 @@ fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
             .read_name()
             .map(|s| s.to_bytes().to_vec())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        PairPosition::try_from(record).map(|p| p.mate()).unwrap(),
+        PairPosition::try_from(record)
+            .map(|p| p.mate())
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.mate_reference_sequence_id().map(i32::from),
         record.mate_position().map(i32::from),
         record.reference_sequence_id().map(i32::from),
