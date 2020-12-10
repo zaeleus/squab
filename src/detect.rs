@@ -52,10 +52,6 @@ impl TryFrom<gff::record::Strand> for Strand {
     }
 }
 
-fn invalid_record_pair(_: ()) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, "invalid record pair")
-}
-
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<u64, Entry>,
@@ -69,7 +65,8 @@ fn count_paired_end_record(
     let reference_len = record.cigar().reference_len()? as u64;
     let end = start + reference_len - 1;
 
-    let pair_position = PairPosition::try_from(record).map_err(invalid_record_pair)?;
+    let pair_position = PairPosition::try_from(record)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     let record_strand = Strand::from(record.flags());
 
     for entry in tree.find(start..=end) {

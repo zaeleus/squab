@@ -208,12 +208,7 @@ where
                 StrandSpecification::Reverse => flags.is_reverse_complemented(),
                 _ => !flags.is_reverse_complemented(),
             },
-            Err(_) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "record is neither read 1 nor 2",
-                ))
-            }
+            Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
         };
 
         let intervals = MatchIntervals::new(&cigar, start);

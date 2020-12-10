@@ -1,4 +1,4 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom, error, fmt};
 
 use noodles_bam as bam;
 use noodles_sam as sam;
@@ -19,15 +19,26 @@ impl PairPosition {
 }
 
 impl<'a> TryFrom<&'a bam::Record> for PairPosition {
-    type Error = ();
+    type Error = TryFromFlagsError;
 
     fn try_from(record: &bam::Record) -> Result<Self, Self::Error> {
         Self::try_from(record.flags())
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TryFromFlagsError;
+
+impl error::Error for TryFromFlagsError {}
+
+impl fmt::Display for TryFromFlagsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("neither read 1 nor read 2 flag is set")
+    }
+}
+
 impl TryFrom<sam::record::Flags> for PairPosition {
-    type Error = ();
+    type Error = TryFromFlagsError;
 
     fn try_from(flags: sam::record::Flags) -> Result<Self, Self::Error> {
         if flags.is_read_1() {
@@ -35,7 +46,7 @@ impl TryFrom<sam::record::Flags> for PairPosition {
         } else if flags.is_read_2() {
             Ok(PairPosition::Second)
         } else {
-            Err(())
+            Err(TryFromFlagsError)
         }
     }
 }
@@ -46,7 +57,7 @@ mod tests {
 
     use noodles_sam as sam;
 
-    use super::PairPosition;
+    use super::*;
 
     #[test]
     fn test_mate() {
@@ -65,6 +76,6 @@ mod tests {
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
 
         let flags = Flags::PAIRED;
-        assert!(PairPosition::try_from(flags).is_err());
+        assert_eq!(PairPosition::try_from(flags), Err(TryFromFlagsError));
     }
 }
