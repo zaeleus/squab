@@ -263,10 +263,10 @@ fn find(
     Ok(set)
 }
 
-fn get_reference_sequence<'a>(
-    reference_sequences: &'a ReferenceSequences,
+fn get_reference_sequence(
+    reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
-) -> io::Result<&'a sam::header::ReferenceSequence> {
+) -> io::Result<&sam::header::ReferenceSequence> {
     reference_sequence_id
         .and_then(|id| {
             reference_sequences
