@@ -22,4 +22,4 @@ noodles-bam = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9
 noodles-gff = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
 noodles-sam = { git = "https://github.com/zaeleus/noodles.git", rev = "ae57109d9868e60aaa444315397b51007bf2bf12" }
 num_cpus = "1.12.0"
-tokio = { version = "0.3.0", features = ["rt-multi-thread"] }
+tokio = { version = "1.0.1", features = ["rt-multi-thread"] }
