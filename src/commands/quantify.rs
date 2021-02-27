@@ -9,7 +9,7 @@ use anyhow::Context as AnyhowContext;
 use noodles::Region;
 use noodles_bam::{self as bam, bai};
 use noodles_sam::{self as sam, header::ReferenceSequences};
-use tracing::{info, warn};
+use tracing::{info, info_span, warn};
 
 use crate::{
     build_interval_trees,
@@ -238,6 +238,12 @@ async fn count_single_end_records_by_region<P>(
 where
     P: AsRef<Path>,
 {
+    let span = info_span!(
+        "region",
+        reference_sequence_name = reference_sequence_name.as_str()
+    );
+    let _entered = span.enter();
+
     let mut reader = File::open(bam_src.as_ref())
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
@@ -278,6 +284,12 @@ async fn count_paired_end_records_by_region<P>(
 where
     P: AsRef<Path>,
 {
+    let span = info_span!(
+        "region",
+        reference_sequence_name = reference_sequence_name.as_str()
+    );
+    let _entered = span.enter();
+
     let mut reader = File::open(bam_src.as_ref())
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
