@@ -6,10 +6,10 @@ use std::{
 };
 
 use anyhow::Context as AnyhowContext;
-use log::{info, warn};
 use noodles::Region;
 use noodles_bam::{self as bam, bai};
 use noodles_sam::{self as sam, header::ReferenceSequences};
+use tracing::{info, warn};
 
 use crate::{
     build_interval_trees,

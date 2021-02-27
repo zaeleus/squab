@@ -1,6 +1,5 @@
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
-use log::LevelFilter;
 use noodles_squab::{commands, count::Filter, normalization, StrandSpecificationOption};
 
 git_testament!(TESTAMENT);
@@ -206,11 +205,11 @@ fn main() -> anyhow::Result<()> {
     let matches = match_args_from_env();
 
     if matches.is_present("verbose") {
-        env_logger::Builder::from_default_env()
-            .filter(Some("noodles_squab"), LevelFilter::Info)
+        tracing_subscriber::fmt()
+            .with_env_filter("noodles_squab=info")
             .init();
     } else {
-        env_logger::init();
+        tracing_subscriber::fmt::init();
     }
 
     if let Some(submatches) = matches.subcommand_matches("quantify") {

@@ -8,8 +8,8 @@ use std::{
     io,
 };
 
-use log::warn;
 use noodles_bam as bam;
+use tracing::warn;
 
 type RecordKey = (
     Vec<u8>,

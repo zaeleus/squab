@@ -22,7 +22,7 @@ use std::{
 };
 
 use interval_tree::IntervalTree;
-use log::info;
+use tracing::info;
 
 pub type Entry = (String, noodles_gff::record::Strand);
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
