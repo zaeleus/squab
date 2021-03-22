@@ -114,7 +114,7 @@ where
     let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
-    let ctx = runtime.block_on(async {
+    let mut ctx = runtime.block_on(async {
         match library_layout {
             LibraryLayout::SingleEnd => {
                 let tasks: Vec<_> = reference_sequences
@@ -191,6 +191,10 @@ where
             }
         }
     })?;
+
+    if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_read_count() {
+        ctx.unmapped += unplaced_unmapped_record_count;
+    }
 
     let writer = File::create(results_dst.as_ref())
         .map(BufWriter::new)

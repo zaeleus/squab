@@ -38,7 +38,7 @@ sq2g1\t0
 __no_feature\t5
 __ambiguous\t1
 __too_low_aQual\t1
-__not_aligned\t0
+__not_aligned\t1
 __alignment_not_unique\t1
 ";
 
