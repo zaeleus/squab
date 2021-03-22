@@ -1,4 +1,4 @@
-FROM rust:1.49.0-buster as builder
+FROM rust:1.50.0-buster as builder
 
 WORKDIR /tmp/noodles-squab/
 
