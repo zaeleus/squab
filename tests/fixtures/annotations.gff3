@@ -1,0 +1,25 @@
+##gff-version 3
+# 00000000011111111112222222222333
+# 12345678901234567890123456789012
+# >sq0e0   >          >sq0e1   >
+# >sq0g0                       >
+sq0	.	exon	1	10	.	+	.	ID=sq0e0;gene_id=sq0g0;gene_name=ndls-sq0g0
+sq0	.	exon	21	30	.	+	.	ID=sq0e1;gene_id=sq0g0;gene_name=ndls-sq0g0
+sq0	.	gene	1	30	.	+	.	ID=sq0g0;gene_id=sq0g0;gene_name=ndls-sq0g0
+# 00000000011111111112222222222333
+# 12345678901234567890123456789012
+# <sq1e0   <          <sq1e1   <
+# <sq1g0                       <
+sq1	.	exon	1	10	.	-	.	ID=sq1e0;gene_id=sq1g0;gene_name=ndls-sq1g0
+sq1	.	exon	21	30	.	-	.	ID=sq1e1;gene_id=sq1g0;gene_name=ndls-sq1g0
+sq1	.	gene	1	30	.	-	.	ID=sq1g0;gene_id=sq1g0;gene_name=ndls-sq1g0
+# 00000000011111111112222222222333
+# 12345678901234567890123456789012
+# >sq2e0   >
+# >sq2g0   >
+#      >sq2e1   >
+#      >sq2g1   >
+sq2	.	exon	1	10	.	+	.	ID=sq2e0;gene_id=sq2g0;gene_name=ndls-sq2g0
+sq2	.	gene	1	10	.	+	.	ID=sq2g0;gene_id=sq2g0;gene_name=ndls-sq2g0
+sq2	.	exon	6	15	.	+	.	ID=sq2e1;gene_id=sq2g1;gene_name=ndls-sq2g1
+sq2	.	gene	6	15	.	+	.	ID=sq2g1;gene_id=sq2g1;gene_name=ndls-sq2g1

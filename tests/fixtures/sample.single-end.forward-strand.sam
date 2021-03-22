@@ -1,0 +1,20 @@
+@HD	VN:1.6	SO:coordinate
+@SQ	SN:sq0	LN:32
+@SQ	SN:sq1	LN:32
+@SQ	SN:sq2	LN:32
+@CO	single end, forward strand example
+r00	0	sq0	1	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq0g0")
+r01	0	sq0	6	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq0g0")
+r02	0	sq0	11	255	5M	*	0	0	*	*	CO:Z:Event::NoFeature
+r03	0	sq0	16	255	5M	*	0	0	*	*	CO:Z:Event::NoFeature
+r04	0	sq0	21	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq0g0")
+r05	0	sq0	26	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq0g0")
+r06	0	sq0	31	255	5M	*	0	0	*	*	CO:Z:Event::NoFeature
+r07	0	sq1	8	255	5M	*	0	0	*	*	CO:Z:Event::NoFeature
+r08	16	sq1	8	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq1g0")
+r09	0	sq1	18	255	5M	*	0	0	*	*	CO:Z:Event::NoFeature
+r10	16	sq1	18	255	5M	*	0	0	*	*	CO:Z:Event::Hit("sq1g0")
+r11	0	sq2	6	255	5M	*	0	0	*	*	CO:Z:Event::Ambiguous
+r12	0	sq2	11	0	5M	*	0	0	*	*	CO:Z:Event::LowQuality
+r13	0	sq2	21	0	5M	*	0	0	*	*	CO:Z:Event::Nonunique	NH:i:2
+r14	4	*	0	0	*	*	0	0	*	*	CO:Z:Event::Unmapped
