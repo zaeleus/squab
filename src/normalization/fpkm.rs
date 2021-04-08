@@ -35,7 +35,7 @@ fn calculate_fpkm(count: u64, len: u64, counts_sum: u64) -> f64 {
 mod tests {
     use crate::Feature;
 
-    use noodles_gff as gff;
+    use noodles::gff;
 
     use super::*;
 

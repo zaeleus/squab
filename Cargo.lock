@@ -221,41 +221,55 @@ dependencies = [
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=6902ca810a844efd9f7e9845a79b31b14d4c7b21#6902ca810a844efd9f7e9845a79b31b14d4c7b21"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
 dependencies = [
+ "noodles-bam",
+ "noodles-core",
+ "noodles-gff",
  "noodles-sam",
 ]
 
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=6902ca810a844efd9f7e9845a79b31b14d4c7b21#6902ca810a844efd9f7e9845a79b31b14d4c7b21"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
 dependencies = [
  "bit-vec",
  "byteorder",
- "noodles",
  "noodles-bgzf",
+ "noodles-core",
  "noodles-sam",
 ]
 
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=6902ca810a844efd9f7e9845a79b31b14d4c7b21#6902ca810a844efd9f7e9845a79b31b14d4c7b21"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
 dependencies = [
  "byteorder",
  "flate2",
 ]
 
 [[package]]
+name = "noodles-core"
+version = "0.1.0"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
+dependencies = [
+ "noodles-sam",
+]
+
+[[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=6902ca810a844efd9f7e9845a79b31b14d4c7b21#6902ca810a844efd9f7e9845a79b31b14d4c7b21"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
+dependencies = [
+ "percent-encoding",
+]
 
 [[package]]
 name = "noodles-sam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=6902ca810a844efd9f7e9845a79b31b14d4c7b21#6902ca810a844efd9f7e9845a79b31b14d4c7b21"
+source = "git+https://github.com/zaeleus/noodles.git?rev=bd7c390468bfe5957c15002cb55ce82216ee4336#bd7c390468bfe5957c15002cb55ce82216ee4336"
 dependencies = [
  "bitflags",
  "indexmap",
@@ -272,9 +286,6 @@ dependencies = [
  "git-testament",
  "interval-tree",
  "noodles",
- "noodles-bam",
- "noodles-gff",
- "noodles-sam",
  "num_cpus",
  "tokio",
  "tracing",
@@ -315,6 +326,12 @@ name = "once_cell"
 version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af8b08b04175473088b46763e51ee54da5f9a164bc162f615b91bc179dbf15a3"
+
+[[package]]
+name = "percent-encoding"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "pin-project-lite"

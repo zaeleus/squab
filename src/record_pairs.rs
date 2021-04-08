@@ -8,7 +8,7 @@ use std::{
     io,
 };
 
-use noodles_bam as bam;
+use noodles::bam;
 use tracing::warn;
 
 type RecordKey = (
@@ -150,13 +150,14 @@ impl<'a> Iterator for Singletons<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles_sam as sam;
+    use noodles::sam::{
+        self,
+        record::{Flags, Position, ReadName, ReferenceSequenceName},
+    };
 
     use super::*;
 
     fn build_record_pair() -> Result<(bam::Record, bam::Record), Box<dyn std::error::Error>> {
-        use sam::record::{Flags, Position, ReadName, ReferenceSequenceName};
-
         let read_name: ReadName = "r0".parse()?;
         let reference_sequence_name: ReferenceSequenceName = "sq0".parse()?;
         let position = Position::try_from(8)?;

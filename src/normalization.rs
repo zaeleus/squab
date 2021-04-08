@@ -76,7 +76,7 @@ fn merge_features(features: &[Feature]) -> Vec<Feature> {
 mod tests {
     use crate::Feature;
 
-    use noodles_gff as gff;
+    use noodles::gff;
 
     use super::*;
 

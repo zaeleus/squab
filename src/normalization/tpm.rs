@@ -38,7 +38,7 @@ fn calculate_tpm(cpb: f64, cpbs_sum: f64) -> f64 {
 mod tests {
     use crate::Feature;
 
-    use noodles_gff as gff;
+    use noodles::gff;
 
     use super::*;
 

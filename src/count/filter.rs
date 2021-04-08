@@ -1,7 +1,6 @@
 use std::io;
 
-use noodles_bam as bam;
-use noodles_sam as sam;
+use noodles::{bam, sam};
 
 use super::{context::Event, Context};
 

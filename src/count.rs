@@ -8,9 +8,10 @@ pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer}
 use std::{collections::HashSet, convert::TryFrom, io};
 
 use interval_tree::IntervalTree;
-use noodles_bam as bam;
-use noodles_gff as gff;
-use noodles_sam::{self as sam, header::ReferenceSequences};
+use noodles::{
+    bam, gff,
+    sam::{self, header::ReferenceSequences},
+};
 
 use crate::{Entry, Features, MatchIntervals, PairPosition, RecordPairs, StrandSpecification};
 

@@ -1,9 +1,10 @@
 use std::{convert::TryFrom, fs::File, io, path::Path};
 
 use interval_tree::IntervalTree;
-use noodles_bam as bam;
-use noodles_gff as gff;
-use noodles_sam::{self as sam, header::ReferenceSequences};
+use noodles::{
+    bam, gff,
+    sam::{self, header::ReferenceSequences},
+};
 
 use crate::{count::get_tree, Context, Entry, Features, PairPosition, StrandSpecification};
 

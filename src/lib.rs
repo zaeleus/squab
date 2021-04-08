@@ -24,7 +24,7 @@ use std::{
 use interval_tree::IntervalTree;
 use tracing::info;
 
-pub type Entry = (String, noodles_gff::record::Strand);
+pub type Entry = (String, noodles::gff::record::Strand);
 pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -35,7 +35,7 @@ pub enum StrandSpecification {
 }
 
 pub fn read_features<R>(
-    reader: &mut noodles_gff::Reader<R>,
+    reader: &mut noodles::gff::Reader<R>,
     feature_type: &str,
     feature_id: &str,
 ) -> io::Result<HashMap<String, Vec<Feature>>>
@@ -123,14 +123,14 @@ mod tests {
 
     #[test]
     fn test_read_features() -> io::Result<()> {
-        use noodles_gff::record::Strand;
+        use noodles::gff::record::Strand;
 
         let data = b"##gff-version 3
 sq0\t.\texon\t1\t10\t.\t+\t.\tID=exon0;gene_id=gene0;gene_name=NDLS_gene0
 sq0\t.\texon\t21\t30\t.\t+\t.\tID=exon1;gene_id=gene0;gene_name=NDLS_gene0
 sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 ";
-        let mut reader = noodles_gff::Reader::new(&data[..]);
+        let mut reader = noodles::gff::Reader::new(&data[..]);
 
         let features = read_features(&mut reader, "exon", "gene_id")?;
 

@@ -1,7 +1,6 @@
 use std::{convert::TryFrom, error, fmt};
 
-use noodles_bam as bam;
-use noodles_sam as sam;
+use noodles::{bam, sam};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -54,8 +53,6 @@ impl TryFrom<sam::record::Flags> for PairPosition {
 #[cfg(test)]
 mod tests {
     use std::convert::TryFrom;
-
-    use noodles_sam as sam;
 
     use super::*;
 

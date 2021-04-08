@@ -1,7 +1,9 @@
 use std::{io, ops::RangeInclusive};
 
-use noodles_bam::{self as bam, record::cigar};
-use noodles_sam as sam;
+use noodles::{
+    bam::{self, record::cigar},
+    sam,
+};
 
 pub struct MatchIntervals<'a> {
     ops: cigar::Ops<'a>,
@@ -50,8 +52,7 @@ impl<'a> Iterator for MatchIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles_bam::{self as bam, record::cigar};
-    use noodles_sam::record::cigar::op;
+    use noodles::{bam::record::cigar, sam::record::cigar::op};
 
     use super::*;
 

@@ -6,9 +6,11 @@ use std::{
 };
 
 use anyhow::Context as AnyhowContext;
-use noodles::Region;
-use noodles_bam::{self as bam, bai};
-use noodles_sam::{self as sam, header::ReferenceSequences};
+use noodles::{
+    bam::{self, bai},
+    core::Region,
+    sam::{self, header::ReferenceSequences},
+};
 use tracing::{info, info_span, warn};
 
 use crate::{

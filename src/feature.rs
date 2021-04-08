@@ -1,4 +1,4 @@
-use noodles_gff as gff;
+use noodles::gff;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Feature {
