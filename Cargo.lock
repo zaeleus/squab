@@ -230,7 +230,7 @@ checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 [[package]]
 name = "noodles"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "noodles-bam",
  "noodles-core",
@@ -241,7 +241,7 @@ dependencies = [
 [[package]]
 name = "noodles-bam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "bit-vec",
  "byteorder",
@@ -253,7 +253,7 @@ dependencies = [
 [[package]]
 name = "noodles-bgzf"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "byteorder",
  "flate2",
@@ -262,7 +262,7 @@ dependencies = [
 [[package]]
 name = "noodles-core"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "noodles-sam",
 ]
@@ -270,7 +270,7 @@ dependencies = [
 [[package]]
 name = "noodles-gff"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "percent-encoding",
 ]
@@ -278,7 +278,7 @@ dependencies = [
 [[package]]
 name = "noodles-sam"
 version = "0.1.0"
-source = "git+https://github.com/zaeleus/noodles.git?rev=df11ceaf450ea3bc8d56bd66a9eab43b9443152b#df11ceaf450ea3bc8d56bd66a9eab43b9443152b"
+source = "git+https://github.com/zaeleus/noodles.git?rev=2e44ba27092fead1c309c48f71be4ad1d729e3cf#2e44ba27092fead1c309c48f71be4ad1d729e3cf"
 dependencies = [
  "bitflags",
  "indexmap",
