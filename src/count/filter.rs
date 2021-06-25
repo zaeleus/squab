@@ -111,7 +111,6 @@ impl Filter {
 }
 
 fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
-    use bam::record::data::field::Value;
     use sam::record::data::field::Tag;
 
     let data = record.data();
@@ -120,10 +119,15 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
         let field = result?;
 
         if field.tag() == &Tag::AlignmentHitCount {
-            match field.value() {
-                Value::Int8(n) => return Ok(*n > 1),
-                Value::UInt8(n) => return Ok(*n > 1),
-                _ => {}
+            let value = field.value();
+
+            if let Some(hits) = value.as_int() {
+                return Ok(hits > 1);
+            } else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("expected integer, got {:?}", value.ty()),
+                ));
             }
         }
     }
