@@ -314,30 +314,21 @@ pub fn get_tree<'t>(
 
 #[cfg(test)]
 mod tests {
+    use sam::header::ReferenceSequence;
+
     use super::*;
 
-    fn build_reference_sequences() -> ReferenceSequences {
-        vec![
-            (
-                String::from("sq0"),
-                sam::header::ReferenceSequence::new(String::from("sq0"), 8),
-            ),
-            (
-                String::from("sq1"),
-                sam::header::ReferenceSequence::new(String::from("sq1"), 13),
-            ),
-            (
-                String::from("sq2"),
-                sam::header::ReferenceSequence::new(String::from("sq2"), 21),
-            ),
-        ]
-        .into_iter()
-        .collect()
+    fn build_reference_sequences(
+    ) -> Result<ReferenceSequences, sam::header::reference_sequence::NewError> {
+        vec![("sq0", 8), ("sq1", 13), ("sq2", 21)]
+            .into_iter()
+            .map(|(name, len)| ReferenceSequence::new(name, len).map(|rs| (name.into(), rs)))
+            .collect()
     }
 
     #[test]
     fn test_get_reference() -> Result<(), Box<dyn std::error::Error>> {
-        let reference_sequences = build_reference_sequences();
+        let reference_sequences = build_reference_sequences()?;
 
         let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(1)?);
         let reference_sequence =

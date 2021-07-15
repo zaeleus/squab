@@ -254,17 +254,7 @@ where
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let reference_sequence_len = reference_sequences
-        .get(&reference_sequence_name)
-        .map(|rs| rs.len())
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "invalid reference sequence name",
-            )
-        })?;
-
-    let region = Region::mapped(reference_sequence_name, 1, reference_sequence_len);
+    let region = Region::mapped(reference_sequence_name, ..);
     let query = reader.query(&reference_sequences, &index, &region)?;
 
     let ctx = count_single_end_records(
@@ -300,17 +290,7 @@ where
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let reference_sequence_len = reference_sequences
-        .get(&reference_sequence_name)
-        .map(|rs| rs.len())
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "invalid reference sequence name",
-            )
-        })?;
-
-    let region = Region::mapped(reference_sequence_name, 1, reference_sequence_len);
+    let region = Region::mapped(reference_sequence_name, ..);
     let query = reader.query(&reference_sequences, &index, &region)?;
 
     let (ctx, mut pairs) = count_paired_end_records(

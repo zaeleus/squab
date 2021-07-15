@@ -152,6 +152,7 @@ impl<'a> Iterator for Singletons<'a> {
 mod tests {
     use noodles::sam::{
         self,
+        header::ReferenceSequence,
         record::{Flags, Position, ReadName, ReferenceSequenceName},
     };
 
@@ -164,18 +165,11 @@ mod tests {
         let mate_reference_sequence_name: ReferenceSequenceName = "sq1".parse()?;
         let mate_position = Position::try_from(13)?;
 
-        let reference_sequences = vec![
-            (
-                String::from("sq0"),
-                sam::header::ReferenceSequence::new(String::from("sq0"), 8),
-            ),
-            (
-                String::from("sq1"),
-                sam::header::ReferenceSequence::new(String::from("sq1"), 13),
-            ),
-        ]
-        .into_iter()
-        .collect();
+        let reference_sequences = vec![("sq0", 8), ("sq1", 13)]
+            .into_iter()
+            .map(|(name, len)| ReferenceSequence::new(name, len).map(|rs| (name.into(), rs)))
+            .into_iter()
+            .collect::<Result<_, _>>()?;
 
         let s1 = sam::Record::builder()
             .set_read_name(read_name.clone())
@@ -185,7 +179,7 @@ mod tests {
             .set_mate_reference_sequence_name(mate_reference_sequence_name.clone())
             .set_mate_position(mate_position)
             .set_template_length(144)
-            .build();
+            .build()?;
 
         let r1 = bam::Record::try_from_sam_record(&reference_sequences, &s1)?;
 
@@ -197,7 +191,7 @@ mod tests {
             .set_mate_reference_sequence_name(reference_sequence_name)
             .set_mate_position(position)
             .set_template_length(-144)
-            .build();
+            .build()?;
 
         let r2 = bam::Record::try_from_sam_record(&reference_sequences, &s2)?;
 
