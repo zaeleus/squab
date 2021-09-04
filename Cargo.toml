@@ -15,7 +15,7 @@ clap = "2.32.0"
 flate2 = "1.0.14"
 git-testament = "0.2.0"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
-noodles = { version = "0.1.0", features = ["bam", "core", "gff", "sam"] }
+noodles = { version = "0.7.0", features = ["bam", "core", "csi", "gff", "sam"] }
 num_cpus = "1.12.0"
 tokio = { version = "1.0.1", features = ["rt-multi-thread"] }
 tracing = "0.1.25"

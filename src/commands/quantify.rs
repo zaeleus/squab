@@ -9,6 +9,7 @@ use anyhow::Context as AnyhowContext;
 use noodles::{
     bam::{self, bai},
     core::Region,
+    csi::BinningIndex,
     sam::{self, header::ReferenceSequences},
 };
 use tracing::{info, info_span, warn};
@@ -194,7 +195,7 @@ where
         }
     })?;
 
-    if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_read_count() {
+    if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
         ctx.unmapped += unplaced_unmapped_record_count;
     }
 
@@ -255,7 +256,7 @@ where
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let region = Region::mapped(reference_sequence_name, ..);
-    let query = reader.query(&reference_sequences, &index, &region)?;
+    let query = reader.query(&reference_sequences, &*index, &region)?;
 
     let ctx = count_single_end_records(
         query,
@@ -291,7 +292,7 @@ where
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let region = Region::mapped(reference_sequence_name, ..);
-    let query = reader.query(&reference_sequences, &index, &region)?;
+    let query = reader.query(&reference_sequences, &*index, &region)?;
 
     let (ctx, mut pairs) = count_paired_end_records(
         query,
