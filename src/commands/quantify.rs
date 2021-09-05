@@ -68,7 +68,7 @@ where
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, &reference_sequences, &features)?;
+        detect_specification(&bam_src, &reference_sequences, &features).await?;
 
     match library_layout {
         LibraryLayout::SingleEnd => info!("library layout: single end"),

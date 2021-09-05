@@ -1,10 +1,12 @@
-use std::{convert::TryFrom, fs::File, io, path::Path};
+use std::{convert::TryFrom, path::Path};
 
+use futures::TryStreamExt;
 use interval_tree::IntervalTree;
 use noodles::{
     bam, gff,
     sam::{self, header::ReferenceSequences},
 };
+use tokio::{fs::File, io};
 
 use crate::{count::get_tree, Context, Entry, Features, PairPosition, StrandSpecification};
 
@@ -137,7 +139,7 @@ fn count_single_end_record(
     Ok(())
 }
 
-pub fn detect_specification<P>(
+pub async fn detect_specification<P>(
     src: P,
     reference_sequences: &ReferenceSequences,
     features: &Features,
@@ -145,16 +147,21 @@ pub fn detect_specification<P>(
 where
     P: AsRef<Path>,
 {
-    let file = File::open(src)?;
-    let mut reader = bam::Reader::new(file);
-    reader.read_header()?;
-    reader.read_reference_sequences()?;
+    let mut reader = File::open(src).await.map(bam::AsyncReader::new)?;
+    reader.read_header().await?;
+    reader.read_reference_sequences().await?;
 
     let mut counts = Counts::default();
     let mut _ctx = Context::default();
 
-    for result in reader.records().take(MAX_RECORDS) {
-        let record = result?;
+    let mut records = reader.records();
+    let mut n = 0;
+
+    while let Some(record) = records.try_next().await? {
+        if n >= MAX_RECORDS {
+            break;
+        }
+
         let flags = record.flags();
 
         if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
@@ -177,6 +184,8 @@ where
         } else {
             count_single_end_record(&mut counts, tree, &record)?;
         }
+
+        n += 1;
     }
 
     let library_layout = if counts.paired > 0 {
