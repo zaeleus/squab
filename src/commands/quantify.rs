@@ -56,8 +56,9 @@ where
         .context("Could not parse BAM header")?;
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index =
-        bai::read(&bai_src).with_context(|| format!("Could not read {}", bai_src.display()))?;
+    let index = bai::r#async::read(&bai_src)
+        .await
+        .with_context(|| format!("Could not read {}", bai_src.display()))?;
 
     let reference_sequences = header.reference_sequences().clone();
 
