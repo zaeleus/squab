@@ -26,14 +26,13 @@ use crate::{
 };
 
 #[allow(clippy::too_many_arguments)]
-pub fn quantify<P, Q, R>(
+pub async fn quantify<P, Q, R>(
     bam_src: P,
     annotations_src: Q,
     feature_type: &str,
     id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
-    threads: usize,
     normalize: Option<normalization::Method>,
     results_dst: R,
 ) -> anyhow::Result<()>
@@ -107,93 +106,85 @@ where
 
     info!("counting features");
 
-    info!("using {} thread(s)", threads);
-
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(threads)
-        .build()?;
-
     let index = Arc::new(index);
     let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
-    let mut ctx = runtime.block_on(async {
-        match library_layout {
-            LibraryLayout::SingleEnd => {
-                let tasks: Vec<_> = reference_sequences
-                    .values()
-                    .map(|reference_sequence| {
-                        tokio::spawn(count_single_end_records_by_region(
-                            bam_src.as_ref().to_path_buf(),
-                            index.clone(),
-                            reference_sequences.clone(),
-                            reference_sequence.name().into(),
-                            features.clone(),
-                            filter.clone(),
-                            strand_specification,
-                        ))
-                    })
-                    .collect();
+    let mut ctx = match library_layout {
+        LibraryLayout::SingleEnd => {
+            let tasks: Vec<_> = reference_sequences
+                .values()
+                .map(|reference_sequence| {
+                    tokio::spawn(count_single_end_records_by_region(
+                        bam_src.as_ref().to_path_buf(),
+                        index.clone(),
+                        reference_sequences.clone(),
+                        reference_sequence.name().into(),
+                        features.clone(),
+                        filter.clone(),
+                        strand_specification,
+                    ))
+                })
+                .collect();
 
-                let mut ctx = Context::default();
+            let mut ctx = Context::default();
 
-                for task in tasks {
-                    let region_ctx = task.await??;
-                    ctx.add(&region_ctx);
-                }
-
-                Ok::<Context, anyhow::Error>(ctx)
+            for task in tasks {
+                let region_ctx = task.await??;
+                ctx.add(&region_ctx);
             }
-            LibraryLayout::PairedEnd => {
-                let tasks: Vec<_> = reference_sequences
-                    .values()
-                    .map(|reference_sequence| {
-                        tokio::spawn(count_paired_end_records_by_region(
-                            bam_src.as_ref().to_path_buf(),
-                            index.clone(),
-                            reference_sequences.clone(),
-                            reference_sequence.name().into(),
-                            features.clone(),
-                            filter.clone(),
-                            strand_specification,
-                        ))
-                    })
-                    .collect();
 
-                let mut ctx1 = Context::default();
-                let mut pairs = Vec::with_capacity(reference_sequences.len());
-
-                for task in tasks {
-                    let (region_ctx, region_pairs) = task.await??;
-                    ctx1.add(&region_ctx);
-                    pairs.push(region_pairs);
-                }
-
-                let records = pairs.into_iter().flat_map(|r| r.into_iter()).map(Ok);
-                let (ctx2, mut pairs) = count_paired_end_records(
-                    records,
-                    &features,
-                    &reference_sequences,
-                    &filter,
-                    strand_specification,
-                )?;
-
-                let singletons = pairs.singletons().map(Ok);
-                let ctx3 = count_paired_end_record_singletons(
-                    singletons,
-                    &features,
-                    &reference_sequences,
-                    &filter,
-                    strand_specification,
-                )?;
-
-                ctx1.add(&ctx2);
-                ctx1.add(&ctx3);
-
-                Ok::<Context, anyhow::Error>(ctx1)
-            }
+            ctx
         }
-    })?;
+        LibraryLayout::PairedEnd => {
+            let tasks: Vec<_> = reference_sequences
+                .values()
+                .map(|reference_sequence| {
+                    tokio::spawn(count_paired_end_records_by_region(
+                        bam_src.as_ref().to_path_buf(),
+                        index.clone(),
+                        reference_sequences.clone(),
+                        reference_sequence.name().into(),
+                        features.clone(),
+                        filter.clone(),
+                        strand_specification,
+                    ))
+                })
+                .collect();
+
+            let mut ctx1 = Context::default();
+            let mut pairs = Vec::with_capacity(reference_sequences.len());
+
+            for task in tasks {
+                let (region_ctx, region_pairs) = task.await??;
+                ctx1.add(&region_ctx);
+                pairs.push(region_pairs);
+            }
+
+            let records = pairs.into_iter().flat_map(|r| r.into_iter()).map(Ok);
+            let (ctx2, mut pairs) = count_paired_end_records(
+                records,
+                &features,
+                &reference_sequences,
+                &filter,
+                strand_specification,
+            )?;
+
+            let singletons = pairs.singletons().map(Ok);
+            let ctx3 = count_paired_end_record_singletons(
+                singletons,
+                &features,
+                &reference_sequences,
+                &filter,
+                strand_specification,
+            )?;
+
+            ctx1.add(&ctx2);
+            ctx1.add(&ctx3);
+
+            ctx1
+        }
+    };
 
     if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
         ctx.unmapped += unplaced_unmapped_record_count;

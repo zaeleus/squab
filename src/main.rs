@@ -1,6 +1,7 @@
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use noodles_squab::{commands, count::Filter, normalization, StrandSpecificationOption};
+use tracing::info;
 
 git_testament!(TESTAMENT);
 
@@ -176,17 +177,22 @@ fn quantify(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
         with_nonunique_records,
     );
 
-    commands::quantify(
+    info!("using {} thread(s)", threads);
+
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(threads)
+        .build()?;
+
+    runtime.block_on(commands::quantify(
         bam_src,
         annotations_src,
         feature_type,
         id,
         filter,
         strand_specification_option,
-        threads,
         normalize,
         results_dst,
-    )
+    ))
 }
 
 fn normalize(matches: &ArgMatches<'_>) -> anyhow::Result<()> {

@@ -2,13 +2,12 @@ use std::{env, fs};
 
 use noodles_squab::{commands::quantify, count::Filter, StrandSpecificationOption};
 
-#[test]
-fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
+#[tokio::test]
+async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let feature_type = "exon";
     let id = "gene_id";
     let filter = Filter::new(10, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
-    let threads = 1;
     let normalize = None;
 
     let working_prefix = env::temp_dir();
@@ -23,10 +22,10 @@ fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
         id,
         filter,
         strand_specification_option,
-        threads,
         normalize,
         &results_dst,
-    )?;
+    )
+    .await?;
 
     let actual = fs::read_to_string(results_dst)?;
 
