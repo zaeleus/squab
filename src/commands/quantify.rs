@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufWriter},
+    io::{self, BufWriter, Read},
     path::Path,
     sync::Arc,
 };
@@ -49,11 +49,7 @@ where
         .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header: sam::Header = reader
-        .read_header()?
-        .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-        .context("Could not parse BAM header")?;
+    let header = read_header(&mut reader)?;
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
     let index = bai::r#async::read(&bai_src)
@@ -223,6 +219,24 @@ where
     }
 
     Ok(())
+}
+
+fn read_header<R>(reader: &mut bam::Reader<R>) -> anyhow::Result<sam::Header>
+where
+    R: Read,
+{
+    let mut header: sam::Header = reader
+        .read_header()?
+        .parse()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+        .context("Could not parse BAM header")?;
+
+    if header.reference_sequences().is_empty() {
+        let reference_sequences = reader.read_reference_sequences()?;
+        *header.reference_sequences_mut() = reference_sequences;
+    }
+
+    Ok(header)
 }
 
 async fn count_single_end_records_by_region<P>(
