@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufWriter, Read},
+    io::{self, BufWriter},
     path::Path,
     sync::Arc,
 };
@@ -12,6 +12,7 @@ use noodles::{
     csi::BinningIndex,
     sam::{self, header::ReferenceSequences},
 };
+use tokio::io::AsyncRead;
 use tracing::{info, info_span, warn};
 
 use crate::{
@@ -45,11 +46,12 @@ where
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let mut reader = File::open(bam_src.as_ref())
-        .map(bam::Reader::new)
+    let mut reader = tokio::fs::File::open(bam_src.as_ref())
+        .await
+        .map(bam::AsyncReader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header = read_header(&mut reader)?;
+    let header = read_header(&mut reader).await?;
 
     let bai_src = bam_src.as_ref().with_extension("bam.bai");
     let index = bai::r#async::read(&bai_src)
@@ -221,17 +223,18 @@ where
     Ok(())
 }
 
-fn read_header<R>(reader: &mut bam::Reader<R>) -> anyhow::Result<sam::Header>
+async fn read_header<R>(reader: &mut bam::AsyncReader<R>) -> anyhow::Result<sam::Header>
 where
-    R: Read,
+    R: AsyncRead + Unpin,
 {
     let mut header: sam::Header = reader
-        .read_header()?
+        .read_header()
+        .await?
         .parse()
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         .context("Could not parse BAM header")?;
 
-    let reference_sequences = reader.read_reference_sequences()?;
+    let reference_sequences = reader.read_reference_sequences().await?;
 
     if header.reference_sequences().is_empty() {
         *header.reference_sequences_mut() = reference_sequences;
