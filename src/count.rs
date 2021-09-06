@@ -85,8 +85,9 @@ pub fn count_single_end_record(
     };
 
     let set = find(tree, intervals, strand_specification, is_reverse)?;
+    let event = update_intersections(set);
 
-    update_intersections(ctx, set);
+    ctx.add_event(event);
 
     Ok(())
 }
@@ -165,7 +166,9 @@ where
 
         set.extend(set2.into_iter());
 
-        update_intersections(&mut ctx, set);
+        let event = update_intersections(set);
+
+        ctx.add_event(event);
     }
 
     Ok((ctx, pairs))
@@ -225,8 +228,9 @@ where
         };
 
         let set = find(tree, intervals, strand_specification, is_reverse)?;
+        let event = update_intersections(set);
 
-        update_intersections(&mut ctx, set);
+        ctx.add_event(event);
     }
 
     Ok(ctx)
@@ -282,15 +286,13 @@ fn get_reference_sequence(
         })
 }
 
-fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
+fn update_intersections(mut intersections: HashSet<String>) -> Event {
     if intersections.is_empty() {
-        ctx.add_event(Event::NoFeature);
+        Event::NoFeature
     } else if intersections.len() == 1 {
-        for name in intersections {
-            ctx.add_event(Event::Hit(name));
-        }
-    } else if intersections.len() > 1 {
-        ctx.add_event(Event::Ambiguous);
+        intersections.drain().next().map(Event::Hit).unwrap()
+    } else {
+        Event::Ambiguous
     }
 }
 
