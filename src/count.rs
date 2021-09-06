@@ -31,31 +31,23 @@ where
 
     for result in records {
         let record = result?;
-
-        count_single_end_record(
-            &mut ctx,
-            features,
-            references,
-            filter,
-            strand_specification,
-            &record,
-        )?;
+        let event =
+            count_single_end_record(features, references, filter, strand_specification, &record)?;
+        ctx.add_event(event);
     }
 
     Ok(ctx)
 }
 
 pub fn count_single_end_record(
-    ctx: &mut Context,
     features: &Features,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     record: &bam::Record,
-) -> io::Result<()> {
+) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
-        ctx.add_event(event);
-        return Ok(());
+        return Ok(event);
     }
 
     let cigar = record.cigar();
@@ -79,18 +71,12 @@ pub fn count_single_end_record(
         record.reference_sequence_id(),
     )? {
         Some(t) => t,
-        None => {
-            ctx.add_event(Event::NoFeature);
-            return Ok(());
-        }
+        None => return Ok(Event::NoFeature),
     };
 
     let set = find(tree, intervals, strand_specification, is_reverse)?;
-    let event = update_intersections(set);
 
-    ctx.add_event(event);
-
-    Ok(())
+    Ok(update_intersections(set))
 }
 
 pub fn count_paired_end_records<I>(
