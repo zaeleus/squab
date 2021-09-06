@@ -53,7 +53,8 @@ pub fn count_single_end_record(
     strand_specification: StrandSpecification,
     record: &bam::Record,
 ) -> io::Result<()> {
-    if filter.filter(ctx, record)? {
+    if let Some(event) = filter.filter(record)? {
+        ctx.add_event(event);
         return Ok(());
     }
 
@@ -110,7 +111,8 @@ where
     for pair in &mut pairs {
         let (r1, r2) = pair?;
 
-        if filter.filter_pair(&mut ctx, &r1, &r2)? {
+        if let Some(event) = filter.filter_pair(&r1, &r2)? {
+            ctx.add_event(event);
             continue;
         }
 
@@ -189,7 +191,8 @@ where
     for result in records {
         let record = result?;
 
-        if filter.filter(&mut ctx, &record)? {
+        if let Some(event) = filter.filter(&record)? {
+            ctx.add_event(event);
             continue;
         }
 

@@ -2,7 +2,7 @@ use std::io;
 
 use noodles::{bam, sam};
 
-use super::{context::Event, Context};
+use super::context::Event;
 
 #[derive(Clone)]
 pub struct Filter {
@@ -45,67 +45,56 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, ctx: &mut Context, record: &bam::Record) -> io::Result<bool> {
+    pub fn filter(&self, record: &bam::Record) -> io::Result<Option<Event>> {
         let flags = record.flags();
 
         if flags.is_unmapped() {
-            ctx.add_event(Event::Unmapped);
-            return Ok(true);
+            return Ok(Some(Event::Unmapped));
         }
 
         if (!self.with_secondary_records && flags.is_secondary())
             || (!self.with_supplementary_records && flags.is_supplementary())
         {
-            return Ok(true);
+            return Ok(Some(Event::Skip));
         }
 
         if !self.with_nonunique_records && is_nonunique_record(record)? {
-            ctx.add_event(Event::Nonunique);
-            return Ok(true);
+            return Ok(Some(Event::Nonunique));
         }
 
         if u8::from(record.mapping_quality()) < self.min_mapping_quality {
-            ctx.add_event(Event::LowQuality);
-            return Ok(true);
+            return Ok(Some(Event::LowQuality));
         }
 
-        Ok(false)
+        Ok(None)
     }
 
-    pub fn filter_pair(
-        &self,
-        ctx: &mut Context,
-        r1: &bam::Record,
-        r2: &bam::Record,
-    ) -> io::Result<bool> {
+    pub fn filter_pair(&self, r1: &bam::Record, r2: &bam::Record) -> io::Result<Option<Event>> {
         let f1 = r1.flags();
         let f2 = r2.flags();
 
         if f1.is_unmapped() && f2.is_unmapped() {
-            ctx.add_event(Event::Unmapped);
-            return Ok(true);
+            return Ok(Some(Event::Unmapped));
         }
 
         if (!self.with_secondary_records && (f1.is_secondary() || f2.is_secondary()))
             || (!self.with_supplementary_records
                 && (f1.is_supplementary() || f2.is_supplementary()))
         {
-            return Ok(true);
+            return Ok(Some(Event::Skip));
         }
 
         if !self.with_nonunique_records && (is_nonunique_record(r1)? || is_nonunique_record(r2)?) {
-            ctx.add_event(Event::Nonunique);
-            return Ok(true);
+            return Ok(Some(Event::Nonunique));
         }
 
         if u8::from(r1.mapping_quality()) < self.min_mapping_quality
             || u8::from(r2.mapping_quality()) < self.min_mapping_quality
         {
-            ctx.add_event(Event::LowQuality);
-            return Ok(true);
+            return Ok(Some(Event::LowQuality));
         }
 
-        Ok(false)
+        Ok(None)
     }
 }
 

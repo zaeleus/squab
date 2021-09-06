@@ -39,6 +39,7 @@ impl Context {
             Event::LowQuality => self.low_quality += 1,
             Event::Unmapped => self.unmapped += 1,
             Event::Nonunique => self.nonunique += 1,
+            Event::Skip => {}
         }
     }
 }

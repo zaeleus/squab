@@ -6,4 +6,5 @@ pub enum Event {
     LowQuality,
     Unmapped,
     Nonunique,
+    Skip,
 }
