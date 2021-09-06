@@ -59,7 +59,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if !self.with_nonunique_records && is_nonunique_record(&record)? {
+        if !self.with_nonunique_records && is_nonunique_record(record)? {
             ctx.add_event(Event::Nonunique);
             return Ok(true);
         }
@@ -93,8 +93,7 @@ impl Filter {
             return Ok(true);
         }
 
-        if !self.with_nonunique_records && (is_nonunique_record(&r1)? || is_nonunique_record(&r2)?)
-        {
+        if !self.with_nonunique_records && (is_nonunique_record(r1)? || is_nonunique_record(r2)?) {
             ctx.add_event(Event::Nonunique);
             return Ok(true);
         }
