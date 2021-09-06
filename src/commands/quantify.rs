@@ -231,8 +231,9 @@ where
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         .context("Could not parse BAM header")?;
 
+    let reference_sequences = reader.read_reference_sequences()?;
+
     if header.reference_sequences().is_empty() {
-        let reference_sequences = reader.read_reference_sequences()?;
         *header.reference_sequences_mut() = reference_sequences;
     }
 
