@@ -8,7 +8,7 @@ use noodles::{
 };
 use tokio::{fs::File, io};
 
-use crate::{count::get_tree, Context, Entry, Features, PairPosition, StrandSpecification};
+use crate::{count::get_tree, Entry, Features, PairPosition, StrandSpecification};
 
 const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
@@ -152,7 +152,6 @@ where
     reader.read_reference_sequences().await?;
 
     let mut counts = Counts::default();
-    let mut _ctx = Context::default();
 
     let mut records = reader.records();
     let mut n = 0;
@@ -169,7 +168,6 @@ where
         }
 
         let tree = match get_tree(
-            &mut _ctx,
             features,
             reference_sequences,
             record.reference_sequence_id(),

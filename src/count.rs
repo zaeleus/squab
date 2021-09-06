@@ -73,13 +73,15 @@ pub fn count_single_end_record(
     let intervals = MatchIntervals::new(&cigar, start);
 
     let tree = match get_tree(
-        ctx,
         features,
         reference_sequences,
         record.reference_sequence_id(),
     )? {
         Some(t) => t,
-        None => return Ok(()),
+        None => {
+            ctx.add_event(Event::NoFeature);
+            return Ok(());
+        }
     };
 
     let set = find(tree, intervals, strand_specification, is_reverse)?;
@@ -126,14 +128,12 @@ where
 
         let intervals = MatchIntervals::new(&cigar, start);
 
-        let tree = match get_tree(
-            &mut ctx,
-            features,
-            reference_sequences,
-            r1.reference_sequence_id(),
-        )? {
+        let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
             Some(t) => t,
-            None => continue,
+            None => {
+                ctx.add_event(Event::NoFeature);
+                continue;
+            }
         };
 
         let mut set = find(tree, intervals, strand_specification, is_reverse)?;
@@ -153,14 +153,12 @@ where
 
         let intervals = MatchIntervals::new(&cigar, start);
 
-        let tree = match get_tree(
-            &mut ctx,
-            features,
-            reference_sequences,
-            r2.reference_sequence_id(),
-        )? {
+        let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
             Some(t) => t,
-            None => continue,
+            None => {
+                ctx.add_event(Event::NoFeature);
+                continue;
+            }
         };
 
         let set2 = find(tree, intervals, strand_specification, is_reverse)?;
@@ -215,13 +213,15 @@ where
         let intervals = MatchIntervals::new(&cigar, start);
 
         let tree = match get_tree(
-            &mut ctx,
             features,
             reference_sequences,
             record.reference_sequence_id(),
         )? {
             Some(t) => t,
-            None => continue,
+            None => {
+                ctx.add_event(Event::NoFeature);
+                continue;
+            }
         };
 
         let set = find(tree, intervals, strand_specification, is_reverse)?;
@@ -295,21 +295,13 @@ fn update_intersections(ctx: &mut Context, intersections: HashSet<String>) {
 }
 
 pub fn get_tree<'t>(
-    ctx: &mut Context,
     features: &'t Features,
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
     let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
     let name = reference_sequence.name();
-
-    match features.get(name) {
-        Some(t) => Ok(Some(t)),
-        None => {
-            ctx.add_event(Event::NoFeature);
-            Ok(None)
-        }
-    }
+    Ok(features.get(name))
 }
 
 #[cfg(test)]
