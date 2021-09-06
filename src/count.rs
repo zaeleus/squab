@@ -97,69 +97,80 @@ where
     for pair in &mut pairs {
         let (r1, r2) = pair?;
 
-        if let Some(event) = filter.filter_pair(&r1, &r2)? {
-            ctx.add_event(event);
-            continue;
-        }
-
-        let cigar = r1.cigar();
-        let start = r1
-            .position()
-            .map(i32::from)
-            .map(|n| n as u64)
-            .expect("record cannot be unmapped");
-        let f1 = r1.flags();
-
-        let is_reverse = match strand_specification {
-            StrandSpecification::Reverse => !f1.is_reverse_complemented(),
-            _ => f1.is_reverse_complemented(),
-        };
-
-        let intervals = MatchIntervals::new(&cigar, start);
-
-        let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
-            Some(t) => t,
-            None => {
-                ctx.add_event(Event::NoFeature);
-                continue;
-            }
-        };
-
-        let mut set = find(tree, intervals, strand_specification, is_reverse)?;
-
-        let cigar = r2.cigar();
-        let start = r2
-            .position()
-            .map(i32::from)
-            .map(|n| n as u64)
-            .expect("record cannot be unmapped");
-        let f2 = r2.flags();
-
-        let is_reverse = match strand_specification {
-            StrandSpecification::Reverse => f2.is_reverse_complemented(),
-            _ => !f2.is_reverse_complemented(),
-        };
-
-        let intervals = MatchIntervals::new(&cigar, start);
-
-        let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
-            Some(t) => t,
-            None => {
-                ctx.add_event(Event::NoFeature);
-                continue;
-            }
-        };
-
-        let set2 = find(tree, intervals, strand_specification, is_reverse)?;
-
-        set.extend(set2.into_iter());
-
-        let event = update_intersections(set);
+        let event = count_paired_end_record_pair(
+            features,
+            reference_sequences,
+            filter,
+            strand_specification,
+            &r1,
+            &r2,
+        )?;
 
         ctx.add_event(event);
     }
 
     Ok((ctx, pairs))
+}
+
+pub fn count_paired_end_record_pair(
+    features: &Features,
+    reference_sequences: &ReferenceSequences,
+    filter: &Filter,
+    strand_specification: StrandSpecification,
+    r1: &bam::Record,
+    r2: &bam::Record,
+) -> io::Result<Event> {
+    if let Some(event) = filter.filter_pair(r1, r2)? {
+        return Ok(event);
+    }
+
+    let cigar = r1.cigar();
+    let start = r1
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
+    let f1 = r1.flags();
+
+    let is_reverse = match strand_specification {
+        StrandSpecification::Reverse => !f1.is_reverse_complemented(),
+        _ => f1.is_reverse_complemented(),
+    };
+
+    let intervals = MatchIntervals::new(&cigar, start);
+
+    let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
+        Some(t) => t,
+        None => return Ok(Event::NoFeature),
+    };
+
+    let mut set = find(tree, intervals, strand_specification, is_reverse)?;
+
+    let cigar = r2.cigar();
+    let start = r2
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
+    let f2 = r2.flags();
+
+    let is_reverse = match strand_specification {
+        StrandSpecification::Reverse => f2.is_reverse_complemented(),
+        _ => !f2.is_reverse_complemented(),
+    };
+
+    let intervals = MatchIntervals::new(&cigar, start);
+
+    let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
+        Some(t) => t,
+        None => return Ok(Event::NoFeature),
+    };
+
+    let set2 = find(tree, intervals, strand_specification, is_reverse)?;
+
+    set.extend(set2.into_iter());
+
+    Ok(update_intersections(set))
 }
 
 pub fn count_paired_end_record_singletons<I>(
