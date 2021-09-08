@@ -42,7 +42,9 @@ where
     Q: AsRef<Path>,
     R: AsRef<Path>,
 {
-    let mut gff_reader = crate::gff::open(annotations_src)?;
+    let mut gff_reader = crate::gff::open(annotations_src.as_ref())
+        .with_context(|| format!("Could not open {}", annotations_src.as_ref().display()))?;
+
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
