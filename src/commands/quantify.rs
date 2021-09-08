@@ -111,31 +111,16 @@ where
     let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
-    let mut ctx = match library_layout {
+    let ctx = match library_layout {
         LibraryLayout::SingleEnd => {
-            let tasks: Vec<_> = reference_sequences
-                .values()
-                .map(|reference_sequence| {
-                    tokio::spawn(count_single_end_records_by_region(
-                        bam_src.as_ref().to_path_buf(),
-                        index.clone(),
-                        reference_sequences.clone(),
-                        reference_sequence.name().into(),
-                        features.clone(),
-                        filter.clone(),
-                        strand_specification,
-                    ))
-                })
-                .collect();
-
-            let mut ctx = Context::default();
-
-            for task in tasks {
-                let region_ctx = task.await??;
-                ctx.add(&region_ctx);
-            }
-
-            ctx
+            count_single_end_records(
+                reader,
+                features.clone(),
+                reference_sequences.clone(),
+                filter.clone(),
+                strand_specification,
+            )
+            .await?
         }
         LibraryLayout::PairedEnd => {
             let tasks: Vec<_> = reference_sequences
@@ -183,13 +168,13 @@ where
             ctx1.add(&ctx2);
             ctx1.add(&ctx3);
 
+            if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
+                ctx1.unmapped += unplaced_unmapped_record_count;
+            }
+
             ctx1
         }
     };
-
-    if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
-        ctx.unmapped += unplaced_unmapped_record_count;
-    }
 
     let writer = File::create(results_dst.as_ref())
         .map(BufWriter::new)
@@ -243,42 +228,6 @@ where
     }
 
     Ok(header)
-}
-
-async fn count_single_end_records_by_region<P>(
-    bam_src: P,
-    index: Arc<bai::Index>,
-    reference_sequences: Arc<ReferenceSequences>,
-    reference_sequence_name: String,
-    features: Arc<Features>,
-    filter: Filter,
-    strand_specification: StrandSpecification,
-) -> anyhow::Result<Context>
-where
-    P: AsRef<Path>,
-{
-    let span = info_span!(
-        "region",
-        reference_sequence_name = reference_sequence_name.as_str()
-    );
-    let _entered = span.enter();
-
-    let mut reader = File::open(bam_src.as_ref())
-        .map(bam::Reader::new)
-        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
-
-    let region = Region::mapped(reference_sequence_name, ..);
-    let query = reader.query(&reference_sequences, &*index, &region)?;
-
-    let ctx = count_single_end_records(
-        query,
-        &features,
-        &reference_sequences,
-        &filter,
-        strand_specification,
-    )?;
-
-    Ok(ctx)
 }
 
 async fn count_paired_end_records_by_region<P>(

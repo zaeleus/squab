@@ -5,36 +5,73 @@ mod writer;
 
 pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};
 
-use std::{collections::HashSet, convert::TryFrom, io};
+use std::{collections::HashSet, convert::TryFrom, io, sync::Arc};
 
+use futures::{StreamExt, TryFutureExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
     bam, gff,
     sam::{self, header::ReferenceSequences},
 };
+use tokio::io::AsyncRead;
 
 use crate::{Entry, Features, MatchIntervals, PairPosition, RecordPairs, StrandSpecification};
 
 use self::context::Event;
 
-pub fn count_single_end_records<I>(
-    records: I,
-    features: &Features,
-    references: &ReferenceSequences,
-    filter: &Filter,
+const CHUNK_SIZE: usize = 8192;
+
+pub async fn count_single_end_records<R>(
+    mut reader: bam::AsyncReader<R>,
+    features: Arc<Features>,
+    reference_sequences: Arc<ReferenceSequences>,
+    filter: Filter,
     strand_specification: StrandSpecification,
 ) -> io::Result<Context>
 where
-    I: Iterator<Item = io::Result<bam::Record>>,
+    R: AsyncRead + Unpin,
 {
-    let mut ctx = Context::default();
+    use tokio::task::spawn_blocking;
 
-    for result in records {
-        let record = result?;
-        let event =
-            count_single_end_record(features, references, filter, strand_specification, &record)?;
-        ctx.add_event(event);
-    }
+    let ctx = reader
+        .records()
+        .try_chunks(CHUNK_SIZE)
+        .map(move |result| {
+            let features = features.clone();
+            let reference_sequences = reference_sequences.clone();
+            let filter = filter.clone();
+
+            result
+                .map(|records| {
+                    spawn_blocking(move || {
+                        let mut ctx = Context::default();
+
+                        for record in records {
+                            let event = count_single_end_record(
+                                &features,
+                                &reference_sequences,
+                                &filter,
+                                strand_specification,
+                                &record,
+                            )?;
+
+                            ctx.add_event(event);
+                        }
+
+                        Ok(ctx)
+                    })
+                    .map_err(io::Error::from)
+                })
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+        })
+        .try_buffer_unordered(8)
+        .try_fold(Context::default(), |mut ctx, result| async move {
+            result.map(|c| {
+                ctx.add(&c);
+                ctx
+            })
+        })
+        .await?;
 
     Ok(ctx)
 }
