@@ -18,7 +18,7 @@ use tracing::{info, info_span, warn};
 use crate::{
     build_interval_trees,
     count::{
-        self, count_paired_end_record_singletons, count_paired_end_records,
+        self, count_paired_end_records, count_paired_end_singleton_record,
         count_single_end_records, Filter,
     },
     detect::{detect_specification, LibraryLayout},
@@ -138,12 +138,12 @@ where
                 })
                 .collect();
 
-            let mut ctx1 = Context::default();
+            let mut ctx = Context::default();
             let mut pairs = Vec::with_capacity(reference_sequences.len());
 
             for task in tasks {
                 let (region_ctx, region_pairs) = task.await??;
-                ctx1.add(&region_ctx);
+                ctx.add(&region_ctx);
                 pairs.push(region_pairs);
             }
 
@@ -156,23 +156,25 @@ where
                 strand_specification,
             )?;
 
-            let singletons = pairs.singletons().map(Ok);
-            let ctx3 = count_paired_end_record_singletons(
-                singletons,
-                &features,
-                &reference_sequences,
-                &filter,
-                strand_specification,
-            )?;
+            ctx.add(&ctx2);
 
-            ctx1.add(&ctx2);
-            ctx1.add(&ctx3);
+            for record in pairs.singletons() {
+                let event = count_paired_end_singleton_record(
+                    &features,
+                    &reference_sequences,
+                    &filter,
+                    strand_specification,
+                    &record,
+                )?;
 
-            if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
-                ctx1.unmapped += unplaced_unmapped_record_count;
+                ctx.add_event(event);
             }
 
-            ctx1
+            if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
+                ctx.unmapped += unplaced_unmapped_record_count;
+            }
+
+            ctx
         }
     };
 

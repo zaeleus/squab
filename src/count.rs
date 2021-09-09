@@ -210,67 +210,51 @@ pub fn count_paired_end_record_pair(
     Ok(update_intersections(set))
 }
 
-pub fn count_paired_end_record_singletons<I>(
-    records: I,
+pub fn count_paired_end_singleton_record(
     features: &Features,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-) -> io::Result<Context>
-where
-    I: Iterator<Item = io::Result<bam::Record>>,
-{
-    let mut ctx = Context::default();
-
-    for result in records {
-        let record = result?;
-
-        if let Some(event) = filter.filter(&record)? {
-            ctx.add_event(event);
-            continue;
-        }
-
-        let cigar = record.cigar();
-        let start = record
-            .position()
-            .map(i32::from)
-            .map(|n| n as u64)
-            .expect("record cannot be unmapped");
-        let flags = record.flags();
-
-        let is_reverse = match PairPosition::try_from(&record) {
-            Ok(PairPosition::First) => match strand_specification {
-                StrandSpecification::Reverse => !flags.is_reverse_complemented(),
-                _ => flags.is_reverse_complemented(),
-            },
-            Ok(PairPosition::Second) => match strand_specification {
-                StrandSpecification::Reverse => flags.is_reverse_complemented(),
-                _ => !flags.is_reverse_complemented(),
-            },
-            Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
-        };
-
-        let intervals = MatchIntervals::new(&cigar, start);
-
-        let tree = match get_tree(
-            features,
-            reference_sequences,
-            record.reference_sequence_id(),
-        )? {
-            Some(t) => t,
-            None => {
-                ctx.add_event(Event::NoFeature);
-                continue;
-            }
-        };
-
-        let set = find(tree, intervals, strand_specification, is_reverse)?;
-        let event = update_intersections(set);
-
-        ctx.add_event(event);
+    record: &bam::Record,
+) -> io::Result<Event> {
+    if let Some(event) = filter.filter(record)? {
+        return Ok(event);
     }
 
-    Ok(ctx)
+    let cigar = record.cigar();
+    let start = record
+        .position()
+        .map(i32::from)
+        .map(|n| n as u64)
+        .expect("record cannot be unmapped");
+    let flags = record.flags();
+
+    let is_reverse = match PairPosition::try_from(record) {
+        Ok(PairPosition::First) => match strand_specification {
+            StrandSpecification::Reverse => !flags.is_reverse_complemented(),
+            _ => flags.is_reverse_complemented(),
+        },
+        Ok(PairPosition::Second) => match strand_specification {
+            StrandSpecification::Reverse => flags.is_reverse_complemented(),
+            _ => !flags.is_reverse_complemented(),
+        },
+        Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
+    };
+
+    let intervals = MatchIntervals::new(&cigar, start);
+
+    let tree = match get_tree(
+        features,
+        reference_sequences,
+        record.reference_sequence_id(),
+    )? {
+        Some(t) => t,
+        None => return Ok(Event::NoFeature),
+    };
+
+    let set = find(tree, intervals, strand_specification, is_reverse)?;
+
+    Ok(update_intersections(set))
 }
 
 fn find(
