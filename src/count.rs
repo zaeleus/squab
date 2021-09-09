@@ -126,29 +126,67 @@ pub async fn count_paired_end_records<R>(
 where
     R: AsyncRead + Unpin,
 {
-    let mut ctx = Context::default();
+    use futures::stream;
+    use tokio::task::spawn_blocking;
 
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
-    let mut pairs = RecordPairs::new(reader, primary_only);
+    let mut record_pairs = RecordPairs::new(reader, primary_only);
 
-    while let Some((r1, r2)) = pairs.next_pair().await? {
-        let event = count_paired_end_record_pair(
-            &features,
-            &reference_sequences,
-            &filter,
-            strand_specification,
-            &r1,
-            &r2,
-        )?;
+    let features_clone = features.clone();
+    let reference_sequences_clone = reference_sequences.clone();
+    let filter_clone = filter.clone();
 
-        ctx.add_event(event);
-    }
+    let mut ctx = stream::unfold(&mut record_pairs, |pairs| async {
+        match pairs.next_pair().await {
+            Ok(Some(pair)) => Some((Ok(pair), pairs)),
+            Ok(None) => None,
+            Err(e) => Some((Err(e), pairs)),
+        }
+    })
+    .try_chunks(CHUNK_SIZE)
+    .map(move |result| {
+        let features = features.clone();
+        let reference_sequences = reference_sequences.clone();
+        let filter = filter.clone();
 
-    for record in pairs.singletons() {
+        result
+            .map(|pairs| {
+                spawn_blocking(move || {
+                    let mut ctx = Context::default();
+
+                    for (r1, r2) in pairs {
+                        let event = count_paired_end_record_pair(
+                            &features,
+                            &reference_sequences,
+                            &filter,
+                            strand_specification,
+                            &r1,
+                            &r2,
+                        )?;
+
+                        ctx.add_event(event);
+                    }
+
+                    Ok(ctx)
+                })
+                .map_err(io::Error::from)
+            })
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+    })
+    .try_buffer_unordered(8)
+    .try_fold(Context::default(), |mut ctx, result| async move {
+        result.map(|c| {
+            ctx.add(&c);
+            ctx
+        })
+    })
+    .await?;
+
+    for record in record_pairs.singletons() {
         let event = count_paired_end_singleton_record(
-            &features,
-            &reference_sequences,
-            &filter,
+            &features_clone,
+            &reference_sequences_clone,
+            &filter_clone,
             strand_specification,
             &record,
         )?;
