@@ -312,8 +312,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "298ecbf6d445e8e3173d3b8b718aa645d202fd356cf1d546178fa711db093b50"
 dependencies = [
  "noodles-bam",
- "noodles-core",
- "noodles-csi",
  "noodles-gff",
  "noodles-sam",
 ]

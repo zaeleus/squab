@@ -116,28 +116,26 @@ pub fn count_single_end_record(
     Ok(update_intersections(set))
 }
 
-pub fn count_paired_end_records<I>(
-    records: I,
-    features: &Features,
-    reference_sequences: &ReferenceSequences,
-    filter: &Filter,
+pub async fn count_paired_end_records<R>(
+    reader: bam::AsyncReader<R>,
+    features: Arc<Features>,
+    reference_sequences: Arc<ReferenceSequences>,
+    filter: Filter,
     strand_specification: StrandSpecification,
-) -> io::Result<(Context, RecordPairs<I>)>
+) -> io::Result<Context>
 where
-    I: Iterator<Item = io::Result<bam::Record>>,
+    R: AsyncRead + Unpin,
 {
     let mut ctx = Context::default();
 
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
-    let mut pairs = RecordPairs::new(records, primary_only);
+    let mut pairs = RecordPairs::new(reader, primary_only);
 
-    for pair in &mut pairs {
-        let (r1, r2) = pair?;
-
+    while let Some((r1, r2)) = pairs.next_pair().await? {
         let event = count_paired_end_record_pair(
-            features,
-            reference_sequences,
-            filter,
+            &features,
+            &reference_sequences,
+            &filter,
             strand_specification,
             &r1,
             &r2,
@@ -146,7 +144,19 @@ where
         ctx.add_event(event);
     }
 
-    Ok((ctx, pairs))
+    for record in pairs.singletons() {
+        let event = count_paired_end_singleton_record(
+            &features,
+            &reference_sequences,
+            &filter,
+            strand_specification,
+            &record,
+        )?;
+
+        ctx.add_event(event);
+    }
+
+    Ok(ctx)
 }
 
 pub fn count_paired_end_record_pair(

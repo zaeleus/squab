@@ -9,6 +9,7 @@ use std::{
 };
 
 use noodles::bam;
+use tokio::io::AsyncRead;
 use tracing::warn;
 
 type RecordKey = (
@@ -21,62 +22,59 @@ type RecordKey = (
     i32,
 );
 
-pub struct RecordPairs<I> {
-    records: I,
+pub struct RecordPairs<R>
+where
+    R: AsyncRead,
+{
+    reader: bam::AsyncReader<R>,
     buf: HashMap<RecordKey, bam::Record>,
     primary_only: bool,
 }
 
-impl<I> RecordPairs<I>
+impl<R> RecordPairs<R>
 where
-    I: Iterator<Item = io::Result<bam::Record>>,
+    R: AsyncRead + Unpin,
 {
-    pub fn new(records: I, primary_only: bool) -> RecordPairs<I> {
-        RecordPairs {
-            records,
+    pub fn new(reader: bam::AsyncReader<R>, primary_only: bool) -> Self {
+        Self {
+            reader,
             buf: HashMap::new(),
             primary_only,
         }
     }
 
-    fn next_pair(&mut self) -> Option<io::Result<(bam::Record, bam::Record)>> {
+    pub async fn next_pair(&mut self) -> io::Result<Option<(bam::Record, bam::Record)>> {
         loop {
-            let record = match self.records.next() {
-                Some(result) => match result {
-                    Ok(r) => r,
-                    Err(e) => return Some(Err(e)),
-                },
-                None => {
+            let mut record = bam::Record::default();
+
+            match self.reader.read_record(&mut record).await {
+                Ok(0) => {
                     if !self.buf.is_empty() {
                         warn!("{} records are singletons", self.buf.len());
                     }
 
-                    return None;
+                    return Ok(None);
                 }
-            };
+                Ok(_) => {}
+                Err(e) => return Err(e),
+            }
 
             if self.primary_only && is_not_primary(&record) {
                 continue;
             }
 
-            let mate_key = match mate_key(&record) {
-                Ok(k) => k,
-                Err(e) => return Some(Err(e)),
-            };
+            let mate_key = mate_key(&record)?;
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
-                    PairPosition::First => Some(Ok((mate, record))),
-                    PairPosition::Second => Some(Ok((record, mate))),
+                    PairPosition::First => Ok(Some((mate, record))),
+                    PairPosition::Second => Ok(Some((record, mate))),
                 };
             }
 
-            let key = match key(&record) {
-                Ok(k) => k,
-                Err(e) => return Some(Err(e)),
-            };
+            let key = key(&record)?;
 
-            self.buf.insert(key, record.clone());
+            self.buf.insert(key, record);
         }
     }
 
@@ -84,17 +82,6 @@ where
         Singletons {
             drain: self.buf.drain(),
         }
-    }
-}
-
-impl<I> Iterator for RecordPairs<I>
-where
-    I: Iterator<Item = io::Result<bam::Record>>,
-{
-    type Item = io::Result<(bam::Record, bam::Record)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_pair()
     }
 }
 

@@ -6,24 +6,16 @@ use std::{
 };
 
 use anyhow::Context as AnyhowContext;
-use noodles::{
-    bam::{self, bai},
-    core::Region,
-    csi::BinningIndex,
-    sam::{self, header::ReferenceSequences},
-};
+use noodles::{bam, sam};
 use tokio::io::AsyncRead;
-use tracing::{info, info_span, warn};
+use tracing::{info, warn};
 
 use crate::{
     build_interval_trees,
-    count::{
-        self, count_paired_end_records, count_paired_end_singleton_record,
-        count_single_end_records, Filter,
-    },
+    count::{self, count_paired_end_records, count_single_end_records, Filter},
     detect::{detect_specification, LibraryLayout},
     normalization::{self, calculate_fpkms, calculate_tpms},
-    read_features, Context, Features, StrandSpecification, StrandSpecificationOption,
+    read_features, StrandSpecification, StrandSpecificationOption,
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -54,12 +46,6 @@ where
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header = read_header(&mut reader).await?;
-
-    let bai_src = bam_src.as_ref().with_extension("bam.bai");
-    let index = bai::r#async::read(&bai_src)
-        .await
-        .with_context(|| format!("Could not read {}", bai_src.display()))?;
-
     let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
@@ -107,7 +93,6 @@ where
 
     info!("counting features");
 
-    let index = Arc::new(index);
     let reference_sequences = Arc::new(reference_sequences);
     let features = Arc::new(features);
 
@@ -123,58 +108,14 @@ where
             .await?
         }
         LibraryLayout::PairedEnd => {
-            let tasks: Vec<_> = reference_sequences
-                .values()
-                .map(|reference_sequence| {
-                    tokio::spawn(count_paired_end_records_by_region(
-                        bam_src.as_ref().to_path_buf(),
-                        index.clone(),
-                        reference_sequences.clone(),
-                        reference_sequence.name().into(),
-                        features.clone(),
-                        filter.clone(),
-                        strand_specification,
-                    ))
-                })
-                .collect();
-
-            let mut ctx = Context::default();
-            let mut pairs = Vec::with_capacity(reference_sequences.len());
-
-            for task in tasks {
-                let (region_ctx, region_pairs) = task.await??;
-                ctx.add(&region_ctx);
-                pairs.push(region_pairs);
-            }
-
-            let records = pairs.into_iter().flat_map(|r| r.into_iter()).map(Ok);
-            let (ctx2, mut pairs) = count_paired_end_records(
-                records,
-                &features,
-                &reference_sequences,
-                &filter,
+            count_paired_end_records(
+                reader,
+                features.clone(),
+                reference_sequences.clone(),
+                filter.clone(),
                 strand_specification,
-            )?;
-
-            ctx.add(&ctx2);
-
-            for record in pairs.singletons() {
-                let event = count_paired_end_singleton_record(
-                    &features,
-                    &reference_sequences,
-                    &filter,
-                    strand_specification,
-                    &record,
-                )?;
-
-                ctx.add_event(event);
-            }
-
-            if let Some(unplaced_unmapped_record_count) = index.unplaced_unmapped_record_count() {
-                ctx.unmapped += unplaced_unmapped_record_count;
-            }
-
-            ctx
+            )
+            .await?
         }
     };
 
@@ -230,40 +171,4 @@ where
     }
 
     Ok(header)
-}
-
-async fn count_paired_end_records_by_region<P>(
-    bam_src: P,
-    index: Arc<bai::Index>,
-    reference_sequences: Arc<ReferenceSequences>,
-    reference_sequence_name: String,
-    features: Arc<Features>,
-    filter: Filter,
-    strand_specification: StrandSpecification,
-) -> anyhow::Result<(Context, Vec<bam::Record>)>
-where
-    P: AsRef<Path>,
-{
-    let span = info_span!(
-        "region",
-        reference_sequence_name = reference_sequence_name.as_str()
-    );
-    let _entered = span.enter();
-
-    let mut reader = File::open(bam_src.as_ref())
-        .map(bam::Reader::new)
-        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
-
-    let region = Region::mapped(reference_sequence_name, ..);
-    let query = reader.query(&reference_sequences, &*index, &region)?;
-
-    let (ctx, mut pairs) = count_paired_end_records(
-        query,
-        &features,
-        &reference_sequences,
-        &filter,
-        strand_specification,
-    )?;
-
-    Ok((ctx, pairs.singletons().collect()))
 }

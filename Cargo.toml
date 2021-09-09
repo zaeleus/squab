@@ -16,7 +16,7 @@ flate2 = "1.0.14"
 futures = { version = "0.3.17", default-features = false, features = ["std"] }
 git-testament = "0.2.0"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
-noodles = { version = "0.7.0", features = ["bam", "core", "csi", "gff", "sam"] }
+noodles = { version = "0.7.0", features = ["bam", "gff", "sam"] }
 noodles-bam = { version = "0.4.0", features = ["async"] }
 num_cpus = "1.12.0"
 tokio = { version = "1.0.1", features = ["fs", "rt-multi-thread"] }
