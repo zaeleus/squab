@@ -78,12 +78,7 @@ mod tests {
             ),
             (
                 String::from("RPL37AP1"),
-                vec![Feature::new(
-                    reference_name.clone(),
-                    44466564,
-                    44466842,
-                    strand,
-                )],
+                vec![Feature::new(reference_name, 44466564, 44466842, strand)],
             ),
         ];
 

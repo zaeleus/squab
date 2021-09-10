@@ -90,7 +90,7 @@ mod tests {
             Feature::new(reference_name.clone(), 5, 7, strand),
             Feature::new(reference_name.clone(), 9, 12, strand),
             Feature::new(reference_name.clone(), 10, 15, strand),
-            Feature::new(reference_name.clone(), 16, 21, strand),
+            Feature::new(reference_name, 16, 21, strand),
         ];
 
         let len = sum_nonoverlapping_feature_lengths(&features);
@@ -115,7 +115,7 @@ mod tests {
         let expected = [
             Feature::new(reference_name.clone(), 2, 7, strand),
             Feature::new(reference_name.clone(), 9, 15, strand),
-            Feature::new(reference_name.clone(), 16, 21, strand),
+            Feature::new(reference_name, 16, 21, strand),
         ];
 
         assert_eq!(actual, expected);

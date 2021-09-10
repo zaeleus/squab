@@ -76,12 +76,14 @@ PAK4\t145
 
     #[test]
     fn test_write_stats() -> io::Result<()> {
-        let mut ctx = Context::default();
-        ctx.no_feature = 735;
-        ctx.ambiguous = 5;
-        ctx.low_quality = 60;
-        ctx.unmapped = 8;
-        ctx.nonunique = 13;
+        let ctx = Context {
+            no_feature: 735,
+            ambiguous: 5,
+            low_quality: 60,
+            unmapped: 8,
+            nonunique: 13,
+            ..Default::default()
+        };
 
         let mut writer = Writer::new(Vec::new());
         writer.write_stats(&ctx)?;
