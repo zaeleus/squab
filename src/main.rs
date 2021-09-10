@@ -55,13 +55,6 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
                 .default_value("10"),
         )
         .arg(
-            Arg::with_name("normalize")
-                .long("normalize")
-                .value_name("str")
-                .help("Quantification normalization method")
-                .possible_values(&["fpkm", "tpm"]),
-        )
-        .arg(
             Arg::with_name("output")
                 .short("o")
                 .long("output")
@@ -149,10 +142,6 @@ fn quantify(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
     let bam_src = matches.value_of("bam").unwrap();
     let annotations_src = matches.value_of("annotations").unwrap();
 
-    let normalize = matches.value_of("normalize").map(|_| {
-        value_t!(matches, "normalize", normalization::Method).unwrap_or_else(|e| e.exit())
-    });
-
     let results_dst = matches.value_of("output").unwrap();
 
     let feature_type = matches.value_of("feature-type").unwrap();
@@ -190,7 +179,6 @@ fn quantify(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
         id,
         filter,
         strand_specification_option,
-        normalize,
         results_dst,
     ))
 }

@@ -8,7 +8,6 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let id = "gene_id";
     let filter = Filter::new(10, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
-    let normalize = None;
 
     let working_prefix = env::temp_dir();
     fs::create_dir_all(&working_prefix)?;
@@ -22,7 +21,6 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
         id,
         filter,
         strand_specification_option,
-        normalize,
         &results_dst,
     )
     .await?;

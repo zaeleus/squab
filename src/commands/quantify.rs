@@ -14,7 +14,6 @@ use crate::{
     build_interval_trees,
     count::{self, count_paired_end_records, count_single_end_records, Filter},
     detect::{detect_specification, LibraryLayout},
-    normalization::{self, calculate_fpkms, calculate_tpms},
     read_features, StrandSpecification, StrandSpecificationOption,
 };
 
@@ -26,7 +25,6 @@ pub async fn quantify<P, Q, R>(
     id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
-    normalize: Option<normalization::Method>,
     results_dst: R,
 ) -> anyhow::Result<()>
 where
@@ -123,32 +121,11 @@ where
         .map(BufWriter::new)
         .with_context(|| format!("Could not open {}", results_dst.as_ref().display()))?;
 
-    if let Some(normalization_method) = normalize {
-        let mut value_writer = normalization::Writer::new(writer);
+    info!("writing counts");
 
-        match normalization_method {
-            normalization::Method::Fpkm => {
-                info!("calculating fpkms");
-                let fpkms = calculate_fpkms(&ctx.counts, &feature_map)
-                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-                info!("writing fpkms");
-                value_writer.write_values(&feature_ids, &fpkms)?;
-            }
-            normalization::Method::Tpm => {
-                info!("calculating tpms");
-                let tpms = calculate_tpms(&ctx.counts, &feature_map)
-                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-                info!("writing tpms");
-                value_writer.write_values(&feature_ids, &tpms)?;
-            }
-        }
-    } else {
-        info!("writing counts");
-
-        let mut count_writer = count::Writer::new(writer);
-        count_writer.write_counts(&feature_ids, &ctx.counts)?;
-        count_writer.write_stats(&ctx)?;
-    }
+    let mut count_writer = count::Writer::new(writer);
+    count_writer.write_counts(&feature_ids, &ctx.counts)?;
+    count_writer.write_stats(&ctx)?;
 
     Ok(())
 }
