@@ -1,4 +1,4 @@
-mod context;
+pub mod context;
 mod filter;
 mod reader;
 mod writer;

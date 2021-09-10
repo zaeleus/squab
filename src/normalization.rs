@@ -9,7 +9,6 @@ use std::{collections::HashMap, error, fmt};
 
 use crate::Feature;
 
-type Counts = HashMap<String, u64>;
 type FeatureMap = HashMap<String, Vec<Feature>>;
 
 #[derive(Debug)]

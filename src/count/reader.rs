@@ -3,6 +3,8 @@ use std::{
     io::{self, BufRead},
 };
 
+use super::context::Counts;
+
 const DELIMITER: char = '\t';
 static HTSEQ_COUNT_META_PREFIX: &str = "__";
 
@@ -18,8 +20,8 @@ where
         Self { inner }
     }
 
-    pub fn read_counts(&mut self) -> io::Result<HashMap<String, u64>> {
-        let mut counts = HashMap::new();
+    pub fn read_counts(&mut self) -> io::Result<Counts> {
+        let mut counts = HashMap::default();
         let mut buf = String::new();
 
         loop {

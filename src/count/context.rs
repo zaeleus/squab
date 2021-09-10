@@ -4,9 +4,11 @@ pub use self::event::Event;
 
 use std::collections::HashMap;
 
+pub type Counts = HashMap<String, u64>;
+
 #[derive(Default)]
 pub struct Context {
-    pub counts: HashMap<String, u64>,
+    pub counts: Counts,
     pub no_feature: u64,
     pub ambiguous: u64,
     pub low_quality: u64,

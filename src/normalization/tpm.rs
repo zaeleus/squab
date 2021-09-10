@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use super::{sum_nonoverlapping_feature_lengths, Counts, Error, FeatureMap};
+use super::{sum_nonoverlapping_feature_lengths, Error, FeatureMap};
+use crate::count::context::Counts;
 
 pub fn calculate_tpms(
     counts: &Counts,

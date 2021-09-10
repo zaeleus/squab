@@ -1,9 +1,6 @@
-use std::{
-    collections::HashMap,
-    io::{self, Write},
-};
+use std::io::{self, Write};
 
-use super::Context;
+use super::{context::Counts, Context};
 
 pub struct Writer<W> {
     inner: W,
@@ -21,11 +18,7 @@ where
         &self.inner
     }
 
-    pub fn write_counts(
-        &mut self,
-        ids: &[String],
-        counts: &HashMap<String, u64>,
-    ) -> io::Result<()> {
+    pub fn write_counts(&mut self, ids: &[String], counts: &Counts) -> io::Result<()> {
         for id in ids {
             let count = counts.get(id).unwrap_or(&0);
             writeln!(self.inner, "{}\t{}", id, count)?;
@@ -50,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_write_counts() -> io::Result<()> {
-        let counts: HashMap<String, u64> = vec![
+        let counts: Counts = vec![
             (String::from("AADAT"), 302),
             (String::from("CLN3"), 37),
             (String::from("PAK4"), 145),
