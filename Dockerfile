@@ -1,4 +1,4 @@
-FROM rust:1.53.0-buster as builder
+FROM rust:1.55.0-bullseye as builder
 
 WORKDIR /tmp/noodles-squab/
 
@@ -8,7 +8,7 @@ COPY src/ src/
 
 RUN cargo build --release
 
-FROM debian:buster
+FROM debian:bullseye
 
 COPY --from=builder \
     /tmp/noodles-squab/target/release/noodles-squab \
