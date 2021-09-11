@@ -27,6 +27,7 @@ pub async fn count_single_end_records<R>(
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
     strand_specification: StrandSpecification,
+    worker_count: usize,
 ) -> io::Result<Context>
 where
     R: AsyncRead + Unpin,
@@ -64,7 +65,7 @@ where
                 })
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         })
-        .try_buffer_unordered(8)
+        .try_buffer_unordered(worker_count)
         .try_fold(Context::default(), |mut ctx, result| async move {
             result.map(|c| {
                 ctx.add(&c);
@@ -122,6 +123,7 @@ pub async fn count_paired_end_records<R>(
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
     strand_specification: StrandSpecification,
+    worker_count: usize,
 ) -> io::Result<Context>
 where
     R: AsyncRead + Unpin,
@@ -173,7 +175,7 @@ where
             })
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     })
-    .try_buffer_unordered(8)
+    .try_buffer_unordered(worker_count)
     .try_fold(Context::default(), |mut ctx, result| async move {
         result.map(|c| {
             ctx.add(&c);

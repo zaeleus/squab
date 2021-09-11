@@ -179,6 +179,7 @@ fn quantify(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
         id,
         filter,
         strand_specification_option,
+        threads,
         results_dst,
     ))
 }

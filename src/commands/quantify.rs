@@ -25,6 +25,7 @@ pub async fn quantify<P, Q, R>(
     id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
+    worker_count: usize,
     results_dst: R,
 ) -> anyhow::Result<()>
 where
@@ -102,6 +103,7 @@ where
                 reference_sequences.clone(),
                 filter.clone(),
                 strand_specification,
+                worker_count,
             )
             .await?
         }
@@ -112,6 +114,7 @@ where
                 reference_sequences.clone(),
                 filter.clone(),
                 strand_specification,
+                worker_count,
             )
             .await?
         }

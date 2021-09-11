@@ -8,6 +8,7 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let id = "gene_id";
     let filter = Filter::new(10, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
+    let worker_count = 1;
 
     let working_prefix = env::temp_dir();
     fs::create_dir_all(&working_prefix)?;
@@ -21,6 +22,7 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
         id,
         filter,
         strand_specification_option,
+        worker_count,
         &results_dst,
     )
     .await?;
