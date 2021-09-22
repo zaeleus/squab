@@ -1,6 +1,6 @@
 use std::{convert::TryFrom, path::Path};
 
-use futures::TryStreamExt;
+use futures::{StreamExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
     bam, gff,
@@ -152,15 +152,9 @@ where
     reader.read_reference_sequences().await?;
 
     let mut counts = Counts::default();
-
-    let mut records = reader.records();
-    let mut n = 0;
+    let mut records = reader.records().take(MAX_RECORDS);
 
     while let Some(record) = records.try_next().await? {
-        if n >= MAX_RECORDS {
-            break;
-        }
-
         let flags = record.flags();
 
         if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
@@ -182,8 +176,6 @@ where
         } else {
             count_single_end_record(&mut counts, tree, &record)?;
         }
-
-        n += 1;
     }
 
     let library_layout = if counts.paired > 0 {
