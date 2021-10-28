@@ -307,9 +307,9 @@ checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
 name = "noodles"
-version = "0.7.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "298ecbf6d445e8e3173d3b8b718aa645d202fd356cf1d546178fa711db093b50"
+checksum = "7e265f2eb9987acd96dc7298014b4472fbe105d315f6312589d7e8e2377b5b7c"
 dependencies = [
  "noodles-bam",
  "noodles-gff",
@@ -318,9 +318,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-bam"
-version = "0.4.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "106987609cfcf660f9b99370a21b4eeb7380216abd1417eb58767c5d836cb33d"
+checksum = "6c13f44120f1e08f817cc286ef50eb817b37ec2e75858baeab64a1731a686e87"
 dependencies = [
  "bit-vec",
  "byteorder",
@@ -351,9 +351,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-core"
-version = "0.1.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c096f0695b02f39876e332c76aa7f4de84f135aac117febf48ba431da2fbfde8"
+checksum = "283a438b6fb47341309c83c17054a27779660eae4382365c8532157d3034b84a"
 dependencies = [
  "noodles-sam",
 ]
@@ -371,18 +371,18 @@ dependencies = [
 
 [[package]]
 name = "noodles-gff"
-version = "0.1.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ad218568e99408ad43aaecbfd0ca4e475c769072d025370f803d523fe9ff89d"
+checksum = "6f0287d61461920657cb7af12e75f4ebf8ea5056357fca0747d6b7b744a5f167"
 dependencies = [
  "percent-encoding",
 ]
 
 [[package]]
 name = "noodles-sam"
-version = "0.2.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17302ad06dcafaa87f50f4b14c6474cd6fecfefdf783e2c9d97b300ea2d25ada"
+checksum = "5a80fc96a204466efcc0bb841fa6087dfabc59ca02ad69a7dc2474d92058958f"
 dependencies = [
  "bitflags",
  "indexmap",
