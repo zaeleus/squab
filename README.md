@@ -108,7 +108,7 @@ identifier (string) and the normalized value (double).
 $ noodles-squab \
     --verbose \
     quantify \
-    --annotations annoations.gff3.gz \
+    --annotations annotations.gff3.gz \
     --output sample.counts.tsv \
     sample.bam
 ```
@@ -119,7 +119,7 @@ $ noodles-squab \
 $ noodles-squab \
     --verbose \
     quantify \
-    --annotations annoations.gff3.gz \
+    --annotations annotations.gff3.gz \
     --feature-type gene \
     --id gene_name \
     --output sample.fpkm.tsv \
@@ -133,7 +133,7 @@ $ noodles-squab \
     --verbose \
     normalize \
     --method fpkm \
-    --annotations annoations.gff3.gz \
+    --annotations annotations.gff3.gz \
     sample.counts.tsv \
     > sample.fpkm.tsv
 ```
