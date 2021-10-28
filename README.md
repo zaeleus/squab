@@ -122,7 +122,7 @@ $ noodles-squab \
     --annotations annotations.gff3.gz \
     --feature-type gene \
     --id gene_name \
-    --output sample.fpkm.tsv \
+    --output sample.counts.tsv \
     sample.bam
 ```
 
