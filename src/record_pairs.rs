@@ -4,7 +4,6 @@ pub use self::pair_position::PairPosition;
 
 use std::{
     collections::{hash_map::Drain, HashMap},
-    convert::TryFrom,
     io,
 };
 

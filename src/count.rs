@@ -5,7 +5,7 @@ mod writer;
 
 pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};
 
-use std::{collections::HashSet, convert::TryFrom, io, sync::Arc};
+use std::{collections::HashSet, io, sync::Arc};
 
 use futures::{StreamExt, TryFutureExt, TryStreamExt};
 use interval_tree::IntervalTree;

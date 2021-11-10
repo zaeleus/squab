@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, path::Path};
+use std::path::Path;
 
 use futures::{StreamExt, TryStreamExt};
 use interval_tree::IntervalTree;
