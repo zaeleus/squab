@@ -56,11 +56,10 @@ mod tests {
 
     use super::*;
 
-    fn build_raw_cigar() -> io::Result<Vec<u8>> {
-        fn build_raw_op(kind: op::Kind, len: u32) -> io::Result<[u8; 4]> {
+    fn build_raw_cigar() -> io::Result<Vec<u32>> {
+        fn build_raw_op(kind: op::Kind, len: u32) -> io::Result<u32> {
             cigar::Op::new(kind, len)
                 .map(u32::from)
-                .map(|n| n.to_le_bytes())
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         }
 
@@ -76,13 +75,13 @@ mod tests {
             build_raw_op(op::Kind::SeqMismatch, 9)?,
         ];
 
-        Ok(raw_ops.iter().flatten().copied().collect())
+        Ok(raw_ops.into_iter().collect())
     }
 
     #[test]
     fn test_next() -> io::Result<()> {
         let raw_cigar = build_raw_cigar()?;
-        let cigar = bam::record::Cigar::new(&raw_cigar);
+        let cigar = bam::record::Cigar::from(raw_cigar);
 
         let start = 1;
         let mut it = MatchIntervals::new(&cigar, start);

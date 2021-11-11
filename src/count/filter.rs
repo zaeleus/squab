@@ -101,9 +101,7 @@ impl Filter {
 fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
     use sam::record::data::field::Tag;
 
-    let data = record.data();
-
-    for result in data.fields() {
+    for result in record.data().values() {
         let field = result?;
 
         if field.tag() == Tag::AlignmentHitCount {
