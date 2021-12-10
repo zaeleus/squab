@@ -6,7 +6,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 use clap::{crate_name, value_t, App, AppSettings, Arg, ArgMatches, SubCommand};
 use git_testament::{git_testament, render_testament};
 use noodles_squab::{commands, count::Filter, normalization, StrandSpecificationOption};
-use tracing::info;
+use tracing::{info, warn};
 
 git_testament!(TESTAMENT);
 
@@ -136,7 +136,8 @@ fn match_args_from_env() -> clap::ArgMatches<'static> {
             Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
-                .help("Use verbose logging"),
+                .help("Use verbose logging")
+                .hidden(true),
         )
         .subcommand(quantify_cmd)
         .subcommand(normalize_cmd)
@@ -204,12 +205,10 @@ fn normalize(matches: &ArgMatches<'_>) -> anyhow::Result<()> {
 fn main() -> anyhow::Result<()> {
     let matches = match_args_from_env();
 
+    tracing_subscriber::fmt::init();
+
     if matches.is_present("verbose") {
-        tracing_subscriber::fmt()
-            .with_env_filter("noodles_squab=info")
-            .init();
-    } else {
-        tracing_subscriber::fmt::init();
+        warn!("`-v`/`--verbose` is deprecated and will be removed in a future version. Logging is now always enabled.");
     }
 
     if let Some(submatches) = matches.subcommand_matches("quantify") {
