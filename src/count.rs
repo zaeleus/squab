@@ -373,8 +373,8 @@ pub fn get_tree<'t>(
     reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
 ) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
     let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
-    let name = reference_sequence.name();
-    Ok(features.get(name))
+    let reference_sequence_name = reference_sequence.name();
+    Ok(features.get(reference_sequence_name.as_str()))
 }
 
 #[cfg(test)]
@@ -383,12 +383,22 @@ mod tests {
 
     use super::*;
 
-    fn build_reference_sequences(
-    ) -> Result<ReferenceSequences, sam::header::reference_sequence::NewError> {
-        vec![("sq0", 8), ("sq1", 13), ("sq2", 21)]
-            .into_iter()
-            .map(|(name, len)| ReferenceSequence::new(name, len).map(|rs| (name.into(), rs)))
-            .collect()
+    fn build_reference_sequences() -> Result<ReferenceSequences, Box<dyn std::error::Error>> {
+        let reference_sequences = [
+            ("sq0".parse()?, 8),
+            ("sq1".parse()?, 13),
+            ("sq2".parse()?, 21),
+        ]
+        .into_iter()
+        .map(
+            |(name, len): (sam::header::reference_sequence::Name, i32)| {
+                let sn = name.to_string();
+                ReferenceSequence::new(name, len).map(|rs| (sn, rs))
+            },
+        )
+        .collect::<Result<_, _>>()?;
+
+        Ok(reference_sequences)
     }
 
     #[test]
@@ -398,7 +408,7 @@ mod tests {
         let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(1)?);
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
-        assert_eq!(reference_sequence.name(), "sq1");
+        assert_eq!(reference_sequence.name().as_str(), "sq1");
         assert_eq!(reference_sequence.len(), 13);
 
         let reference_sequence_id = None;

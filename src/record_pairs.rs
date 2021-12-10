@@ -151,15 +151,20 @@ mod tests {
         let mate_reference_sequence_name: ReferenceSequenceName = "sq1".parse()?;
         let mate_position = Position::try_from(13)?;
 
-        let reference_sequences = vec![("sq0", 8), ("sq1", 13)]
+        let reference_sequences = vec![("sq0".parse()?, 8), ("sq1".parse()?, 13)]
             .into_iter()
-            .map(|(name, len)| ReferenceSequence::new(name, len).map(|rs| (name.into(), rs)))
+            .map(
+                |(name, len): (sam::header::reference_sequence::Name, i32)| {
+                    let sn = name.to_string();
+                    ReferenceSequence::new(name, len).map(|rs| (sn, rs))
+                },
+            )
             .into_iter()
             .collect::<Result<_, _>>()?;
 
         let s1 = sam::Record::builder()
             .set_read_name(read_name.clone())
-            .set_flags(Flags::PAIRED | Flags::READ_1)
+            .set_flags(Flags::SEGMENTED | Flags::FIRST_SEGMENT)
             .set_reference_sequence_name(reference_sequence_name.clone())
             .set_position(position)
             .set_mate_reference_sequence_name(mate_reference_sequence_name.clone())
@@ -171,7 +176,7 @@ mod tests {
 
         let s2 = sam::Record::builder()
             .set_read_name(read_name)
-            .set_flags(Flags::PAIRED | Flags::READ_2)
+            .set_flags(Flags::SEGMENTED | Flags::LAST_SEGMENT)
             .set_reference_sequence_name(mate_reference_sequence_name)
             .set_position(mate_position)
             .set_mate_reference_sequence_name(reference_sequence_name)

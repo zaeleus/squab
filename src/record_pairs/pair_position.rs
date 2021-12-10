@@ -40,9 +40,9 @@ impl TryFrom<sam::record::Flags> for PairPosition {
     type Error = TryFromFlagsError;
 
     fn try_from(flags: sam::record::Flags) -> Result<Self, Self::Error> {
-        if flags.is_read_1() {
+        if flags.is_first_segment() {
             Ok(PairPosition::First)
-        } else if flags.is_read_2() {
+        } else if flags.is_last_segment() {
             Ok(PairPosition::Second)
         } else {
             Err(TryFromFlagsError)
@@ -66,13 +66,13 @@ mod tests {
     fn test_try_from_flag() {
         use sam::record::Flags;
 
-        let flags = Flags::PAIRED | Flags::READ_1;
+        let flags = Flags::SEGMENTED | Flags::FIRST_SEGMENT;
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::First));
 
-        let flags = Flags::PAIRED | Flags::READ_2;
+        let flags = Flags::SEGMENTED | Flags::LAST_SEGMENT;
         assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
 
-        let flags = Flags::PAIRED;
+        let flags = Flags::SEGMENTED;
         assert_eq!(PairPosition::try_from(flags), Err(TryFromFlagsError));
     }
 }

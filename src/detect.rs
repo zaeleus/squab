@@ -170,7 +170,7 @@ where
             None => continue,
         };
 
-        if flags.is_paired() {
+        if flags.is_segmented() {
             counts.paired += 1;
             count_paired_end_record(&mut counts, tree, &record)?;
         } else {
