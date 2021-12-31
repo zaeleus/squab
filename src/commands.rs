@@ -14,7 +14,7 @@ pub enum StrandSpecificationOption {
 }
 
 impl FromStr for StrandSpecificationOption {
-    type Err = ();
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -22,7 +22,7 @@ impl FromStr for StrandSpecificationOption {
             "forward" => Ok(Self::Forward),
             "reverse" => Ok(Self::Reverse),
             "auto" => Ok(Self::Auto),
-            _ => Err(()),
+            _ => Err(format!("invalid strand specification option: {}", s)),
         }
     }
 }
