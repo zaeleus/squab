@@ -1,4 +1,4 @@
-FROM rust:1.57.0-bullseye as builder
+FROM rust:1.58.1-bullseye as builder
 
 WORKDIR /tmp/noodles-squab/
 
