@@ -38,7 +38,7 @@ mod tests {
         assert_eq!("reverse".parse(), Ok(StrandSpecificationOption::Reverse));
         assert_eq!("auto".parse(), Ok(StrandSpecificationOption::Auto));
 
-        assert_eq!("".parse::<StrandSpecificationOption>(), Err(()));
-        assert_eq!("noodles".parse::<StrandSpecificationOption>(), Err(()));
+        assert!("".parse::<StrandSpecificationOption>().is_err());
+        assert!("noodles".parse::<StrandSpecificationOption>().is_err());
     }
 }
