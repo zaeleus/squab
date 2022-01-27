@@ -1,12 +1,13 @@
 use std::{env, fs};
 
+use noodles::sam::record::MappingQuality;
 use noodles_squab::{commands::quantify, count::Filter, StrandSpecificationOption};
 
 #[tokio::test]
 async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let feature_type = "exon";
     let id = "gene_id";
-    let filter = Filter::new(10, false, false, false);
+    let filter = Filter::new(MappingQuality::try_from(10)?, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
     let worker_count = 1;
 
