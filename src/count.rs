@@ -101,7 +101,7 @@ pub fn count_single_end_record(
         _ => flags.is_reverse_complemented(),
     };
 
-    let intervals = MatchIntervals::new(&cigar, start);
+    let intervals = MatchIntervals::new(cigar, start);
 
     let tree = match get_tree(
         features,
@@ -224,7 +224,7 @@ pub fn count_paired_end_record_pair(
         _ => f1.is_reverse_complemented(),
     };
 
-    let intervals = MatchIntervals::new(&cigar, start);
+    let intervals = MatchIntervals::new(cigar, start);
 
     let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
         Some(t) => t,
@@ -246,7 +246,7 @@ pub fn count_paired_end_record_pair(
         _ => !f2.is_reverse_complemented(),
     };
 
-    let intervals = MatchIntervals::new(&cigar, start);
+    let intervals = MatchIntervals::new(cigar, start);
 
     let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
         Some(t) => t,
@@ -291,7 +291,7 @@ pub fn count_paired_end_singleton_record(
         Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
     };
 
-    let intervals = MatchIntervals::new(&cigar, start);
+    let intervals = MatchIntervals::new(cigar, start);
 
     let tree = match get_tree(
         features,
