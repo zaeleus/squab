@@ -3,7 +3,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use clap::{crate_name, App, AppSettings, Arg, ArgMatches};
+use clap::{crate_name, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
 use noodles_squab::{commands, count::Filter};
 use tracing::{info, warn};
@@ -11,7 +11,7 @@ use tracing::{info, warn};
 git_testament!(TESTAMENT);
 
 fn match_args_from_env() -> clap::ArgMatches {
-    let quantify_cmd = App::new("quantify")
+    let quantify_cmd = Command::new("quantify")
         .about("Gene expression quantification")
         .arg(
             Arg::new("with-secondary-records")
@@ -88,7 +88,7 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .index(1),
         );
 
-    let normalize_cmd = App::new("normalize")
+    let normalize_cmd = Command::new("normalize")
         .about("Normalize counts")
         .arg(
             Arg::new("feature-type")
@@ -129,9 +129,10 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .index(1),
         );
 
-    App::new(crate_name!())
+    Command::new(crate_name!())
         .version(render_testament!(TESTAMENT).as_str())
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .arg(
             Arg::new("verbose")
                 .short('v')
