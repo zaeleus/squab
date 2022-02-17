@@ -8,16 +8,17 @@ use std::{
 };
 
 use noodles::bam;
+use noodles::sam;
 use tokio::io::AsyncRead;
 use tracing::warn;
 
 type RecordKey = (
     Vec<u8>,
     PairPosition,
-    Option<i32>,
-    Option<i32>,
-    Option<i32>,
-    Option<i32>,
+    Option<bam::record::ReferenceSequenceId>,
+    Option<sam::record::Position>,
+    Option<bam::record::ReferenceSequenceId>,
+    Option<sam::record::Position>,
     i32,
 );
 
@@ -94,10 +95,10 @@ fn key(record: &bam::Record) -> io::Result<RecordKey> {
         record.read_name().to_vec(),
         PairPosition::try_from(record)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        record.reference_sequence_id().map(i32::from),
-        record.position().map(i32::from),
-        record.mate_reference_sequence_id().map(i32::from),
-        record.mate_position().map(i32::from),
+        record.reference_sequence_id(),
+        record.position(),
+        record.mate_reference_sequence_id(),
+        record.mate_position(),
         record.template_length(),
     ))
 }
@@ -108,10 +109,10 @@ fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
         PairPosition::try_from(record)
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        record.mate_reference_sequence_id().map(i32::from),
-        record.mate_position().map(i32::from),
-        record.reference_sequence_id().map(i32::from),
-        record.position().map(i32::from),
+        record.mate_reference_sequence_id(),
+        record.mate_position(),
+        record.reference_sequence_id(),
+        record.position(),
         -record.template_length(),
     ))
 }
@@ -189,13 +190,13 @@ mod tests {
 
         let actual = key(&r1)?;
         let expected = (
-            b"r0".to_vec(),
+            r1.read_name().to_vec(),
             PairPosition::First,
-            Some(0),
-            Some(8),
-            Some(1),
-            Some(13),
-            144,
+            r1.reference_sequence_id(),
+            r1.position(),
+            r1.mate_reference_sequence_id(),
+            r1.mate_position(),
+            r1.template_length(),
         );
 
         assert_eq!(actual, expected);
@@ -209,13 +210,13 @@ mod tests {
 
         let actual = mate_key(&r1)?;
         let expected = (
-            b"r0".to_vec(),
+            r1.read_name().to_vec(),
             PairPosition::Second,
-            Some(1),
-            Some(13),
-            Some(0),
-            Some(8),
-            -144,
+            r1.mate_reference_sequence_id(),
+            r1.mate_position(),
+            r1.reference_sequence_id(),
+            r1.position(),
+            -r1.template_length(),
         );
 
         assert_eq!(actual, expected);
