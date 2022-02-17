@@ -91,10 +91,7 @@ fn is_not_primary(record: &bam::Record) -> bool {
 
 fn key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record
-            .read_name()
-            .map(|s| s.to_bytes().to_vec())
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
+        record.read_name().to_vec(),
         PairPosition::try_from(record)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id().map(i32::from),
@@ -107,10 +104,7 @@ fn key(record: &bam::Record) -> io::Result<RecordKey> {
 
 fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record
-            .read_name()
-            .map(|s| s.to_bytes().to_vec())
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
+        record.read_name().to_vec(),
         PairPosition::try_from(record)
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
