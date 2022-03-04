@@ -17,9 +17,9 @@ futures = { version = "0.3.17", default-features = false, features = ["std"] }
 git-testament = "0.2.0"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
 mimalloc = { version = "0.1.26", default-features = false }
-noodles = { version = "0.19.0", features = ["bam", "gff", "sam"] }
-noodles-bam = { version = "0.15.0", features = ["async"] }
-noodles-bgzf = { version = "0.9.0", features = ["libdeflate"] }
+noodles = { version = "0.20.0", features = ["bam", "gff", "sam"] }
+noodles-bam = { version = "0.16.0", features = ["async"] }
+noodles-bgzf = { version = "0.10.0", features = ["libdeflate"] }
 num_cpus = "1.12.0"
 tokio = { version = "1.0.1", features = ["fs", "rt-multi-thread"] }
 tracing = "0.1.25"
