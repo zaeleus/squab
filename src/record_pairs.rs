@@ -7,18 +7,21 @@ use std::{
     io,
 };
 
-use noodles::bam;
-use noodles::sam;
+use noodles::{
+    bam,
+    core::Position,
+    sam::{self, AlignmentRecord},
+};
 use tokio::io::AsyncRead;
 use tracing::warn;
 
 type RecordKey = (
-    Vec<u8>,
+    Option<sam::record::ReadName>,
     PairPosition,
-    Option<bam::record::ReferenceSequenceId>,
-    Option<sam::record::Position>,
-    Option<bam::record::ReferenceSequenceId>,
-    Option<sam::record::Position>,
+    Option<usize>,
+    Option<Position>,
+    Option<usize>,
+    Option<Position>,
     i32,
 );
 
@@ -92,7 +95,7 @@ fn is_not_primary(record: &bam::Record) -> bool {
 
 fn key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record.read_name().to_vec(),
+        record.read_name().cloned(),
         PairPosition::try_from(record)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id(),
@@ -105,7 +108,7 @@ fn key(record: &bam::Record) -> io::Result<RecordKey> {
 
 fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record.read_name().to_vec(),
+        record.read_name().cloned(),
         PairPosition::try_from(record)
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
@@ -134,7 +137,7 @@ mod tests {
     use noodles::sam::{
         self,
         header::ReferenceSequence,
-        record::{Flags, Position, ReadName, ReferenceSequenceName},
+        record::{Flags, ReadName, ReferenceSequenceName},
     };
 
     use super::*;
@@ -165,7 +168,7 @@ mod tests {
             .set_mate_reference_sequence_name(mate_reference_sequence_name.clone())
             .set_mate_position(mate_position)
             .set_template_length(144)
-            .build()?;
+            .build();
 
         let r1 = bam::Record::try_from_sam_record(&reference_sequences, &s1)?;
 
@@ -177,7 +180,7 @@ mod tests {
             .set_mate_reference_sequence_name(reference_sequence_name)
             .set_mate_position(position)
             .set_template_length(-144)
-            .build()?;
+            .build();
 
         let r2 = bam::Record::try_from_sam_record(&reference_sequences, &s2)?;
 
@@ -190,7 +193,7 @@ mod tests {
 
         let actual = key(&r1)?;
         let expected = (
-            r1.read_name().to_vec(),
+            r1.read_name().cloned(),
             PairPosition::First,
             r1.reference_sequence_id(),
             r1.position(),
@@ -210,7 +213,7 @@ mod tests {
 
         let actual = mate_key(&r1)?;
         let expected = (
-            r1.read_name().to_vec(),
+            r1.read_name().cloned(),
             PairPosition::Second,
             r1.mate_reference_sequence_id(),
             r1.mate_position(),

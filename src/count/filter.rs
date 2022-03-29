@@ -2,7 +2,7 @@ use std::io;
 
 use noodles::{
     bam,
-    sam::{self, record::MappingQuality},
+    sam::{self, record::MappingQuality, AlignmentRecord},
 };
 
 use super::context::Event;
@@ -112,7 +112,7 @@ impl Filter {
 fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
     use sam::record::data::field::{value::Type, Tag};
 
-    let field = match record.data().get(Tag::AlignmentHitCount).transpose()? {
+    let field = match record.data().get(Tag::AlignmentHitCount) {
         Some(f) => f,
         None => return Ok(false),
     };
@@ -126,7 +126,7 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
             format!(
                 "invalid {} value type: expected {:?}, got {:?}",
                 Tag::AlignmentHitCount,
-                Type::Int,
+                Type::Int32,
                 value.ty()
             ),
         )),

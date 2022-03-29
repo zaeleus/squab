@@ -1,6 +1,9 @@
 use std::{error, fmt};
 
-use noodles::{bam, sam};
+use noodles::{
+    bam,
+    sam::{self, AlignmentRecord},
+};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {

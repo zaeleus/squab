@@ -39,7 +39,7 @@ fn calculate_tpm(cpb: f64, cpbs_sum: f64) -> f64 {
 mod tests {
     use crate::Feature;
 
-    use noodles::gff;
+    use noodles::{core::Position, gff};
 
     use super::*;
 
@@ -53,7 +53,7 @@ mod tests {
         counts.iter().cloned().collect()
     }
 
-    fn build_feature_map() -> FeatureMap {
+    fn build_feature_map() -> Result<FeatureMap, noodles::core::position::TryFromIntError> {
         let reference_name = String::from("chr1");
         let strand = gff::record::Strand::Forward;
 
@@ -62,8 +62,8 @@ mod tests {
                 String::from("AAAS"),
                 vec![Feature::new(
                     reference_name.clone(),
-                    53307456,
-                    53324864,
+                    Position::try_from(53307456)?,
+                    Position::try_from(53324864)?,
                     strand,
                 )],
             ),
@@ -71,24 +71,29 @@ mod tests {
                 String::from("AC009952.3"),
                 vec![Feature::new(
                     reference_name.clone(),
-                    9189629,
-                    9204611,
+                    Position::try_from(9189629)?,
+                    Position::try_from(9204611)?,
                     strand,
                 )],
             ),
             (
                 String::from("RPL37AP1"),
-                vec![Feature::new(reference_name, 44466564, 44466842, strand)],
+                vec![Feature::new(
+                    reference_name,
+                    Position::try_from(44466564)?,
+                    Position::try_from(44466842)?,
+                    strand,
+                )],
             ),
         ];
 
-        features.iter().cloned().collect()
+        Ok(features.iter().cloned().collect())
     }
     #[test]
-    fn test_calculate_tpms() -> Result<(), Error> {
+    fn test_calculate_tpms() -> Result<(), Box<dyn std::error::Error>> {
         let counts = build_counts();
-        let feature_map = build_feature_map();
 
+        let feature_map = build_feature_map()?;
         let tpms = calculate_tpms(&counts, &feature_map)?;
 
         assert_eq!(tpms.len(), 3);
@@ -109,12 +114,15 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_tpms_with_missing_feature() {
+    fn test_calculate_tpms_with_missing_feature(
+    ) -> Result<(), noodles::core::position::TryFromIntError> {
         let counts = build_counts();
 
-        let mut feature_map = build_feature_map();
+        let mut feature_map = build_feature_map()?;
         feature_map.remove("AC009952.3");
 
         assert!(calculate_tpms(&counts, &feature_map).is_err());
+
+        Ok(())
     }
 }

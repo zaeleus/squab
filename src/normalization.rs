@@ -26,7 +26,7 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {}
 
-fn sum_nonoverlapping_feature_lengths(features: &[Feature]) -> u64 {
+fn sum_nonoverlapping_feature_lengths(features: &[Feature]) -> usize {
     merge_features(features).iter().map(|f| f.len()).sum()
 }
 
@@ -75,49 +75,129 @@ fn merge_features(features: &[Feature]) -> Vec<Feature> {
 mod tests {
     use crate::Feature;
 
-    use noodles::gff;
+    use noodles::{core::Position, gff};
 
     use super::*;
 
     #[test]
-    fn test_sum_nonoverlapping_feature_lengths() {
+    fn test_sum_nonoverlapping_feature_lengths(
+    ) -> Result<(), noodles::core::position::TryFromIntError> {
         let reference_name = String::from("chr1");
         let strand = gff::record::Strand::Forward;
 
         let features = [
-            Feature::new(reference_name.clone(), 2, 5, strand),
-            Feature::new(reference_name.clone(), 3, 4, strand),
-            Feature::new(reference_name.clone(), 5, 7, strand),
-            Feature::new(reference_name.clone(), 9, 12, strand),
-            Feature::new(reference_name.clone(), 10, 15, strand),
-            Feature::new(reference_name, 16, 21, strand),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(2)?,
+                Position::try_from(5)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(3)?,
+                Position::try_from(4)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(5)?,
+                Position::try_from(7)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(9)?,
+                Position::try_from(12)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(10)?,
+                Position::try_from(15)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name,
+                Position::try_from(16)?,
+                Position::try_from(21)?,
+                strand,
+            ),
         ];
 
         let len = sum_nonoverlapping_feature_lengths(&features);
         assert_eq!(len, 19);
+
+        Ok(())
     }
 
     #[test]
-    fn test_merge_features() {
+    fn test_merge_features() -> Result<(), noodles::core::position::TryFromIntError> {
         let reference_name = String::from("chr1");
         let strand = gff::record::Strand::Forward;
 
         let features = [
-            Feature::new(reference_name.clone(), 2, 5, strand),
-            Feature::new(reference_name.clone(), 3, 4, strand),
-            Feature::new(reference_name.clone(), 5, 7, strand),
-            Feature::new(reference_name.clone(), 9, 12, strand),
-            Feature::new(reference_name.clone(), 10, 15, strand),
-            Feature::new(reference_name.clone(), 16, 21, strand),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(2)?,
+                Position::try_from(5)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(3)?,
+                Position::try_from(4)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(5)?,
+                Position::try_from(7)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(9)?,
+                Position::try_from(12)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(10)?,
+                Position::try_from(15)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(16)?,
+                Position::try_from(21)?,
+                strand,
+            ),
         ];
 
         let actual = merge_features(&features);
         let expected = [
-            Feature::new(reference_name.clone(), 2, 7, strand),
-            Feature::new(reference_name.clone(), 9, 15, strand),
-            Feature::new(reference_name, 16, 21, strand),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(2)?,
+                Position::try_from(7)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name.clone(),
+                Position::try_from(9)?,
+                Position::try_from(15)?,
+                strand,
+            ),
+            Feature::new(
+                reference_name,
+                Position::try_from(16)?,
+                Position::try_from(21)?,
+                strand,
+            ),
         ];
 
         assert_eq!(actual, expected);
+
+        Ok(())
     }
 }

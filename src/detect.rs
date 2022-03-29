@@ -3,8 +3,10 @@ use std::path::Path;
 use futures::{StreamExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
-    bam, gff,
-    sam::{self, header::ReferenceSequences},
+    bam,
+    core::Position,
+    gff,
+    sam::{self, header::ReferenceSequences, AlignmentRecord},
 };
 use tokio::{fs::File, io};
 
@@ -57,16 +59,11 @@ impl TryFrom<gff::record::Strand> for Strand {
 
 fn count_paired_end_record(
     counts: &mut Counts,
-    tree: &IntervalTree<u64, Entry>,
+    tree: &IntervalTree<Position, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = record
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
-    let reference_len = record.cigar().reference_len()? as u64;
-    let end = start + reference_len - 1;
+    let start = record.alignment_start().expect("missing alignment start");
+    let end = record.alignment_end().expect("missing alignment end");
 
     let pair_position = PairPosition::try_from(record)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
@@ -103,16 +100,11 @@ fn count_paired_end_record(
 
 fn count_single_end_record(
     counts: &mut Counts,
-    tree: &IntervalTree<u64, Entry>,
+    tree: &IntervalTree<Position, Entry>,
     record: &bam::Record,
 ) -> io::Result<()> {
-    let start = record
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
-    let reference_len = record.cigar().reference_len()? as u64;
-    let end = start + reference_len - 1;
+    let start = record.alignment_start().expect("missing alignment start");
+    let end = record.alignment_end().expect("missing alignment end");
 
     let record_strand = Strand::from(record.flags());
 

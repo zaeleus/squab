@@ -10,8 +10,10 @@ use std::{collections::HashSet, io, sync::Arc};
 use futures::{StreamExt, TryFutureExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
-    bam, gff,
-    sam::{self, header::ReferenceSequences},
+    bam,
+    core::Position,
+    gff,
+    sam::{self, header::ReferenceSequences, AlignmentRecord},
 };
 use tokio::io::AsyncRead;
 
@@ -89,11 +91,7 @@ pub fn count_single_end_record(
     }
 
     let cigar = record.cigar();
-    let start = record
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
+    let start = record.alignment_start().expect("missing alignment start");
     let flags = record.flags();
 
     let is_reverse = match strand_specification {
@@ -212,11 +210,7 @@ pub fn count_paired_end_record_pair(
     }
 
     let cigar = r1.cigar();
-    let start = r1
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
+    let start = r1.alignment_start().expect("missing alignment start");
     let f1 = r1.flags();
 
     let is_reverse = match strand_specification {
@@ -234,11 +228,7 @@ pub fn count_paired_end_record_pair(
     let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
     let cigar = r2.cigar();
-    let start = r2
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
+    let start = r2.alignment_start().expect("missing alignment start");
     let f2 = r2.flags();
 
     let is_reverse = match strand_specification {
@@ -272,11 +262,7 @@ pub fn count_paired_end_singleton_record(
     }
 
     let cigar = record.cigar();
-    let start = record
-        .position()
-        .map(i32::from)
-        .map(|n| n as u64)
-        .expect("record cannot be unmapped");
+    let start = record.alignment_start().expect("missing alignment start");
     let flags = record.flags();
 
     let is_reverse = match PairPosition::try_from(record) {
@@ -308,16 +294,14 @@ pub fn count_paired_end_singleton_record(
 }
 
 fn find(
-    tree: &IntervalTree<u64, Entry>,
+    tree: &IntervalTree<Position, Entry>,
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
     is_reverse: bool,
 ) -> io::Result<HashSet<String>> {
     let mut set = HashSet::new();
 
-    for result in intervals {
-        let interval = result?;
-
+    for interval in intervals {
         for entry in tree.find(interval.clone()) {
             let (gene_name, strand) = entry.get();
 
@@ -341,14 +325,10 @@ fn find(
 
 fn get_reference_sequence(
     reference_sequences: &ReferenceSequences,
-    reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
+    reference_sequence_id: Option<usize>,
 ) -> io::Result<&sam::header::ReferenceSequence> {
     reference_sequence_id
-        .and_then(|id| {
-            reference_sequences
-                .get_index(i32::from(id) as usize)
-                .map(|(_, rs)| rs)
-        })
+        .and_then(|id| reference_sequences.get_index(id).map(|(_, rs)| rs))
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -370,8 +350,8 @@ fn update_intersections(mut intersections: HashSet<String>) -> Event {
 pub fn get_tree<'t>(
     features: &'t Features,
     reference_sequences: &ReferenceSequences,
-    reference_sequence_id: Option<bam::record::ReferenceSequenceId>,
-) -> io::Result<Option<&'t IntervalTree<u64, Entry>>> {
+    reference_sequence_id: Option<usize>,
+) -> io::Result<Option<&'t IntervalTree<Position, Entry>>> {
     let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
     let reference_sequence_name = reference_sequence.name();
     Ok(features.get(reference_sequence_name.as_str()))
@@ -405,7 +385,7 @@ mod tests {
     fn test_get_reference() -> Result<(), Box<dyn std::error::Error>> {
         let reference_sequences = build_reference_sequences()?;
 
-        let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(1)?);
+        let reference_sequence_id = Some(1);
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
         assert_eq!(reference_sequence.name().as_str(), "sq1");
@@ -416,7 +396,7 @@ mod tests {
             get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());
 
-        let reference_sequence_id = Some(bam::record::ReferenceSequenceId::try_from(5)?);
+        let reference_sequence_id = Some(5);
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id);
         assert!(reference_sequence.is_err());

@@ -22,10 +22,11 @@ use std::{
 };
 
 use interval_tree::IntervalTree;
+use noodles::core::Position;
 use tracing::info;
 
 pub type Entry = (String, noodles::gff::record::Strand);
-pub type Features = HashMap<String, IntervalTree<u64, Entry>>;
+pub type Features = HashMap<String, IntervalTree<Position, Entry>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {
@@ -58,11 +59,12 @@ where
         let reference_sequence_name = record.reference_sequence_name();
         let start = record.start();
         let end = record.end();
-
         let strand = record.strand();
 
-        let attributes = record.attributes();
-        let id = attributes
+        let feature = Feature::new(reference_sequence_name.into(), start, end, strand);
+
+        let id = record
+            .attributes()
             .iter()
             .find(|e| e.key() == feature_id)
             .map(|e| e.value())
@@ -74,13 +76,6 @@ where
             })?;
 
         let list = features.entry(id.into()).or_default();
-
-        let feature = Feature::new(
-            reference_sequence_name.into(),
-            start as u64,
-            end as u64,
-            strand,
-        );
 
         list.push(feature);
     }
@@ -107,7 +102,8 @@ pub fn build_interval_trees<S: BuildHasher>(
 
             let tree = interval_trees
                 .entry(reference_sequence_name.into())
-                .or_default();
+                .or_insert_with(IntervalTree::new);
+
             tree.insert(start..=end, (id.into(), strand));
         }
 
@@ -122,7 +118,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_read_features() -> io::Result<()> {
+    fn test_read_features() -> anyhow::Result<()> {
         use noodles::gff::record::Strand;
 
         let data = b"##gff-version 3
@@ -138,13 +134,28 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
         assert_eq!(
             features["gene0"],
             [
-                Feature::new(String::from("sq0"), 1, 10, Strand::Forward),
-                Feature::new(String::from("sq0"), 21, 30, Strand::Forward),
+                Feature::new(
+                    String::from("sq0"),
+                    Position::try_from(1)?,
+                    Position::try_from(10)?,
+                    Strand::Forward
+                ),
+                Feature::new(
+                    String::from("sq0"),
+                    Position::try_from(21)?,
+                    Position::try_from(30)?,
+                    Strand::Forward
+                ),
             ]
         );
         assert_eq!(
             features["gene1"],
-            [Feature::new(String::from("sq1"), 41, 50, Strand::Reverse),]
+            [Feature::new(
+                String::from("sq1"),
+                Position::try_from(41)?,
+                Position::try_from(50)?,
+                Strand::Reverse
+            ),]
         );
 
         Ok(())

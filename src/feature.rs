@@ -1,18 +1,18 @@
-use noodles::gff;
+use noodles::{core::Position, gff};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Feature {
     reference_sequence_name: String,
-    start: u64,
-    end: u64,
+    start: Position,
+    end: Position,
     strand: gff::record::Strand,
 }
 
 impl Feature {
     pub fn new(
         reference_sequence_name: String,
-        start: u64,
-        end: u64,
+        start: Position,
+        end: Position,
         strand: gff::record::Strand,
     ) -> Self {
         Self {
@@ -27,15 +27,15 @@ impl Feature {
         &self.reference_sequence_name
     }
 
-    pub fn start(&self) -> u64 {
+    pub fn start(&self) -> Position {
         self.start
     }
 
-    pub fn end(&self) -> u64 {
+    pub fn end(&self) -> Position {
         self.end
     }
 
-    pub fn end_mut(&mut self) -> &mut u64 {
+    pub fn end_mut(&mut self) -> &mut Position {
         &mut self.end
     }
 
@@ -43,8 +43,8 @@ impl Feature {
         self.strand
     }
 
-    pub fn len(&self) -> u64 {
-        self.end - self.start + 1
+    pub fn len(&self) -> usize {
+        usize::from(self.end) - usize::from(self.start) + 1
     }
 
     pub fn is_empty(&self) -> bool {
@@ -56,46 +56,63 @@ impl Feature {
 mod tests {
     use super::*;
 
-    fn build_feature() -> Feature {
-        Feature::new(String::from("sq0"), 8, 13, gff::record::Strand::Forward)
+    fn build_feature() -> Result<Feature, noodles::core::position::TryFromIntError> {
+        Ok(Feature::new(
+            String::from("sq0"),
+            Position::try_from(8)?,
+            Position::try_from(13)?,
+            gff::record::Strand::Forward,
+        ))
     }
 
     #[test]
-    fn test_reference_sequence_name() {
-        let feature = build_feature();
+    fn test_reference_sequence_name() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = build_feature()?;
         assert_eq!(feature.reference_sequence_name(), "sq0");
+        Ok(())
     }
 
     #[test]
-    fn test_start() {
-        let feature = build_feature();
-        assert_eq!(feature.start(), 8);
+    fn test_start() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = build_feature()?;
+        assert_eq!(feature.start(), Position::try_from(8)?);
+        Ok(())
     }
 
     #[test]
-    fn test_end() {
-        let feature = build_feature();
-        assert_eq!(feature.end(), 13);
+    fn test_end() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = build_feature()?;
+        assert_eq!(feature.end(), Position::try_from(13)?);
+        Ok(())
     }
 
     #[test]
-    fn test_strand() {
-        let feature = build_feature();
+    fn test_strand() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = build_feature()?;
         assert_eq!(feature.strand(), gff::record::Strand::Forward);
+        Ok(())
     }
 
     #[test]
-    fn test_len() {
-        let feature = build_feature();
+    fn test_len() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = build_feature()?;
         assert_eq!(feature.len(), 6);
+        Ok(())
     }
 
     #[test]
-    fn test_is_empty() {
-        let feature = Feature::new(String::from("sq0"), 1, 1, gff::record::Strand::Forward);
+    fn test_is_empty() -> Result<(), noodles::core::position::TryFromIntError> {
+        let feature = Feature::new(
+            String::from("sq0"),
+            Position::MIN,
+            Position::MIN,
+            gff::record::Strand::Forward,
+        );
         assert!(!feature.is_empty());
 
-        let feature = build_feature();
+        let feature = build_feature()?;
         assert!(!feature.is_empty());
+
+        Ok(())
     }
 }
