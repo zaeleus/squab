@@ -3,6 +3,8 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+use std::thread;
+
 use clap::{crate_name, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
 use noodles_squab::{commands, count::Filter};
@@ -163,7 +165,7 @@ fn quantify(matches: &ArgMatches) -> anyhow::Result<()> {
 
     let threads = matches
         .value_of_t("threads")
-        .unwrap_or_else(|_| num_cpus::get());
+        .or_else(|_| thread::available_parallelism().map(usize::from))?;
 
     let strand_specification_option = matches
         .value_of_t("strand-specification")

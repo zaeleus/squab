@@ -431,7 +431,6 @@ dependencies = [
  "noodles",
  "noodles-bam",
  "noodles-bgzf",
- "num_cpus",
  "tokio",
  "tracing",
  "tracing-subscriber",
