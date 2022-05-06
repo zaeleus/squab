@@ -5,6 +5,7 @@ authors = ["Michael Macias <zaeleus@gmail.com>"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.59.0"
+publish = false
 
 [profile.release]
 lto = "fat"
