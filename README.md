@@ -1,11 +1,11 @@
 # noodles squab
 
-[![GitHub Actions status](https://github.com/zaeleus/noodles-squab/workflows/CI/badge.svg)](https://github.com/zaeleus/noodles-squab/actions)
+[![GitHub Actions status](https://github.com/zaeleus/squab/workflows/CI/badge.svg)](https://github.com/zaeleus/squab/actions)
 
-**noodles squab** performs gene expression quantification by counting the
-number of aligned records that intersects a set of features. Output can be the
-raw counts or normalized counts in TPM (transcripts per million) or FPKM
-(fragments per kilobase per million mapped reads).
+**squab** performs gene expression quantification by counting the number of
+aligned records that intersects a set of features. Output can be the raw counts
+or normalized counts in TPM (transcripts per million) or FPKM (fragments per
+kilobase per million mapped reads).
 
 The original goal of this project is to provide a faster alternative to
 [htseq-count]. It uses similar counting rules and outputs a compatible data
@@ -15,10 +15,10 @@ table.
 
 ## Installation
 
-Install [Rust] and use `cargo` to install `noodles-squab`.
+Install [Rust] and use `cargo` to install `squab`.
 
 ```
-$ cargo install --git https://github.com/zaeleus/noodles-squab.git
+$ cargo install --git https://github.com/zaeleus/squab.git
 ```
 
 [Rust]: https://www.rust-lang.org/tools/install
@@ -26,7 +26,7 @@ $ cargo install --git https://github.com/zaeleus/noodles-squab.git
 
 ## Usage
 
-noodles-squab has two subcommands: `quantify` and `normalize`.
+squab has two subcommands: `quantify` and `normalize`.
 
 ### `quantify`
 
@@ -34,11 +34,11 @@ noodles-squab has two subcommands: `quantify` and `normalize`.
 times aligned records intersect known gene annotations.
 
 ```
-noodles-squab-quantify
+squab-quantify
 Gene expression quantification
 
 USAGE:
-    noodles-squab quantify [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
+    squab quantify [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
 
 FLAGS:
     -h, --help                          Prints help information
@@ -74,14 +74,14 @@ normalization methods are available: FPKM for single sample normalization and
 TPM for across samples normalization (default).
 
 Typically, this is only used when a sample was previously quanitifed, e.g.,
-using `noodles-squab quantify` or `htseq-count`.
+using `squab quantify` or `htseq-count`.
 
 ```
-noodles-squab-normalize
+squab-normalize
 Normalize counts
 
 USAGE:
-    noodles-squab normalize [OPTIONS] <counts> --annotations <file>
+    squab normalize [OPTIONS] <counts> --annotations <file>
 
 FLAGS:
     -h, --help       Prints help information
@@ -105,7 +105,7 @@ identifier (string) and the normalized value (double).
 ### Count features (exons by gene ID)
 
 ```
-$ noodles-squab \
+$ squab \
     quantify \
     --annotations annotations.gff3.gz \
     --output sample.counts.tsv \
@@ -115,7 +115,7 @@ $ noodles-squab \
 ### Count featues (genes by gene name)
 
 ```
-$ noodles-squab \
+$ squab \
     quantify \
     --annotations annotations.gff3.gz \
     --feature-type gene \
@@ -127,7 +127,7 @@ $ noodles-squab \
 ### Normalize counts in FPKM (exons by gene ID)
 
 ```
-$ noodles-squab \
+$ squab \
     normalize \
     --method fpkm \
     --annotations annotations.gff3.gz \

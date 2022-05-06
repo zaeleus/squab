@@ -7,7 +7,7 @@ use std::thread;
 
 use clap::{crate_name, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
-use noodles_squab::{commands, count::Filter};
+use squab::{commands, count::Filter};
 use tracing::{info, warn};
 
 git_testament!(TESTAMENT);

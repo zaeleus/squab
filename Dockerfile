@@ -1,6 +1,6 @@
 FROM rust:1.60.0-bullseye as builder
 
-WORKDIR /tmp/noodles-squab/
+WORKDIR /tmp/squab/
 
 COPY .git/ .git/
 COPY Cargo.lock Cargo.toml ./
@@ -10,10 +10,8 @@ RUN cargo build --release
 
 FROM debian:bullseye
 
-COPY --from=builder \
-    /tmp/noodles-squab/target/release/noodles-squab \
-    /opt/noodles-squab/bin/
+COPY --from=builder /tmp/squab/target/release/squab /opt/squab/bin/
 
-ENV PATH=/opt/noodles-squab/bin:$PATH
+ENV PATH=/opt/squab/bin:$PATH
 
-ENTRYPOINT ["/opt/noodles-squab/bin/noodles-squab"]
+ENTRYPOINT ["/opt/squab/bin/squab"]

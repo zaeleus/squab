@@ -1,7 +1,7 @@
 use std::{env, fs};
 
 use noodles::sam::record::MappingQuality;
-use noodles_squab::{commands::quantify, count::Filter, StrandSpecificationOption};
+use squab::{commands::quantify, count::Filter, StrandSpecificationOption};
 
 #[tokio::test]
 async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
