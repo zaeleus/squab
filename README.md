@@ -18,7 +18,7 @@ table.
 Install [Rust] and use `cargo` to install `squab`.
 
 ```
-$ cargo install --git https://github.com/zaeleus/squab.git
+$ cargo install --locked --git https://github.com/zaeleus/squab.git
 ```
 
 [Rust]: https://www.rust-lang.org/tools/install
