@@ -90,15 +90,6 @@ pub fn count_single_end_record(
         return Ok(event);
     }
 
-    let cigar = record.cigar();
-    let start = record.alignment_start().expect("missing alignment start");
-    let flags = record.flags();
-
-    let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => !flags.is_reverse_complemented(),
-        _ => flags.is_reverse_complemented(),
-    };
-
     let tree = match get_tree(
         features,
         reference_sequences,
@@ -108,7 +99,15 @@ pub fn count_single_end_record(
         None => return Ok(Event::NoFeature),
     };
 
+    let cigar = record.cigar();
+    let start = record.alignment_start().expect("missing alignment start");
     let intervals = MatchIntervals::new(cigar, start);
+
+    let flags = record.flags();
+    let is_reverse = match strand_specification {
+        StrandSpecification::Reverse => !flags.is_reverse_complemented(),
+        _ => flags.is_reverse_complemented(),
+    };
 
     let set = find(tree, intervals, strand_specification, is_reverse)?;
 
@@ -209,39 +208,37 @@ pub fn count_paired_end_record_pair(
         return Ok(event);
     }
 
-    let cigar = r1.cigar();
-    let start = r1.alignment_start().expect("missing alignment start");
-    let f1 = r1.flags();
-
-    let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => !f1.is_reverse_complemented(),
-        _ => f1.is_reverse_complemented(),
-    };
-
     let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
+    let cigar = r1.cigar();
+    let start = r1.alignment_start().expect("missing alignment start");
     let intervals = MatchIntervals::new(cigar, start);
 
-    let mut set = find(tree, intervals, strand_specification, is_reverse)?;
-
-    let cigar = r2.cigar();
-    let start = r2.alignment_start().expect("missing alignment start");
-    let f2 = r2.flags();
-
+    let f1 = r1.flags();
     let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => f2.is_reverse_complemented(),
-        _ => !f2.is_reverse_complemented(),
+        StrandSpecification::Reverse => !f1.is_reverse_complemented(),
+        _ => f1.is_reverse_complemented(),
     };
+
+    let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
     let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
+    let cigar = r2.cigar();
+    let start = r2.alignment_start().expect("missing alignment start");
     let intervals = MatchIntervals::new(cigar, start);
+
+    let f2 = r2.flags();
+    let is_reverse = match strand_specification {
+        StrandSpecification::Reverse => f2.is_reverse_complemented(),
+        _ => !f2.is_reverse_complemented(),
+    };
 
     let set2 = find(tree, intervals, strand_specification, is_reverse)?;
 
@@ -261,10 +258,20 @@ pub fn count_paired_end_singleton_record(
         return Ok(event);
     }
 
+    let tree = match get_tree(
+        features,
+        reference_sequences,
+        record.reference_sequence_id(),
+    )? {
+        Some(t) => t,
+        None => return Ok(Event::NoFeature),
+    };
+
     let cigar = record.cigar();
     let start = record.alignment_start().expect("missing alignment start");
-    let flags = record.flags();
+    let intervals = MatchIntervals::new(cigar, start);
 
+    let flags = record.flags();
     let is_reverse = match PairPosition::try_from(record) {
         Ok(PairPosition::First) => match strand_specification {
             StrandSpecification::Reverse => !flags.is_reverse_complemented(),
@@ -276,17 +283,6 @@ pub fn count_paired_end_singleton_record(
         },
         Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
     };
-
-    let tree = match get_tree(
-        features,
-        reference_sequences,
-        record.reference_sequence_id(),
-    )? {
-        Some(t) => t,
-        None => return Ok(Event::NoFeature),
-    };
-
-    let intervals = MatchIntervals::new(cigar, start);
 
     let set = find(tree, intervals, strand_specification, is_reverse)?;
 
