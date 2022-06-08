@@ -1,6 +1,6 @@
 use std::{error, fmt};
 
-use noodles::sam::{self, alignment::Record};
+use noodles::sam;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -14,14 +14,6 @@ impl PairPosition {
             PairPosition::First => PairPosition::Second,
             PairPosition::Second => PairPosition::First,
         }
-    }
-}
-
-impl<'a> TryFrom<&'a Record> for PairPosition {
-    type Error = TryFromFlagsError;
-
-    fn try_from(record: &Record) -> Result<Self, Self::Error> {
-        Self::try_from(record.flags())
     }
 }
 

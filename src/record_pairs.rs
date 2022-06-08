@@ -96,7 +96,7 @@ fn is_not_primary(record: &Record) -> bool {
 fn key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
-        PairPosition::try_from(record)
+        PairPosition::try_from(record.flags())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id(),
         record.alignment_start(),
@@ -109,7 +109,7 @@ fn key(record: &Record) -> io::Result<RecordKey> {
 fn mate_key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
-        PairPosition::try_from(record)
+        PairPosition::try_from(record.flags())
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.mate_reference_sequence_id(),
