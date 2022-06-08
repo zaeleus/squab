@@ -6,7 +6,7 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, alignment::Record, header::ReferenceSequences},
+    sam::{self, header::ReferenceSequences},
 };
 use tokio::{fs::File, io};
 
@@ -60,14 +60,13 @@ impl TryFrom<gff::record::Strand> for Strand {
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    record: &Record,
+    flags: sam::record::Flags,
+    start: Position,
+    end: Position,
 ) -> io::Result<()> {
-    let start = record.alignment_start().expect("missing alignment start");
-    let end = record.alignment_end().expect("missing alignment end");
-
-    let pair_position = PairPosition::try_from(record)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-    let record_strand = Strand::from(record.flags());
+    let pair_position =
+        PairPosition::try_from(flags).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let record_strand = Strand::from(flags);
 
     for entry in tree.find(start..=end) {
         let strand = entry.get().1;
@@ -101,12 +100,11 @@ fn count_paired_end_record(
 fn count_single_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    record: &Record,
+    flags: sam::record::Flags,
+    start: Position,
+    end: Position,
 ) -> io::Result<()> {
-    let start = record.alignment_start().expect("missing alignment start");
-    let end = record.alignment_end().expect("missing alignment end");
-
-    let record_strand = Strand::from(record.flags());
+    let record_strand = Strand::from(flags);
 
     for entry in tree.find(start..=end) {
         let strand = entry.get().1;
@@ -153,20 +151,21 @@ where
             continue;
         }
 
-        let tree = match get_tree(
-            features,
-            reference_sequences,
-            record.reference_sequence_id(),
-        )? {
+        let reference_sequence_id = record.reference_sequence_id();
+
+        let tree = match get_tree(features, reference_sequences, reference_sequence_id)? {
             Some(t) => t,
             None => continue,
         };
 
+        let start = record.alignment_start().expect("missing alignment start");
+        let end = record.alignment_end().expect("missing alignment end");
+
         if flags.is_segmented() {
             counts.paired += 1;
-            count_paired_end_record(&mut counts, tree, &record)?;
+            count_paired_end_record(&mut counts, tree, flags, start, end)?;
         } else {
-            count_single_end_record(&mut counts, tree, &record)?;
+            count_single_end_record(&mut counts, tree, flags, start, end)?;
         }
     }
 
