@@ -10,7 +10,7 @@ use std::{
 use noodles::{
     bam,
     core::Position,
-    sam::{self, AlignmentRecord},
+    sam::{self, alignment::Record},
 };
 use tokio::io::AsyncRead;
 use tracing::warn;
@@ -30,7 +30,7 @@ where
     R: AsyncRead,
 {
     reader: bam::AsyncReader<R>,
-    buf: HashMap<RecordKey, bam::Record>,
+    buf: HashMap<RecordKey, Record>,
     primary_only: bool,
 }
 
@@ -46,9 +46,9 @@ where
         }
     }
 
-    pub async fn next_pair(&mut self) -> io::Result<Option<(bam::Record, bam::Record)>> {
+    pub async fn next_pair(&mut self) -> io::Result<Option<(Record, Record)>> {
         loop {
-            let mut record = bam::Record::default();
+            let mut record = Record::default();
 
             match self.reader.read_record(&mut record).await {
                 Ok(0) => {
@@ -88,44 +88,44 @@ where
     }
 }
 
-fn is_not_primary(record: &bam::Record) -> bool {
+fn is_not_primary(record: &Record) -> bool {
     let flags = record.flags();
     flags.is_secondary() || flags.is_supplementary()
 }
 
-fn key(record: &bam::Record) -> io::Result<RecordKey> {
+fn key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
         PairPosition::try_from(record)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id(),
-        record.position(),
+        record.alignment_start(),
         record.mate_reference_sequence_id(),
-        record.mate_position(),
+        record.mate_alignment_start(),
         record.template_length(),
     ))
 }
 
-fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
+fn mate_key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
         PairPosition::try_from(record)
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.mate_reference_sequence_id(),
-        record.mate_position(),
+        record.mate_alignment_start(),
         record.reference_sequence_id(),
-        record.position(),
+        record.alignment_start(),
         -record.template_length(),
     ))
 }
 
 pub struct Singletons<'a> {
-    drain: Drain<'a, RecordKey, bam::Record>,
+    drain: Drain<'a, RecordKey, Record>,
 }
 
 impl<'a> Iterator for Singletons<'a> {
-    type Item = bam::Record;
+    type Item = Record;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.drain.next().map(|(_, r)| r)
@@ -134,55 +134,36 @@ impl<'a> Iterator for Singletons<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles::sam::{
-        self,
-        header::ReferenceSequence,
-        record::{Flags, ReadName, ReferenceSequenceName},
-    };
-
     use super::*;
 
-    fn build_record_pair() -> Result<(bam::Record, bam::Record), Box<dyn std::error::Error>> {
+    fn build_record_pair() -> Result<(Record, Record), Box<dyn std::error::Error>> {
+        use noodles::sam::record::{Flags, ReadName};
+
         let read_name: ReadName = "r0".parse()?;
-        let reference_sequence_name: ReferenceSequenceName = "sq0".parse()?;
-        let position = Position::try_from(8)?;
-        let mate_reference_sequence_name: ReferenceSequenceName = "sq1".parse()?;
+        let reference_sequence_id = 0;
+        let alignment_start = Position::try_from(8)?;
+        let mate_reference_sequence_id = 1;
         let mate_position = Position::try_from(13)?;
 
-        let reference_sequences = vec![("sq0".parse()?, 8), ("sq1".parse()?, 13)]
-            .into_iter()
-            .map(
-                |(name, len): (sam::header::reference_sequence::Name, i32)| {
-                    let sn = name.to_string();
-                    ReferenceSequence::new(name, len).map(|rs| (sn, rs))
-                },
-            )
-            .into_iter()
-            .collect::<Result<_, _>>()?;
-
-        let s1 = sam::Record::builder()
+        let r1 = Record::builder()
             .set_read_name(read_name.clone())
             .set_flags(Flags::SEGMENTED | Flags::FIRST_SEGMENT)
-            .set_reference_sequence_name(reference_sequence_name.clone())
-            .set_position(position)
-            .set_mate_reference_sequence_name(mate_reference_sequence_name.clone())
-            .set_mate_position(mate_position)
+            .set_reference_sequence_id(reference_sequence_id)
+            .set_alignment_start(alignment_start)
+            .set_mate_reference_sequence_id(mate_reference_sequence_id)
+            .set_mate_alignment_start(mate_position)
             .set_template_length(144)
             .build();
 
-        let r1 = bam::Record::try_from_sam_record(&reference_sequences, &s1)?;
-
-        let s2 = sam::Record::builder()
+        let r2 = Record::builder()
             .set_read_name(read_name)
             .set_flags(Flags::SEGMENTED | Flags::LAST_SEGMENT)
-            .set_reference_sequence_name(mate_reference_sequence_name)
-            .set_position(mate_position)
-            .set_mate_reference_sequence_name(reference_sequence_name)
-            .set_mate_position(position)
+            .set_reference_sequence_id(mate_reference_sequence_id)
+            .set_alignment_start(mate_position)
+            .set_mate_reference_sequence_id(reference_sequence_id)
+            .set_mate_alignment_start(alignment_start)
             .set_template_length(-144)
             .build();
-
-        let r2 = bam::Record::try_from_sam_record(&reference_sequences, &s2)?;
 
         Ok((r1, r2))
     }
@@ -196,9 +177,9 @@ mod tests {
             r1.read_name().cloned(),
             PairPosition::First,
             r1.reference_sequence_id(),
-            r1.position(),
+            r1.alignment_start(),
             r1.mate_reference_sequence_id(),
-            r1.mate_position(),
+            r1.mate_alignment_start(),
             r1.template_length(),
         );
 
@@ -216,9 +197,9 @@ mod tests {
             r1.read_name().cloned(),
             PairPosition::Second,
             r1.mate_reference_sequence_id(),
-            r1.mate_position(),
+            r1.mate_alignment_start(),
             r1.reference_sequence_id(),
-            r1.position(),
+            r1.alignment_start(),
             -r1.template_length(),
         );
 

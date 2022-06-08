@@ -1,9 +1,6 @@
 use std::io;
 
-use noodles::{
-    bam,
-    sam::{self, record::MappingQuality, AlignmentRecord},
-};
+use noodles::sam::{self, alignment::Record, record::MappingQuality};
 
 use super::context::Event;
 
@@ -48,7 +45,7 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, record: &bam::Record) -> io::Result<Option<Event>> {
+    pub fn filter(&self, record: &Record) -> io::Result<Option<Event>> {
         let flags = record.flags();
 
         if flags.is_unmapped() {
@@ -74,7 +71,7 @@ impl Filter {
         Ok(None)
     }
 
-    pub fn filter_pair(&self, r1: &bam::Record, r2: &bam::Record) -> io::Result<Option<Event>> {
+    pub fn filter_pair(&self, r1: &Record, r2: &Record) -> io::Result<Option<Event>> {
         let f1 = r1.flags();
         let f2 = r2.flags();
 
@@ -109,7 +106,7 @@ impl Filter {
     }
 }
 
-fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
+fn is_nonunique_record(record: &Record) -> io::Result<bool> {
     use sam::record::data::field::{value::Type, Tag};
 
     let field = match record.data().get(Tag::AlignmentHitCount) {

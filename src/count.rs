@@ -13,7 +13,7 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, header::ReferenceSequences, AlignmentRecord},
+    sam::{self, alignment::Record, header::ReferenceSequences},
 };
 use tokio::io::AsyncRead;
 
@@ -84,7 +84,7 @@ pub fn count_single_end_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &bam::Record,
+    record: &Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
@@ -201,8 +201,8 @@ pub fn count_paired_end_record_pair(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    r1: &bam::Record,
-    r2: &bam::Record,
+    r1: &Record,
+    r2: &Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter_pair(r1, r2)? {
         return Ok(event);
@@ -252,7 +252,7 @@ pub fn count_paired_end_singleton_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &bam::Record,
+    record: &Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
@@ -367,7 +367,7 @@ mod tests {
         ]
         .into_iter()
         .map(
-            |(name, len): (sam::header::reference_sequence::Name, i32)| {
+            |(name, len): (sam::header::reference_sequence::Name, usize)| {
                 let sn = name.to_string();
                 ReferenceSequence::new(name, len).map(|rs| (sn, rs))
             },
@@ -385,7 +385,7 @@ mod tests {
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
         assert_eq!(reference_sequence.name().as_str(), "sq1");
-        assert_eq!(reference_sequence.len(), 13);
+        assert_eq!(usize::from(reference_sequence.len()), 13);
 
         let reference_sequence_id = None;
         let reference_sequence =

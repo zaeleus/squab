@@ -6,7 +6,7 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, header::ReferenceSequences, AlignmentRecord},
+    sam::{self, alignment::Record, header::ReferenceSequences},
 };
 use tokio::{fs::File, io};
 
@@ -60,7 +60,7 @@ impl TryFrom<gff::record::Strand> for Strand {
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    record: &bam::Record,
+    record: &Record,
 ) -> io::Result<()> {
     let start = record.alignment_start().expect("missing alignment start");
     let end = record.alignment_end().expect("missing alignment end");
@@ -101,7 +101,7 @@ fn count_paired_end_record(
 fn count_single_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    record: &bam::Record,
+    record: &Record,
 ) -> io::Result<()> {
     let start = record.alignment_start().expect("missing alignment start");
     let end = record.alignment_end().expect("missing alignment end");
