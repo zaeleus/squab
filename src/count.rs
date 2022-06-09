@@ -13,11 +13,13 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, alignment::Record, header::ReferenceSequences},
+    sam::{self, header::ReferenceSequences},
 };
 use tokio::io::AsyncRead;
 
-use crate::{Entry, Features, MatchIntervals, PairPosition, RecordPairs, StrandSpecification};
+use crate::{
+    Entry, Features, MatchIntervals, PairPosition, Record, RecordPairs, StrandSpecification,
+};
 
 use self::context::Event;
 
@@ -37,7 +39,7 @@ where
     use tokio::task::spawn_blocking;
 
     let ctx = reader
-        .records()
+        .lazy_records()
         .try_chunks(CHUNK_SIZE)
         .map(move |result| {
             let features = features.clone();
@@ -84,9 +86,11 @@ pub fn count_single_end_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &Record,
+    record: &bam::lazy::Record,
 ) -> io::Result<Event> {
-    if let Some(event) = filter.filter(record)? {
+    let record = Record::try_from(record)?;
+
+    if let Some(event) = filter.filter(&record)? {
         return Ok(event);
     }
 

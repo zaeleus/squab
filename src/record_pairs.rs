@@ -7,13 +7,11 @@ use std::{
     io,
 };
 
-use noodles::{
-    bam,
-    core::Position,
-    sam::{self, alignment::Record},
-};
+use noodles::{bam, core::Position, sam};
 use tokio::io::AsyncRead;
 use tracing::warn;
+
+use crate::Record;
 
 type RecordKey = (
     Option<sam::record::ReadName>,
@@ -48,9 +46,9 @@ where
 
     pub async fn next_pair(&mut self) -> io::Result<Option<(Record, Record)>> {
         loop {
-            let mut record = Record::default();
+            let mut lazy_record = bam::lazy::Record::default();
 
-            match self.reader.read_record(&mut record).await {
+            match self.reader.read_lazy_record(&mut lazy_record).await {
                 Ok(0) => {
                     if !self.buf.is_empty() {
                         warn!("{} records are singletons", self.buf.len());
@@ -61,6 +59,8 @@ where
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
+
+            let record = Record::try_from(&lazy_record)?;
 
             if self.primary_only && is_not_primary(&record) {
                 continue;
@@ -145,7 +145,7 @@ mod tests {
         let mate_reference_sequence_id = 1;
         let mate_position = Position::try_from(13)?;
 
-        let r1 = Record::builder()
+        let r1 = sam::alignment::Record::builder()
             .set_read_name(read_name.clone())
             .set_flags(Flags::SEGMENTED | Flags::FIRST_SEGMENT)
             .set_reference_sequence_id(reference_sequence_id)
@@ -155,7 +155,7 @@ mod tests {
             .set_template_length(144)
             .build();
 
-        let r2 = Record::builder()
+        let r2 = sam::alignment::Record::builder()
             .set_read_name(read_name)
             .set_flags(Flags::SEGMENTED | Flags::LAST_SEGMENT)
             .set_reference_sequence_id(mate_reference_sequence_id)
@@ -165,7 +165,7 @@ mod tests {
             .set_template_length(-144)
             .build();
 
-        Ok((r1, r2))
+        Ok((Record::from(r1), Record::from(r2)))
     }
 
     #[test]

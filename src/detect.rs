@@ -137,29 +137,34 @@ pub async fn detect_specification<P>(
 where
     P: AsRef<Path>,
 {
+    use crate::record::alignment_end;
+
     let mut reader = File::open(src).await.map(bam::AsyncReader::new)?;
     reader.read_header().await?;
     reader.read_reference_sequences().await?;
 
     let mut counts = Counts::default();
-    let mut records = reader.records().take(MAX_RECORDS);
+    let mut records = reader.lazy_records().take(MAX_RECORDS);
 
     while let Some(record) = records.try_next().await? {
-        let flags = record.flags();
+        let flags = record.flags()?;
 
         if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
             continue;
         }
 
-        let reference_sequence_id = record.reference_sequence_id();
+        let reference_sequence_id = record.reference_sequence_id()?;
 
         let tree = match get_tree(features, reference_sequences, reference_sequence_id)? {
             Some(t) => t,
             None => continue,
         };
 
-        let start = record.alignment_start().expect("missing alignment start");
-        let end = record.alignment_end().expect("missing alignment end");
+        let alignment_start = record.alignment_start()?;
+        let cigar = record.cigar()?;
+
+        let start = alignment_start.expect("missing alignment start");
+        let end = alignment_end(alignment_start, &cigar).expect("missing alignment end");
 
         if flags.is_segmented() {
             counts.paired += 1;

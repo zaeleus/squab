@@ -1,8 +1,9 @@
 use std::io;
 
-use noodles::sam::{self, alignment::Record, record::MappingQuality};
+use noodles::sam::{self, record::MappingQuality};
 
 use super::context::Event;
+use crate::Record;
 
 #[derive(Clone)]
 pub struct Filter {
