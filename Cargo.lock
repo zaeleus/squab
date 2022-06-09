@@ -324,9 +324,9 @@ checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
 name = "noodles"
-version = "0.23.0"
+version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60e0d2c3a20a6c3c9526167e21cd67febc8cc2464c94afe1d1b3a5aac4a1af36"
+checksum = "b3639cbef3ca8d5d3d9867cb2584dd856ac6884d4bd5df53ff117c2566e5c435"
 dependencies = [
  "noodles-bam",
  "noodles-core",
