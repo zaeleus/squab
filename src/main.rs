@@ -3,11 +3,11 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use std::thread;
+use std::{path::PathBuf, thread};
 
-use clap::{crate_name, Arg, ArgMatches, Command};
+use clap::{crate_name, value_parser, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
-use squab::{commands, count::Filter};
+use squab::{commands, count::Filter, normalization::Method, StrandSpecificationOption};
 use tracing::{info, warn};
 
 git_testament!(TESTAMENT);
@@ -18,25 +18,28 @@ fn match_args_from_env() -> clap::ArgMatches {
         .arg(
             Arg::new("with-secondary-records")
                 .long("with-secondary-records")
-                .help("Count secondary records (BAM flag 0x100)"),
+                .help("Count secondary records (BAM flag 0x100)")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("with-supplementary-records")
                 .long("with-supplementary-records")
-                .help("Count supplementary records (BAM flag 0x800)"),
+                .help("Count supplementary records (BAM flag 0x800)")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("with-nonunique-records")
                 .long("with-nonunique-records")
-                .help("Count nonunique records (BAM data tag NH > 1)"),
+                .help("Count nonunique records (BAM data tag NH > 1)")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("strand-specification")
                 .long("strand-specification")
                 .value_name("str")
                 .help("Strand specification")
-                .possible_values(&["none", "forward", "reverse", "auto"])
-                .default_value("auto"),
+                .default_value("auto")
+                .value_parser(value_parser!(StrandSpecificationOption)),
         )
         .arg(
             Arg::new("feature-type")
@@ -59,35 +62,40 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .long("min-mapping-quality")
                 .value_name("u8")
                 .help("Minimum mapping quality to consider an alignment")
-                .default_value("10"),
+                .default_value("10")
+                .value_parser(value_parser!(u8)),
         )
         .arg(
             Arg::new("output")
                 .short('o')
                 .long("output")
-                .value_name("file")
+                .value_name("path")
                 .help("Output destination for feature counts")
+                .value_parser(value_parser!(PathBuf))
                 .required(true),
         )
         .arg(
             Arg::new("annotations")
                 .short('a')
                 .long("annotations")
-                .value_name("file")
+                .value_name("path")
                 .help("Input annotations file (GFF3)")
+                .value_parser(value_parser!(PathBuf))
                 .required(true),
         )
         .arg(
             Arg::new("threads")
                 .long("threads")
                 .value_name("uint")
-                .help("Force a specific number of threads"),
+                .help("Force a specific number of threads")
+                .value_parser(value_parser!(usize)),
         )
         .arg(
             Arg::new("bam")
+                .index(1)
                 .help("Input alignment file")
-                .required(true)
-                .index(1),
+                .value_parser(value_parser!(PathBuf))
+                .required(true),
         );
 
     let normalize_cmd = Command::new("normalize")
@@ -114,6 +122,7 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .long("annotations")
                 .value_name("file")
                 .help("Input annotations file (GFF3)")
+                .value_parser(value_parser!(PathBuf))
                 .required(true),
         )
         .arg(
@@ -121,14 +130,15 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .long("method")
                 .value_name("str")
                 .help("Quantification normalization method")
-                .possible_values(&["fpkm", "tpm"])
-                .default_value("tpm"),
+                .default_value("tpm")
+                .value_parser(value_parser!(Method)),
         )
         .arg(
             Arg::new("counts")
+                .index(1)
                 .help("Input counts file")
                 .required(true)
-                .index(1),
+                .value_parser(value_parser!(PathBuf)),
         );
 
     Command::new(crate_name!())
@@ -140,6 +150,7 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .short('v')
                 .long("verbose")
                 .help("Use verbose logging")
+                .action(clap::ArgAction::SetTrue)
                 .hide(true),
         )
         .subcommand(quantify_cmd)
@@ -148,28 +159,25 @@ fn match_args_from_env() -> clap::ArgMatches {
 }
 
 fn quantify(matches: &ArgMatches) -> anyhow::Result<()> {
-    let bam_src = matches.value_of("bam").unwrap();
-    let annotations_src = matches.value_of("annotations").unwrap();
+    let bam_src: &PathBuf = matches.get_one("bam").unwrap();
+    let annotations_src: &PathBuf = matches.get_one("annotations").unwrap();
 
-    let results_dst = matches.value_of("output").unwrap();
+    let results_dst: &PathBuf = matches.get_one("output").unwrap();
 
-    let feature_type = matches.value_of("feature-type").unwrap();
-    let id = matches.value_of("id").unwrap();
-    let min_mapping_quality = matches
-        .value_of_t("min-mapping-quality")
-        .unwrap_or_else(|e| e.exit());
+    let feature_type: &String = matches.get_one("feature-type").unwrap();
+    let id: &String = matches.get_one("id").unwrap();
+    let min_mapping_quality = *matches.get_one("min-mapping-quality").unwrap();
 
-    let with_secondary_records = matches.is_present("with-secondary-records");
-    let with_supplementary_records = matches.is_present("with-supplementary-records");
-    let with_nonunique_records = matches.is_present("with-nonunique-records");
+    let with_secondary_records = *matches.get_one("with-secondary-records").unwrap();
+    let with_supplementary_records = *matches.get_one("with-supplementary-records").unwrap();
+    let with_nonunique_records = *matches.get_one("with-nonunique-records").unwrap();
 
-    let threads = matches
-        .value_of_t("threads")
-        .or_else(|_| thread::available_parallelism().map(usize::from))?;
+    let threads = match matches.get_one("threads") {
+        Some(n) => *n,
+        None => thread::available_parallelism().map(usize::from)?,
+    };
 
-    let strand_specification_option = matches
-        .value_of_t("strand-specification")
-        .unwrap_or_else(|e| e.exit());
+    let strand_specification_option = *matches.get_one("strand-specification").unwrap();
 
     let filter = Filter::new(
         min_mapping_quality,
@@ -197,13 +205,13 @@ fn quantify(matches: &ArgMatches) -> anyhow::Result<()> {
 }
 
 fn normalize(matches: &ArgMatches) -> anyhow::Result<()> {
-    let counts_src = matches.value_of("counts").unwrap();
-    let annotations_src = matches.value_of("annotations").unwrap();
+    let counts_src: &PathBuf = matches.get_one("counts").unwrap();
+    let annotations_src: &PathBuf = matches.get_one("annotations").unwrap();
 
-    let feature_type = matches.value_of("feature-type").unwrap();
-    let id = matches.value_of("id").unwrap();
+    let feature_type: &String = matches.get_one("feature-type").unwrap();
+    let id: &String = matches.get_one("id").unwrap();
 
-    let method = matches.value_of_t("method").unwrap_or_else(|e| e.exit());
+    let method = *matches.get_one("method").unwrap();
 
     commands::normalize(counts_src, annotations_src, feature_type, id, method)
 }
@@ -213,7 +221,7 @@ fn main() -> anyhow::Result<()> {
 
     tracing_subscriber::fmt::init();
 
-    if matches.is_present("verbose") {
+    if let Some(true) = matches.get_one("verbose").copied() {
         warn!("`-v`/`--verbose` is deprecated and will be removed in a future version. Logging is now always enabled.");
     }
 

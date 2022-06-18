@@ -13,6 +13,23 @@ pub enum StrandSpecificationOption {
     Auto,
 }
 
+impl clap::ValueEnum for StrandSpecificationOption {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Self::None, Self::Forward, Self::Reverse, Self::Auto]
+    }
+
+    fn to_possible_value<'a>(&self) -> Option<clap::PossibleValue<'a>> {
+        use clap::PossibleValue;
+
+        match self {
+            Self::None => Some(PossibleValue::new("none")),
+            Self::Forward => Some(PossibleValue::new("forward")),
+            Self::Reverse => Some(PossibleValue::new("reverse")),
+            Self::Auto => Some(PossibleValue::new("auto")),
+        }
+    }
+}
+
 impl FromStr for StrandSpecificationOption {
     type Err = String;
 

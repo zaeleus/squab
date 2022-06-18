@@ -9,6 +9,21 @@ pub enum Method {
     Tpm,
 }
 
+impl clap::ValueEnum for Method {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Self::Fpkm, Self::Tpm]
+    }
+
+    fn to_possible_value<'a>(&self) -> Option<clap::PossibleValue<'a>> {
+        use clap::PossibleValue;
+
+        match self {
+            Self::Fpkm => Some(PossibleValue::new("fpkm")),
+            Self::Tpm => Some(PossibleValue::new("tpm")),
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct ParseError(String);
 
