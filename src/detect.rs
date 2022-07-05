@@ -161,7 +161,7 @@ where
         };
 
         let alignment_start = record.alignment_start()?;
-        let cigar = record.cigar()?;
+        let cigar = sam::record::Cigar::try_from(record.cigar())?;
 
         let start = alignment_start.expect("missing alignment start");
         let end = alignment_end(alignment_start, &cigar).expect("missing alignment end");

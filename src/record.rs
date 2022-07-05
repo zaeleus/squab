@@ -91,11 +91,11 @@ impl TryFrom<&bam::lazy::Record> for Record {
             reference_sequence_id: record.reference_sequence_id()?,
             alignment_start: record.alignment_start()?,
             mapping_quality: record.mapping_quality()?,
-            cigar: record.cigar()?,
+            cigar: sam::record::Cigar::try_from(record.cigar())?,
             mate_reference_sequence_id: record.mate_reference_sequence_id()?,
             mate_alignment_start: record.mate_alignment_start()?,
             template_length: record.template_length(),
-            data: record.data()?,
+            data: sam::record::Data::try_from(record.data())?,
         })
     }
 }
