@@ -142,7 +142,7 @@ fn match_args_from_env() -> clap::ArgMatches {
         );
 
     Command::new(crate_name!())
-        .version(render_testament!(TESTAMENT).as_str())
+        .version(render_testament!(TESTAMENT))
         .subcommand_required(true)
         .arg_required_else_help(true)
         .arg(
