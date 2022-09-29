@@ -13,7 +13,10 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, header::ReferenceSequences},
+    sam::header::{
+        record::value::{map::ReferenceSequence, Map},
+        ReferenceSequences,
+    },
 };
 use tokio::io::AsyncRead;
 
@@ -326,7 +329,7 @@ fn find(
 fn get_reference_sequence(
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<usize>,
-) -> io::Result<&sam::header::ReferenceSequence> {
+) -> io::Result<&Map<ReferenceSequence>> {
     reference_sequence_id
         .and_then(|id| reference_sequences.get_index(id).map(|(_, rs)| rs))
         .ok_or_else(|| {
@@ -359,7 +362,7 @@ pub fn get_tree<'t>(
 
 #[cfg(test)]
 mod tests {
-    use sam::header::ReferenceSequence;
+    use noodles::sam::header::record::value::map::reference_sequence;
 
     use super::*;
 
@@ -370,12 +373,10 @@ mod tests {
             ("sq2".parse()?, 21),
         ]
         .into_iter()
-        .map(
-            |(name, len): (sam::header::reference_sequence::Name, usize)| {
-                let sn = name.to_string();
-                ReferenceSequence::new(name, len).map(|rs| (sn, rs))
-            },
-        )
+        .map(|(name, len): (reference_sequence::Name, usize)| {
+            let sn = name.to_string();
+            Map::<ReferenceSequence>::new(name, len).map(|rs| (sn, rs))
+        })
         .collect::<Result<_, _>>()?;
 
         Ok(reference_sequences)
@@ -389,7 +390,7 @@ mod tests {
         let reference_sequence =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
         assert_eq!(reference_sequence.name().as_str(), "sq1");
-        assert_eq!(usize::from(reference_sequence.len()), 13);
+        assert_eq!(usize::from(reference_sequence.length()), 13);
 
         let reference_sequence_id = None;
         let reference_sequence =
