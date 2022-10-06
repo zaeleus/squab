@@ -34,31 +34,36 @@ squab has two subcommands: `quantify` and `normalize`.
 times aligned records intersect known gene annotations.
 
 ```
-squab-quantify
 Gene expression quantification
 
-USAGE:
-    squab quantify [FLAGS] [OPTIONS] <bam> --annotations <file> --output <file>
+Usage: squab quantify [OPTIONS] --output <OUTPUT> --annotations <ANNOTATIONS> <BAM>
 
-FLAGS:
-    -h, --help                          Prints help information
-    -V, --version                       Prints version information
-        --with-nonunique-records        Count nonunique records (BAM data tag NH > 1)
-        --with-secondary-records        Count secondary records (BAM flag 0x100)
-        --with-supplementary-records    Count supplementary records (BAM flag 0x800)
+Arguments:
+  <BAM>  Input alignment file
 
-OPTIONS:
-    -a, --annotations <file>            Input annotations file (GFF3)
-    -t, --feature-type <str>            Feature type to count [default: exon]
-    -i, --id <str>                      Feature attribute to use as the feature identity [default: gene_id]
-        --min-mapping-quality <u8>      Minimum mapping quality to consider an alignment [default: 10]
-    -o, --output <file>                 Output destination for feature counts
-        --strand-specification <str>    Strand specification [default: auto]  [possible values: none, forward, reverse,
-                                        auto]
-        --threads <uint>                Force a specific number of threads
-
-ARGS:
-    <bam>    Input alignment file
+Options:
+      --with-secondary-records
+          Count secondary records (BAM flag 0x100)
+      --with-supplementary-records
+          Count supplementary records (BAM flag 0x800)
+      --with-nonunique-records
+          Count nonunique records (BAM data tag NH > 1)
+      --strand-specification <STRAND_SPECIFICATION>
+          Strand specification [default: auto]
+  -t, --feature-type <FEATURE_TYPE>
+          Feature type to count [default: exon]
+  -i, --id <ID>
+          Feature attribute to use as the feature identity [default: gene_id]
+      --min-mapping-quality <MIN_MAPPING_QUALITY>
+          [default: 10]
+  -o, --output <OUTPUT>
+          Output destination for feature counts
+  -a, --annotations <ANNOTATIONS>
+          Input annotations file (GFF3)
+      --threads <THREADS>
+          Force a specific number of threads
+  -h, --help
+          Print help information
 ```
 
 The default output is a tab-delimited text file with two columns: the feature
@@ -77,24 +82,24 @@ Typically, this is only used when a sample was previously quanitifed, e.g.,
 using `squab quantify` or `htseq-count`.
 
 ```
-squab-normalize
-Normalize counts
+Normalize features counts
 
-USAGE:
-    squab normalize [OPTIONS] <counts> --annotations <file>
+Usage: squab normalize [OPTIONS] --annotations <ANNOTATIONS> <COUNTS>
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+Arguments:
+  <COUNTS>  Input counts file
 
-OPTIONS:
-    -a, --annotations <file>    Input annotations file (GFF3)
-    -t, --feature-type <str>    Feature type to count [default: exon]
-    -i, --id <str>              Feature attribute to use as the feature identity [default: gene_id]
-        --method <str>          Quantification normalization method [default: tpm]  [possible values: fpkm, tpm]
-
-ARGS:
-    <counts>    Input counts file
+Options:
+  -t, --feature-type <FEATURE_TYPE>
+          Feature type to count [default: exon]
+  -i, --id <ID>
+          Feature attribute to use as the feature identity [default: gene_id]
+  -a, --annotations <ANNOTATIONS>
+          Input annotations file (GFF3)
+      --method <METHOD>
+          Quantification normalization method [default: tpm]
+  -h, --help
+          Print help information
 ```
 
 The output is a tab-delimited text file with two columns: the feature
