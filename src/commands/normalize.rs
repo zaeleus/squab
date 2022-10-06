@@ -41,9 +41,8 @@ where
 
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
 
-    let stdout = io::stdout();
-    let handle = stdout.lock();
-    let mut writer = normalization::Writer::new(handle);
+    let stdout = io::stdout().lock();
+    let mut writer = normalization::Writer::new(stdout);
 
     let values = match method {
         normalization::Method::Fpkm => {
