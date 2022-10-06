@@ -9,7 +9,7 @@ use clap::{crate_name, value_parser, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
 use noodles::sam::record::MappingQuality;
 use squab::{commands, count::Filter, normalization::Method, StrandSpecificationOption};
-use tracing::{info, warn};
+use tracing::info;
 
 git_testament!(TESTAMENT);
 
@@ -146,14 +146,6 @@ fn match_args_from_env() -> clap::ArgMatches {
         .version(render_testament!(TESTAMENT))
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .arg(
-            Arg::new("verbose")
-                .short('v')
-                .long("verbose")
-                .help("Use verbose logging")
-                .action(clap::ArgAction::SetTrue)
-                .hide(true),
-        )
         .subcommand(quantify_cmd)
         .subcommand(normalize_cmd)
         .get_matches()
@@ -221,10 +213,6 @@ fn main() -> anyhow::Result<()> {
     let matches = match_args_from_env();
 
     tracing_subscriber::fmt::init();
-
-    if let Some(true) = matches.get_one("verbose").copied() {
-        warn!("`-v`/`--verbose` is deprecated and will be removed in a future version. Logging is now always enabled.");
-    }
 
     if let Some(submatches) = matches.subcommand_matches("quantify") {
         quantify(submatches)
