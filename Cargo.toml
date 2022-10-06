@@ -13,7 +13,7 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0.32"
-clap = { version = "4.0.4", features = ["cargo", "string"] }
+clap = { version = "4.0.10", features = ["derive", "string"] }
 flate2 = "1.0.14"
 futures = { version = "0.3.17", default-features = false, features = ["std"] }
 git-testament = "0.2.0"

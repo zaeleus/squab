@@ -7,6 +7,7 @@ pub use self::{
     record_pairs::{PairPosition, RecordPairs},
 };
 
+pub mod cli;
 pub mod commands;
 pub mod count;
 pub mod detect;
@@ -16,6 +17,8 @@ mod match_intervals;
 pub mod normalization;
 pub mod record;
 pub mod record_pairs;
+
+pub use self::cli::Cli;
 
 use std::{
     collections::{HashMap, HashSet},
