@@ -7,6 +7,7 @@ use std::{path::PathBuf, thread};
 
 use clap::{crate_name, value_parser, Arg, ArgMatches, Command};
 use git_testament::{git_testament, render_testament};
+use noodles::sam::record::MappingQuality;
 use squab::{commands, count::Filter, normalization::Method, StrandSpecificationOption};
 use tracing::{info, warn};
 
@@ -63,7 +64,7 @@ fn match_args_from_env() -> clap::ArgMatches {
                 .value_name("u8")
                 .help("Minimum mapping quality to consider an alignment")
                 .default_value("10")
-                .value_parser(value_parser!(u8)),
+                .value_parser(value_parser!(MappingQuality)),
         )
         .arg(
             Arg::new("output")
