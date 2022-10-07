@@ -60,7 +60,7 @@ pub struct Quantify {
     pub with_nonunique_records: bool,
 
     /// Strand specification.
-    #[arg(long, default_value = "auto")]
+    #[arg(long, value_enum, default_value_t = StrandSpecificationOption::Auto)]
     pub strand_specification: StrandSpecificationOption,
 
     /// Feature type to count.

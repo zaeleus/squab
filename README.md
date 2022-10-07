@@ -49,7 +49,7 @@ Options:
       --with-nonunique-records
           Count nonunique records (BAM data tag NH > 1)
       --strand-specification <STRAND_SPECIFICATION>
-          Strand specification [default: auto]
+          Strand specification [default: auto] [possible values: none, forward, reverse, auto]
   -t, --feature-type <FEATURE_TYPE>
           Feature type to count [default: exon]
   -i, --id <ID>

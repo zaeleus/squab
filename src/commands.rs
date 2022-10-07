@@ -5,7 +5,7 @@ pub use self::{normalize::normalize, quantify::quantify};
 
 use std::str::FromStr;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
 pub enum StrandSpecificationOption {
     None,
     Forward,
