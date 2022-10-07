@@ -1,27 +1,12 @@
 use std::{error, fmt, str::FromStr};
 
 /// Normalization method
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
 pub enum Method {
     /// fragments per kilobase per million mapped reads
     Fpkm,
     /// transcripts per million
     Tpm,
-}
-
-impl AsRef<str> for Method {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::Fpkm => "fpkm",
-            Self::Tpm => "tpm",
-        }
-    }
-}
-
-impl fmt::Display for Method {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_ref().fmt(f)
-    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -50,12 +35,6 @@ impl FromStr for Method {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_fmt() {
-        assert_eq!(Method::Fpkm.to_string(), "fpkm");
-        assert_eq!(Method::Tpm.to_string(), "tpm");
-    }
 
     #[test]
     fn test_from_str() -> Result<(), ParseError> {

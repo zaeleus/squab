@@ -87,19 +87,34 @@ Normalize features counts
 Usage: squab normalize [OPTIONS] --annotations <ANNOTATIONS> <COUNTS>
 
 Arguments:
-  <COUNTS>  Input counts file
+  <COUNTS>
+          Input counts file
 
 Options:
   -t, --feature-type <FEATURE_TYPE>
-          Feature type to count [default: exon]
+          Feature type to count
+
+          [default: exon]
+
   -i, --id <ID>
-          Feature attribute to use as the feature identity [default: gene_id]
+          Feature attribute to use as the feature identity
+
+          [default: gene_id]
+
   -a, --annotations <ANNOTATIONS>
           Input annotations file (GFF3)
+
       --method <METHOD>
-          Quantification normalization method [default: tpm]
+          Quantification normalization method
+
+          [default: tpm]
+
+          Possible values:
+          - fpkm: fragments per kilobase per million mapped reads
+          - tpm:  transcripts per million
+
   -h, --help
-          Print help information
+          Print help information (use `-h` for a summary)
 ```
 
 The output is a tab-delimited text file with two columns: the feature

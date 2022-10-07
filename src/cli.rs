@@ -38,7 +38,7 @@ pub struct Normalize {
     pub annotations: PathBuf,
 
     /// Quantification normalization method.
-    #[arg(long, default_value_t = Method::Tpm)]
+    #[arg(long, value_enum, default_value_t = Method::Tpm)]
     pub method: Method,
 
     /// Input counts file.
