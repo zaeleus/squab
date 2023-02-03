@@ -13,9 +13,12 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::header::{
-        record::value::{map::ReferenceSequence, Map},
-        ReferenceSequences,
+    sam::{
+        header::{
+            record::value::{map::ReferenceSequence, Map},
+            ReferenceSequences,
+        },
+        record::ReferenceSequenceName,
     },
 };
 use tokio::io::AsyncRead;
@@ -329,9 +332,9 @@ fn find(
 fn get_reference_sequence(
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<usize>,
-) -> io::Result<&Map<ReferenceSequence>> {
+) -> io::Result<(&ReferenceSequenceName, &Map<ReferenceSequence>)> {
     reference_sequence_id
-        .and_then(|id| reference_sequences.get_index(id).map(|(_, rs)| rs))
+        .and_then(|id| reference_sequences.get_index(id))
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -355,29 +358,33 @@ pub fn get_tree<'t>(
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<usize>,
 ) -> io::Result<Option<&'t IntervalTree<Position, Entry>>> {
-    let reference_sequence = get_reference_sequence(reference_sequences, reference_sequence_id)?;
-    let reference_sequence_name = reference_sequence.name();
-    Ok(features.get(reference_sequence_name.as_str()))
+    let (name, _) = get_reference_sequence(reference_sequences, reference_sequence_id)?;
+    Ok(features.get(name.as_str()))
 }
 
 #[cfg(test)]
 mod tests {
-    use noodles::sam::header::record::value::map::reference_sequence;
-
     use super::*;
 
     fn build_reference_sequences() -> Result<ReferenceSequences, Box<dyn std::error::Error>> {
+        use std::num::NonZeroUsize;
+
         let reference_sequences = [
-            ("sq0".parse()?, 8),
-            ("sq1".parse()?, 13),
-            ("sq2".parse()?, 21),
+            (
+                "sq0".parse()?,
+                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(8)?),
+            ),
+            (
+                "sq1".parse()?,
+                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(13)?),
+            ),
+            (
+                "sq2".parse()?,
+                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(21)?),
+            ),
         ]
         .into_iter()
-        .map(|(name, len): (reference_sequence::Name, usize)| {
-            let sn = name.to_string();
-            Map::<ReferenceSequence>::new(name, len).map(|rs| (sn, rs))
-        })
-        .collect::<Result<_, _>>()?;
+        .collect();
 
         Ok(reference_sequences)
     }
@@ -387,9 +394,9 @@ mod tests {
         let reference_sequences = build_reference_sequences()?;
 
         let reference_sequence_id = Some(1);
-        let reference_sequence =
+        let (name, reference_sequence) =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
-        assert_eq!(reference_sequence.name().as_str(), "sq1");
+        assert_eq!(name.as_str(), "sq1");
         assert_eq!(usize::from(reference_sequence.length()), 13);
 
         let reference_sequence_id = None;

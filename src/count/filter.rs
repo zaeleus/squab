@@ -110,12 +110,10 @@ impl Filter {
 fn is_nonunique_record(record: &Record) -> io::Result<bool> {
     use sam::record::data::field::{value::Type, Tag};
 
-    let field = match record.data().get(Tag::AlignmentHitCount) {
-        Some(f) => f,
+    let value = match record.data().get(Tag::AlignmentHitCount) {
+        Some(v) => v,
         None => return Ok(false),
     };
-
-    let value = field.value();
 
     match value.as_int() {
         Some(hits) => Ok(hits > 1),
