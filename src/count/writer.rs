@@ -21,7 +21,7 @@ where
     pub fn write_counts(&mut self, ids: &[String], counts: &Counts) -> io::Result<()> {
         for id in ids {
             let count = counts.get(id).unwrap_or(&0);
-            writeln!(self.inner, "{}\t{}", id, count)?;
+            writeln!(self.inner, "{id}\t{count}")?;
         }
 
         Ok(())

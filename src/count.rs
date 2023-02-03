@@ -335,7 +335,7 @@ fn get_reference_sequence(
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("invalid reference sequence ID: {:?}", reference_sequence_id),
+                format!("invalid reference sequence ID: {reference_sequence_id:?}"),
             )
         })
 }

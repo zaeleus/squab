@@ -22,7 +22,7 @@ impl FromStr for StrandSpecificationOption {
             "forward" => Ok(Self::Forward),
             "reverse" => Ok(Self::Reverse),
             "auto" => Ok(Self::Auto),
-            _ => Err(format!("invalid strand specification option: {}", s)),
+            _ => Err(format!("invalid strand specification option: {s}")),
         }
     }
 }

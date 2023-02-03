@@ -76,7 +76,7 @@ where
             .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("missing attribute '{}'", feature_id),
+                    format!("missing attribute '{feature_id}'"),
                 )
             })?;
 

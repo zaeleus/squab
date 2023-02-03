@@ -25,7 +25,7 @@ where
     {
         for id in ids {
             let value = values.get(id).unwrap_or(&0.0);
-            writeln!(self.inner, "{}\t{}", id, value)?;
+            writeln!(self.inner, "{id}\t{value}")?;
         }
 
         Ok(())
