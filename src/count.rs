@@ -383,7 +383,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_reference() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_get_reference_sequence() -> Result<(), Box<dyn std::error::Error>> {
         let reference_sequences = build_reference_sequences()?;
 
         let reference_sequence_id = Some(1);
