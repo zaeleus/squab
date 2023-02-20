@@ -1,4 +1,4 @@
-use std::{env, fs};
+use std::{env, fs, num::NonZeroUsize};
 
 use noodles::sam::record::MappingQuality;
 use squab::{commands::quantify, count::Filter, StrandSpecificationOption};
@@ -9,7 +9,7 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let id = "gene_id";
     let filter = Filter::new(MappingQuality::try_from(10)?, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
-    let worker_count = 1;
+    let worker_count = NonZeroUsize::try_from(1)?;
 
     let working_prefix = env::temp_dir();
     fs::create_dir_all(&working_prefix)?;

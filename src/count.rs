@@ -5,7 +5,7 @@ mod writer;
 
 pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};
 
-use std::{collections::HashSet, io, sync::Arc};
+use std::{collections::HashSet, io, num::NonZeroUsize, sync::Arc};
 
 use futures::{StreamExt, TryFutureExt, TryStreamExt};
 use interval_tree::IntervalTree;
@@ -37,7 +37,7 @@ pub async fn count_single_end_records<R>(
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
     strand_specification: StrandSpecification,
-    worker_count: usize,
+    worker_count: NonZeroUsize,
 ) -> io::Result<Context>
 where
     R: AsyncRead + Unpin,
@@ -75,7 +75,7 @@ where
                 })
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         })
-        .try_buffer_unordered(worker_count)
+        .try_buffer_unordered(worker_count.get())
         .try_fold(Context::default(), |mut ctx, result| async move {
             result.map(|c| {
                 ctx.add(&c);
@@ -130,7 +130,7 @@ pub async fn count_paired_end_records<R>(
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
     strand_specification: StrandSpecification,
-    worker_count: usize,
+    worker_count: NonZeroUsize,
 ) -> io::Result<Context>
 where
     R: AsyncRead + Unpin,
@@ -182,7 +182,7 @@ where
             })
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     })
-    .try_buffer_unordered(worker_count)
+    .try_buffer_unordered(worker_count.get())
     .try_fold(Context::default(), |mut ctx, result| async move {
         result.map(|c| {
             ctx.add(&c);
@@ -367,8 +367,6 @@ mod tests {
     use super::*;
 
     fn build_reference_sequences() -> Result<ReferenceSequences, Box<dyn std::error::Error>> {
-        use std::num::NonZeroUsize;
-
         let reference_sequences = [
             (
                 "sq0".parse()?,

@@ -22,7 +22,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
 
     let threads = match options.threads {
         Some(n) => n,
-        None => thread::available_parallelism().map(usize::from)?,
+        None => thread::available_parallelism()?,
     };
 
     let strand_specification_option = options.strand_specification;
@@ -37,7 +37,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
     info!("using {} thread(s)", threads);
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(threads)
+        .worker_threads(threads.get())
         .build()?;
 
     runtime.block_on(commands::quantify(

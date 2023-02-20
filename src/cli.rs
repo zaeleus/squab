@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{num::NonZeroUsize, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use git_testament::{git_testament, render_testament};
@@ -84,7 +84,7 @@ pub struct Quantify {
 
     /// Force a specific number of threads.
     #[arg(long)]
-    pub threads: Option<usize>,
+    pub threads: Option<NonZeroUsize>,
 
     /// Input alignment file.
     pub bam: PathBuf,

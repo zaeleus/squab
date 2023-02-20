@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::{self, BufWriter},
+    num::NonZeroUsize,
     path::Path,
     sync::Arc,
 };
@@ -25,7 +26,7 @@ pub async fn quantify<P, Q, R>(
     id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
-    worker_count: usize,
+    worker_count: NonZeroUsize,
     results_dst: R,
 ) -> anyhow::Result<()>
 where
