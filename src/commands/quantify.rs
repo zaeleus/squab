@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{self, BufWriter},
+    io::{self, BufWriter, Read},
     num::NonZeroUsize,
     path::Path,
     sync::Arc,
@@ -8,7 +8,6 @@ use std::{
 
 use anyhow::Context as AnyhowContext;
 use noodles::{bam, sam};
-use tokio::io::AsyncRead;
 use tracing::{info, warn};
 
 use crate::{
@@ -19,7 +18,7 @@ use crate::{
 };
 
 #[allow(clippy::too_many_arguments)]
-pub async fn quantify<P, Q, R>(
+pub fn quantify<P, Q, R>(
     bam_src: P,
     annotations_src: Q,
     feature_type: &str,
@@ -40,12 +39,11 @@ where
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let mut reader = tokio::fs::File::open(bam_src.as_ref())
-        .await
-        .map(bam::AsyncReader::new)
+    let mut reader = File::open(bam_src.as_ref())
+        .map(bam::Reader::new)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header = read_header(&mut reader).await?;
+    let header = read_header(&mut reader)?;
     let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
@@ -55,7 +53,7 @@ where
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, &reference_sequences, &features).await?;
+        detect_specification(&bam_src, &reference_sequences, &features)?;
 
     match library_layout {
         LibraryLayout::SingleEnd => info!("library layout: single end"),
@@ -97,28 +95,22 @@ where
     let features = Arc::new(features);
 
     let ctx = match library_layout {
-        LibraryLayout::SingleEnd => {
-            count_single_end_records(
-                reader,
-                features.clone(),
-                reference_sequences.clone(),
-                filter.clone(),
-                strand_specification,
-                worker_count,
-            )
-            .await?
-        }
-        LibraryLayout::PairedEnd => {
-            count_paired_end_records(
-                reader,
-                features.clone(),
-                reference_sequences.clone(),
-                filter.clone(),
-                strand_specification,
-                worker_count,
-            )
-            .await?
-        }
+        LibraryLayout::SingleEnd => count_single_end_records(
+            reader,
+            features.clone(),
+            reference_sequences.clone(),
+            filter.clone(),
+            strand_specification,
+            worker_count,
+        )?,
+        LibraryLayout::PairedEnd => count_paired_end_records(
+            reader,
+            features.clone(),
+            reference_sequences.clone(),
+            filter.clone(),
+            strand_specification,
+            worker_count,
+        )?,
     };
 
     let writer = File::create(results_dst.as_ref())
@@ -134,18 +126,17 @@ where
     Ok(())
 }
 
-async fn read_header<R>(reader: &mut bam::AsyncReader<R>) -> anyhow::Result<sam::Header>
+fn read_header<R>(reader: &mut bam::Reader<R>) -> anyhow::Result<sam::Header>
 where
-    R: AsyncRead + Unpin,
+    R: Read,
 {
     let mut header: sam::Header = reader
-        .read_header()
-        .await?
+        .read_header()?
         .parse()
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
         .context("Could not parse BAM header")?;
 
-    let reference_sequences = reader.read_reference_sequences().await?;
+    let reference_sequences = reader.read_reference_sequences()?;
 
     if header.reference_sequences().is_empty() {
         *header.reference_sequences_mut() = reference_sequences;

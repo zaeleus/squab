@@ -5,9 +5,14 @@ mod writer;
 
 pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};
 
-use std::{collections::HashSet, io, num::NonZeroUsize, sync::Arc};
+use std::{
+    collections::HashSet,
+    io::{self, Read},
+    num::NonZeroUsize,
+    sync::Arc,
+    thread,
+};
 
-use futures::{StreamExt, TryFutureExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
     bam,
@@ -21,7 +26,6 @@ use noodles::{
         record::ReferenceSequenceName,
     },
 };
-use tokio::io::AsyncRead;
 
 use crate::{
     Entry, Features, MatchIntervals, PairPosition, Record, RecordPairs, StrandSpecification,
@@ -31,8 +35,8 @@ use self::context::Event;
 
 const CHUNK_SIZE: usize = 8192;
 
-pub async fn count_single_end_records<R>(
-    mut reader: bam::AsyncReader<R>,
+pub fn count_single_end_records<R>(
+    mut reader: bam::Reader<R>,
     features: Arc<Features>,
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
@@ -40,24 +44,46 @@ pub async fn count_single_end_records<R>(
     worker_count: NonZeroUsize,
 ) -> io::Result<Context>
 where
-    R: AsyncRead + Unpin,
+    R: Read + Send,
 {
-    use tokio::task::spawn_blocking;
+    thread::scope(move |scope| {
+        let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
-    let ctx = reader
-        .lazy_records()
-        .try_chunks(CHUNK_SIZE)
-        .map(move |result| {
-            let features = features.clone();
-            let reference_sequences = reference_sequences.clone();
-            let filter = filter.clone();
+        scope.spawn(move || {
+            let mut records = reader.lazy_records();
 
-            result
-                .map(|records| {
-                    spawn_blocking(move || {
-                        let mut ctx = Context::default();
+            loop {
+                let mut chunk = Vec::with_capacity(CHUNK_SIZE);
 
-                        for record in records {
+                for result in records.by_ref().take(CHUNK_SIZE) {
+                    let record = result?;
+                    chunk.push(record);
+                }
+
+                if chunk.is_empty() {
+                    drop(tx);
+                    break;
+                } else {
+                    tx.send(chunk).expect("reader channel unexpectedly closed");
+                }
+            }
+
+            Ok::<_, io::Error>(())
+        });
+
+        let handles: Vec<_> = (0..worker_count.get())
+            .map(|_| {
+                let rx = rx.clone();
+
+                let features = features.clone();
+                let reference_sequences = reference_sequences.clone();
+                let filter = filter.clone();
+
+                scope.spawn(move || {
+                    let mut ctx = Context::default();
+
+                    while let Ok(chunk) = rx.recv() {
+                        for record in chunk {
                             let event = count_single_end_record(
                                 &features,
                                 &reference_sequences,
@@ -68,23 +94,22 @@ where
 
                             ctx.add_event(event);
                         }
+                    }
 
-                        Ok(ctx)
-                    })
-                    .map_err(io::Error::from)
+                    Ok::<_, io::Error>(ctx)
                 })
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-        })
-        .try_buffer_unordered(worker_count.get())
-        .try_fold(Context::default(), |mut ctx, result| async move {
-            result.map(|c| {
-                ctx.add(&c);
-                ctx
             })
-        })
-        .await?;
+            .collect();
 
-    Ok(ctx)
+        let mut ctx = Context::default();
+
+        for handle in handles {
+            let c = handle.join().unwrap()?;
+            ctx.add(&c);
+        }
+
+        Ok(ctx)
+    })
 }
 
 pub fn count_single_end_record(
@@ -124,8 +149,8 @@ pub fn count_single_end_record(
     Ok(update_intersections(set))
 }
 
-pub async fn count_paired_end_records<R>(
-    reader: bam::AsyncReader<R>,
+pub fn count_paired_end_records<R>(
+    reader: bam::Reader<R>,
     features: Arc<Features>,
     reference_sequences: Arc<ReferenceSequences>,
     filter: Filter,
@@ -133,11 +158,8 @@ pub async fn count_paired_end_records<R>(
     worker_count: NonZeroUsize,
 ) -> io::Result<Context>
 where
-    R: AsyncRead + Unpin,
+    R: Read + Send,
 {
-    use futures::stream;
-    use tokio::task::spawn_blocking;
-
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut record_pairs = RecordPairs::new(reader, primary_only);
 
@@ -145,51 +167,73 @@ where
     let reference_sequences_clone = reference_sequences.clone();
     let filter_clone = filter.clone();
 
-    let mut ctx = stream::unfold(&mut record_pairs, |pairs| async {
-        match pairs.next_pair().await {
-            Ok(Some(pair)) => Some((Ok(pair), pairs)),
-            Ok(None) => None,
-            Err(e) => Some((Err(e), pairs)),
-        }
-    })
-    .try_chunks(CHUNK_SIZE)
-    .map(move |result| {
-        let features = features.clone();
-        let reference_sequences = reference_sequences.clone();
-        let filter = filter.clone();
+    let (mut ctx, mut record_pairs) = thread::scope(move |scope| {
+        let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
-        result
-            .map(|pairs| {
-                spawn_blocking(move || {
+        let reader_handle = scope.spawn(move || {
+            loop {
+                let mut chunk = Vec::with_capacity(CHUNK_SIZE);
+
+                for _ in 0..CHUNK_SIZE {
+                    match record_pairs.next_pair()? {
+                        Some(pair) => chunk.push(pair),
+                        None => break,
+                    }
+                }
+
+                if chunk.is_empty() {
+                    drop(tx);
+                    break;
+                } else {
+                    tx.send(chunk).expect("reader channel unexpectedly closed");
+                }
+            }
+
+            Ok::<_, io::Error>(record_pairs)
+        });
+
+        let handles: Vec<_> = (0..worker_count.get())
+            .map(|_| {
+                let rx = rx.clone();
+
+                let features = features.clone();
+                let reference_sequences = reference_sequences.clone();
+                let filter = filter.clone();
+
+                scope.spawn(move || {
                     let mut ctx = Context::default();
 
-                    for (r1, r2) in pairs {
-                        let event = count_paired_end_record_pair(
-                            &features,
-                            &reference_sequences,
-                            &filter,
-                            strand_specification,
-                            &r1,
-                            &r2,
-                        )?;
+                    while let Ok(chunk) = rx.recv() {
+                        for (r1, r2) in chunk {
+                            let event = count_paired_end_record_pair(
+                                &features,
+                                &reference_sequences,
+                                &filter,
+                                strand_specification,
+                                &r1,
+                                &r2,
+                            )?;
 
-                        ctx.add_event(event);
+                            ctx.add_event(event);
+                        }
                     }
 
-                    Ok(ctx)
+                    Ok::<_, io::Error>(ctx)
                 })
-                .map_err(io::Error::from)
             })
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-    })
-    .try_buffer_unordered(worker_count.get())
-    .try_fold(Context::default(), |mut ctx, result| async move {
-        result.map(|c| {
+            .collect();
+
+        let record_pairs = reader_handle.join().unwrap()?;
+
+        let mut ctx = Context::default();
+
+        for handle in handles {
+            let c = handle.join().unwrap()?;
             ctx.add(&c);
-            ctx
-        })
-    })
-    .await?;
+        }
+
+        Ok::<_, io::Error>((ctx, record_pairs))
+    })?;
 
     for record in record_pairs.singletons() {
         let event = count_paired_end_singleton_record(

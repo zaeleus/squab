@@ -1,6 +1,5 @@
-use std::path::Path;
+use std::{fs::File, io, path::Path};
 
-use futures::{StreamExt, TryStreamExt};
 use interval_tree::IntervalTree;
 use noodles::{
     bam,
@@ -8,7 +7,6 @@ use noodles::{
     gff,
     sam::{self, header::ReferenceSequences},
 };
-use tokio::{fs::File, io};
 
 use crate::{count::get_tree, Entry, Features, PairPosition, StrandSpecification};
 
@@ -129,7 +127,7 @@ fn count_single_end_record(
     Ok(())
 }
 
-pub async fn detect_specification<P>(
+pub fn detect_specification<P>(
     src: P,
     reference_sequences: &ReferenceSequences,
     features: &Features,
@@ -139,14 +137,15 @@ where
 {
     use crate::record::alignment_end;
 
-    let mut reader = File::open(src).await.map(bam::AsyncReader::new)?;
-    reader.read_header().await?;
-    reader.read_reference_sequences().await?;
+    let mut reader = File::open(src).map(bam::Reader::new)?;
+    reader.read_header()?;
+    reader.read_reference_sequences()?;
 
     let mut counts = Counts::default();
-    let mut records = reader.lazy_records().take(MAX_RECORDS);
 
-    while let Some(record) = records.try_next().await? {
+    for result in reader.lazy_records().take(MAX_RECORDS) {
+        let record = result?;
+
         let flags = record.flags()?;
 
         if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {

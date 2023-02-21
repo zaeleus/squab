@@ -36,11 +36,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
 
     info!("using {} thread(s)", threads);
 
-    let runtime = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(threads.get())
-        .build()?;
-
-    runtime.block_on(commands::quantify(
+    commands::quantify(
         bam_src,
         annotations_src,
         &options.feature_type,
@@ -49,7 +45,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
         strand_specification_option,
         threads,
         results_dst,
-    ))
+    )
 }
 
 fn normalize(options: cli::Normalize) -> anyhow::Result<()> {

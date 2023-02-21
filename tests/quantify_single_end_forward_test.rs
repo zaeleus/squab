@@ -3,8 +3,8 @@ use std::{env, fs, num::NonZeroUsize};
 use noodles::sam::record::MappingQuality;
 use squab::{commands::quantify, count::Filter, StrandSpecificationOption};
 
-#[tokio::test]
-async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
+#[test]
+fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let feature_type = "exon";
     let id = "gene_id";
     let filter = Filter::new(MappingQuality::try_from(10)?, false, false, false);
@@ -25,8 +25,7 @@ async fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
         strand_specification_option,
         worker_count,
         &results_dst,
-    )
-    .await?;
+    )?;
 
     let actual = fs::read_to_string(results_dst)?;
 

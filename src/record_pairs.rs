@@ -4,11 +4,10 @@ pub use self::pair_position::PairPosition;
 
 use std::{
     collections::{hash_map::Drain, HashMap},
-    io,
+    io::{self, Read},
 };
 
 use noodles::{bam, core::Position, sam};
-use tokio::io::AsyncRead;
 use tracing::warn;
 
 use crate::Record;
@@ -25,18 +24,18 @@ type RecordKey = (
 
 pub struct RecordPairs<R>
 where
-    R: AsyncRead,
+    R: Read,
 {
-    reader: bam::AsyncReader<R>,
+    reader: bam::Reader<R>,
     buf: HashMap<RecordKey, Record>,
     primary_only: bool,
 }
 
 impl<R> RecordPairs<R>
 where
-    R: AsyncRead + Unpin,
+    R: Read,
 {
-    pub fn new(reader: bam::AsyncReader<R>, primary_only: bool) -> Self {
+    pub fn new(reader: bam::Reader<R>, primary_only: bool) -> Self {
         Self {
             reader,
             buf: HashMap::new(),
@@ -44,11 +43,11 @@ where
         }
     }
 
-    pub async fn next_pair(&mut self) -> io::Result<Option<(Record, Record)>> {
+    pub fn next_pair(&mut self) -> io::Result<Option<(Record, Record)>> {
         loop {
             let mut lazy_record = bam::lazy::Record::default();
 
-            match self.reader.read_lazy_record(&mut lazy_record).await {
+            match self.reader.read_lazy_record(&mut lazy_record) {
                 Ok(0) => {
                     if !self.buf.is_empty() {
                         warn!("{} records are singletons", self.buf.len());
