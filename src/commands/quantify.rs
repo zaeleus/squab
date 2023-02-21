@@ -3,7 +3,6 @@ use std::{
     io::{self, BufWriter, Read},
     num::NonZeroUsize,
     path::Path,
-    sync::Arc,
 };
 
 use anyhow::Context as AnyhowContext;
@@ -93,23 +92,20 @@ where
 
     info!("counting features");
 
-    let reference_sequences = Arc::new(reference_sequences);
-    let features = Arc::new(features);
-
     let ctx = match library_layout {
         LibraryLayout::SingleEnd => count_single_end_records(
             reader,
-            features,
-            reference_sequences,
-            filter,
+            &features,
+            &reference_sequences,
+            &filter,
             strand_specification,
             worker_count,
         )?,
         LibraryLayout::PairedEnd => count_paired_end_records(
             reader,
-            features,
-            reference_sequences,
-            filter,
+            &features,
+            &reference_sequences,
+            &filter,
             strand_specification,
             worker_count,
         )?,

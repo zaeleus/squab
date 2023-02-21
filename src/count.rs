@@ -9,7 +9,6 @@ use std::{
     collections::HashSet,
     io::{self, Read},
     num::NonZeroUsize,
-    sync::Arc,
     thread,
 };
 
@@ -37,9 +36,9 @@ const CHUNK_SIZE: usize = 8192;
 
 pub fn count_single_end_records<R>(
     mut reader: bam::Reader<R>,
-    features: Arc<Features>,
-    reference_sequences: Arc<ReferenceSequences>,
-    filter: Filter,
+    features: &Features,
+    reference_sequences: &ReferenceSequences,
+    filter: &Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
 ) -> io::Result<Context>
@@ -75,19 +74,15 @@ where
             .map(|_| {
                 let rx = rx.clone();
 
-                let features = features.clone();
-                let reference_sequences = reference_sequences.clone();
-                let filter = filter.clone();
-
                 scope.spawn(move || {
                     let mut ctx = Context::default();
 
                     while let Ok(chunk) = rx.recv() {
                         for record in chunk {
                             let event = count_single_end_record(
-                                &features,
-                                &reference_sequences,
-                                &filter,
+                                features,
+                                reference_sequences,
+                                filter,
                                 strand_specification,
                                 &record,
                             )?;
@@ -151,9 +146,9 @@ pub fn count_single_end_record(
 
 pub fn count_paired_end_records<R>(
     reader: bam::Reader<R>,
-    features: Arc<Features>,
-    reference_sequences: Arc<ReferenceSequences>,
-    filter: Filter,
+    features: &Features,
+    reference_sequences: &ReferenceSequences,
+    filter: &Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
 ) -> io::Result<Context>
@@ -162,10 +157,6 @@ where
 {
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut record_pairs = RecordPairs::new(reader, primary_only);
-
-    let features_clone = features.clone();
-    let reference_sequences_clone = reference_sequences.clone();
-    let filter_clone = filter.clone();
 
     let (mut ctx, mut record_pairs) = thread::scope(move |scope| {
         let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
@@ -196,19 +187,15 @@ where
             .map(|_| {
                 let rx = rx.clone();
 
-                let features = features.clone();
-                let reference_sequences = reference_sequences.clone();
-                let filter = filter.clone();
-
                 scope.spawn(move || {
                     let mut ctx = Context::default();
 
                     while let Ok(chunk) = rx.recv() {
                         for (r1, r2) in chunk {
                             let event = count_paired_end_record_pair(
-                                &features,
-                                &reference_sequences,
-                                &filter,
+                                features,
+                                reference_sequences,
+                                filter,
                                 strand_specification,
                                 &r1,
                                 &r2,
@@ -237,9 +224,9 @@ where
 
     for record in record_pairs.singletons() {
         let event = count_paired_end_singleton_record(
-            &features_clone,
-            &reference_sequences_clone,
-            &filter_clone,
+            features,
+            reference_sequences,
+            filter,
             strand_specification,
             &record,
         )?;
