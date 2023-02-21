@@ -99,17 +99,17 @@ where
     let ctx = match library_layout {
         LibraryLayout::SingleEnd => count_single_end_records(
             reader,
-            features.clone(),
-            reference_sequences.clone(),
-            filter.clone(),
+            features,
+            reference_sequences,
+            filter,
             strand_specification,
             worker_count,
         )?,
         LibraryLayout::PairedEnd => count_paired_end_records(
             reader,
-            features.clone(),
-            reference_sequences.clone(),
-            filter.clone(),
+            features,
+            reference_sequences,
+            filter,
             strand_specification,
             worker_count,
         )?,
