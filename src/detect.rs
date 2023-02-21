@@ -101,7 +101,7 @@ fn count_single_end_record(
     flags: sam::record::Flags,
     start: Position,
     end: Position,
-) -> io::Result<()> {
+) {
     let record_strand = Strand::from(flags);
 
     for entry in tree.find(start..=end) {
@@ -123,8 +123,6 @@ fn count_single_end_record(
 
         counts.matches += 1;
     }
-
-    Ok(())
 }
 
 pub fn detect_specification<P>(
@@ -169,7 +167,7 @@ where
             counts.paired += 1;
             count_paired_end_record(&mut counts, tree, flags, start, end)?;
         } else {
-            count_single_end_record(&mut counts, tree, flags, start, end)?;
+            count_single_end_record(&mut counts, tree, flags, start, end);
         }
     }
 
