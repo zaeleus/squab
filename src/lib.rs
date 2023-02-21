@@ -22,7 +22,6 @@ pub use self::cli::Cli;
 
 use std::{
     collections::{HashMap, HashSet},
-    hash::BuildHasher,
     io::{self, BufRead},
 };
 
@@ -90,8 +89,8 @@ where
     Ok(features)
 }
 
-pub fn build_interval_trees<S: BuildHasher>(
-    feature_map: &HashMap<String, Vec<Feature>, S>,
+pub fn build_interval_trees(
+    feature_map: &HashMap<String, Vec<Feature>>,
 ) -> (Features, HashSet<String>) {
     let mut interval_trees = Features::new();
     let mut names = HashSet::new();
