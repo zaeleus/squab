@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Context as AnyhowContext;
-use noodles::{bam, sam};
+use noodles::{bam, bgzf, sam};
 use tracing::{info, warn};
 
 use crate::{
@@ -39,8 +39,10 @@ where
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let mut reader = File::open(bam_src.as_ref())
-        .map(bam::Reader::new)
+    let mut reader = bgzf::reader::Builder::default()
+        .set_worker_count(worker_count)
+        .build_from_path(bam_src.as_ref())
+        .map(bam::Reader::from)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header = read_header(&mut reader)?;
