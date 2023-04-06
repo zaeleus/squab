@@ -137,7 +137,6 @@ where
 
     let mut reader = File::open(src).map(bam::Reader::new)?;
     reader.read_header()?;
-    reader.read_reference_sequences()?;
 
     let mut counts = Counts::default();
 

@@ -1,12 +1,7 @@
-use std::{
-    fs::File,
-    io::{self, BufWriter, Read},
-    num::NonZeroUsize,
-    path::Path,
-};
+use std::{fs::File, io::BufWriter, num::NonZeroUsize, path::Path};
 
 use anyhow::Context as AnyhowContext;
-use noodles::{bam, bgzf, sam};
+use noodles::{bam, bgzf};
 use tracing::{info, warn};
 
 use crate::{
@@ -44,7 +39,7 @@ where
         .map(bam::Reader::from)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
-    let header = read_header(&mut reader)?;
+    let header = reader.read_header()?;
     let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
@@ -122,23 +117,4 @@ where
     count_writer.write_stats(&ctx)?;
 
     Ok(())
-}
-
-fn read_header<R>(reader: &mut bam::Reader<R>) -> anyhow::Result<sam::Header>
-where
-    R: Read,
-{
-    let mut header: sam::Header = reader
-        .read_header()?
-        .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-        .context("Could not parse BAM header")?;
-
-    let reference_sequences = reader.read_reference_sequences()?;
-
-    if header.reference_sequences().is_empty() {
-        *header.reference_sequences_mut() = reference_sequences;
-    }
-
-    Ok(header)
 }
