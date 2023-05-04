@@ -27,13 +27,9 @@ where
         loop {
             buf.clear();
 
-            match self.inner.read_line(&mut buf) {
-                Ok(0) => break,
-                Ok(_) => {}
-                Err(e) => return Err(e),
+            if read_line(&mut self.inner, &mut buf)? == 0 {
+                break;
             }
-
-            buf.pop();
 
             let mut fields = buf.split(DELIMITER);
 
@@ -50,6 +46,26 @@ where
 
         Ok(counts)
     }
+}
+
+fn read_line<R>(reader: &mut R, buf: &mut String) -> io::Result<usize>
+where
+    R: BufRead,
+{
+    const LINE_FEED: char = '\n';
+    const CARRIAGE_RETURN: char = '\r';
+
+    reader.read_line(buf).map(|n| {
+        if n > 0 && buf.ends_with(LINE_FEED) {
+            buf.pop();
+
+            if buf.ends_with(CARRIAGE_RETURN) {
+                buf.pop();
+            }
+        }
+
+        n
+    })
 }
 
 fn parse_string<'a, I>(fields: &mut I) -> io::Result<&'a str>
@@ -74,6 +90,24 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_read_line() -> io::Result<()> {
+        fn t(buf: &mut String, mut reader: &[u8], expected: &str) -> io::Result<()> {
+            buf.clear();
+            read_line(&mut reader, buf)?;
+            assert_eq!(buf, expected);
+            Ok(())
+        }
+
+        let mut buf = String::new();
+
+        t(&mut buf, b"squab\n", "squab")?;
+        t(&mut buf, b"squab\r\n", "squab")?;
+        t(&mut buf, b"squab", "squab")?;
+
+        Ok(())
+    }
 
     #[test]
     fn test_read_counts() -> io::Result<()> {
