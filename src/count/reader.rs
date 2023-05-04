@@ -31,17 +31,13 @@ where
                 break;
             }
 
-            let mut fields = buf.split(DELIMITER);
-
-            let id = parse_string(&mut fields)?;
+            let (id, count) = parse_line(&buf)?;
 
             if id.starts_with(HTSEQ_COUNT_META_PREFIX) {
                 break;
             }
 
-            let count = parse_u64(&mut fields)?;
-
-            counts.insert(id.into(), count);
+            counts.insert(id, count);
         }
 
         Ok(counts)
@@ -68,23 +64,16 @@ where
     })
 }
 
-fn parse_string<'a, I>(fields: &mut I) -> io::Result<&'a str>
-where
-    I: Iterator<Item = &'a str>,
-{
-    fields
-        .next()
-        .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))
-}
+fn parse_line(s: &str) -> io::Result<(String, u64)> {
+    let (raw_id, raw_count) = s
+        .split_once(DELIMITER)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "malformed record"))?;
 
-fn parse_u64<'a, I>(fields: &mut I) -> io::Result<u64>
-where
-    I: Iterator<Item = &'a str>,
-{
-    parse_string(fields).and_then(|s| {
-        s.parse()
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-    })
+    let count = raw_count
+        .parse()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+    Ok((raw_id.into(), count))
 }
 
 #[cfg(test)]
