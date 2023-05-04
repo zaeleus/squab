@@ -44,13 +44,13 @@ mod tests {
     use super::*;
 
     fn build_counts() -> HashMap<String, u64> {
-        let counts = [
+        [
             (String::from("AAAS"), 645),
             (String::from("AC009952.3"), 1),
             (String::from("RPL37AP1"), 5714),
-        ];
-
-        counts.iter().cloned().collect()
+        ]
+        .into_iter()
+        .collect()
     }
 
     fn build_feature_map() -> Result<FeatureMap, noodles::core::position::TryFromIntError> {
@@ -85,9 +85,11 @@ mod tests {
                     strand,
                 )],
             ),
-        ];
+        ]
+        .into_iter()
+        .collect();
 
-        Ok(features.iter().cloned().collect())
+        Ok(features)
     }
     #[test]
     fn test_calculate_tpms() -> Result<(), Box<dyn std::error::Error>> {

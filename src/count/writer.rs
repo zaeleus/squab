@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_write_counts() -> io::Result<()> {
-        let counts: Counts = vec![
+        let counts = [
             (String::from("AADAT"), 302),
             (String::from("CLN3"), 37),
             (String::from("PAK4"), 145),

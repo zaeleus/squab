@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn test_write_values() -> io::Result<()> {
-        let values: HashMap<String, f64> = vec![
+        let values = [
             (String::from("AADAT"), 30.2),
             (String::from("CLN3"), 3.7),
             (String::from("PAK4"), 14.5),
