@@ -108,9 +108,9 @@ impl Filter {
 }
 
 fn is_nonunique_record(record: &Record) -> io::Result<bool> {
-    use sam::record::data::field::{value::Type, Tag};
+    use sam::record::data::field::{tag, Type};
 
-    let value = match record.data().get(Tag::AlignmentHitCount) {
+    let value = match record.data().get(&tag::ALIGNMENT_HIT_COUNT) {
         Some(v) => v,
         None => return Ok(false),
     };
@@ -121,7 +121,7 @@ fn is_nonunique_record(record: &Record) -> io::Result<bool> {
             io::ErrorKind::InvalidData,
             format!(
                 "invalid {} value type: expected {:?}, got {:?}",
-                Tag::AlignmentHitCount,
+                tag::ALIGNMENT_HIT_COUNT,
                 Type::Int32,
                 value.ty()
             ),
