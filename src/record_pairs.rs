@@ -70,7 +70,7 @@ where
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
                     SegmentPosition::First => Ok(Some((mate, record))),
-                    SegmentPosition::Second => Ok(Some((record, mate))),
+                    SegmentPosition::Last => Ok(Some((record, mate))),
                 };
             }
 
@@ -194,7 +194,7 @@ mod tests {
         let actual = mate_key(&r1)?;
         let expected = (
             r1.read_name().cloned(),
-            SegmentPosition::Second,
+            SegmentPosition::Last,
             r1.mate_reference_sequence_id(),
             r1.mate_alignment_start(),
             r1.reference_sequence_id(),

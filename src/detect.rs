@@ -77,14 +77,14 @@ fn count_paired_end_record(
         match (segment_position, record_strand, feature_strand) {
             (SegmentPosition::First, Strand::Forward, Strand::Forward)
             | (SegmentPosition::First, Strand::Reverse, Strand::Reverse)
-            | (SegmentPosition::Second, Strand::Forward, Strand::Reverse)
-            | (SegmentPosition::Second, Strand::Reverse, Strand::Forward) => {
+            | (SegmentPosition::Last, Strand::Forward, Strand::Reverse)
+            | (SegmentPosition::Last, Strand::Reverse, Strand::Forward) => {
                 counts.forward += 1;
             }
             (SegmentPosition::First, Strand::Forward, Strand::Reverse)
             | (SegmentPosition::First, Strand::Reverse, Strand::Forward)
-            | (SegmentPosition::Second, Strand::Forward, Strand::Forward)
-            | (SegmentPosition::Second, Strand::Reverse, Strand::Reverse) => {
+            | (SegmentPosition::Last, Strand::Forward, Strand::Forward)
+            | (SegmentPosition::Last, Strand::Reverse, Strand::Reverse) => {
                 counts.reverse += 1;
             }
         }

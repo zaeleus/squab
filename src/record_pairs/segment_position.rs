@@ -4,14 +4,14 @@ use thiserror::Error;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SegmentPosition {
     First,
-    Second,
+    Last,
 }
 
 impl SegmentPosition {
     pub fn mate(self) -> SegmentPosition {
         match self {
-            Self::First => SegmentPosition::Second,
-            Self::Second => SegmentPosition::First,
+            Self::First => SegmentPosition::Last,
+            Self::Last => SegmentPosition::First,
         }
     }
 }
@@ -27,7 +27,7 @@ impl TryFrom<sam::record::Flags> for SegmentPosition {
         if flags.is_first_segment() {
             Ok(SegmentPosition::First)
         } else if flags.is_last_segment() {
-            Ok(SegmentPosition::Second)
+            Ok(SegmentPosition::Last)
         } else {
             Err(TryFromFlagsError)
         }
@@ -42,8 +42,8 @@ mod tests {
 
     #[test]
     fn test_mate() {
-        assert_eq!(SegmentPosition::First.mate(), SegmentPosition::Second);
-        assert_eq!(SegmentPosition::Second.mate(), SegmentPosition::First);
+        assert_eq!(SegmentPosition::First.mate(), SegmentPosition::Last);
+        assert_eq!(SegmentPosition::Last.mate(), SegmentPosition::First);
     }
 
     #[test]
@@ -54,10 +54,7 @@ mod tests {
         assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::First));
 
         let flags = Flags::SEGMENTED | Flags::LAST_SEGMENT;
-        assert_eq!(
-            SegmentPosition::try_from(flags),
-            Ok(SegmentPosition::Second)
-        );
+        assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::Last));
 
         let flags = Flags::SEGMENTED;
         assert_eq!(SegmentPosition::try_from(flags), Err(TryFromFlagsError));

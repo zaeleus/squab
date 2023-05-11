@@ -318,7 +318,7 @@ pub fn count_paired_end_singleton_record(
             StrandSpecification::Reverse => !flags.is_reverse_complemented(),
             _ => flags.is_reverse_complemented(),
         },
-        Ok(SegmentPosition::Second) => match strand_specification {
+        Ok(SegmentPosition::Last) => match strand_specification {
             StrandSpecification::Reverse => flags.is_reverse_complemented(),
             _ => !flags.is_reverse_complemented(),
         },
