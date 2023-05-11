@@ -1,6 +1,6 @@
-pub mod pair_position;
+pub mod segment_position;
 
-pub use self::pair_position::PairPosition;
+pub use self::segment_position::SegmentPosition;
 
 use std::{
     collections::{hash_map::Drain, HashMap},
@@ -14,7 +14,7 @@ use crate::Record;
 
 type RecordKey = (
     Option<sam::record::ReadName>,
-    PairPosition,
+    SegmentPosition,
     Option<usize>,
     Option<Position>,
     Option<usize>,
@@ -69,8 +69,8 @@ where
 
             if let Some(mate) = self.buf.remove(&mate_key) {
                 return match mate_key.1 {
-                    PairPosition::First => Ok(Some((mate, record))),
-                    PairPosition::Second => Ok(Some((record, mate))),
+                    SegmentPosition::First => Ok(Some((mate, record))),
+                    SegmentPosition::Second => Ok(Some((record, mate))),
                 };
             }
 
@@ -95,7 +95,7 @@ fn is_not_primary(record: &Record) -> bool {
 fn key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
-        PairPosition::try_from(record.flags())
+        SegmentPosition::try_from(record.flags())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id(),
         record.alignment_start(),
@@ -108,7 +108,7 @@ fn key(record: &Record) -> io::Result<RecordKey> {
 fn mate_key(record: &Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().cloned(),
-        PairPosition::try_from(record.flags())
+        SegmentPosition::try_from(record.flags())
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.mate_reference_sequence_id(),
@@ -174,7 +174,7 @@ mod tests {
         let actual = key(&r1)?;
         let expected = (
             r1.read_name().cloned(),
-            PairPosition::First,
+            SegmentPosition::First,
             r1.reference_sequence_id(),
             r1.alignment_start(),
             r1.mate_reference_sequence_id(),
@@ -194,7 +194,7 @@ mod tests {
         let actual = mate_key(&r1)?;
         let expected = (
             r1.read_name().cloned(),
-            PairPosition::Second,
+            SegmentPosition::Second,
             r1.mate_reference_sequence_id(),
             r1.mate_alignment_start(),
             r1.reference_sequence_id(),

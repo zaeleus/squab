@@ -27,7 +27,7 @@ use noodles::{
 };
 
 use crate::{
-    Entry, Features, MatchIntervals, PairPosition, Record, RecordPairs, StrandSpecification,
+    Entry, Features, MatchIntervals, Record, RecordPairs, SegmentPosition, StrandSpecification,
 };
 
 use self::context::Event;
@@ -313,12 +313,12 @@ pub fn count_paired_end_singleton_record(
     let intervals = MatchIntervals::new(cigar, start);
 
     let flags = record.flags();
-    let is_reverse = match PairPosition::try_from(flags) {
-        Ok(PairPosition::First) => match strand_specification {
+    let is_reverse = match SegmentPosition::try_from(flags) {
+        Ok(SegmentPosition::First) => match strand_specification {
             StrandSpecification::Reverse => !flags.is_reverse_complemented(),
             _ => flags.is_reverse_complemented(),
         },
-        Ok(PairPosition::Second) => match strand_specification {
+        Ok(SegmentPosition::Second) => match strand_specification {
             StrandSpecification::Reverse => flags.is_reverse_complemented(),
             _ => !flags.is_reverse_complemented(),
         },

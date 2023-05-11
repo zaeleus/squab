@@ -8,7 +8,7 @@ use noodles::{
     sam::{self, header::ReferenceSequences},
 };
 
-use crate::{count::get_tree, Entry, Features, PairPosition, StrandSpecification};
+use crate::{count::get_tree, Entry, Features, SegmentPosition, StrandSpecification};
 
 const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
@@ -62,8 +62,8 @@ fn count_paired_end_record(
     start: Position,
     end: Position,
 ) -> io::Result<()> {
-    let pair_position =
-        PairPosition::try_from(flags).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let segment_position = SegmentPosition::try_from(flags)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     let record_strand = Strand::from(flags);
 
     for entry in tree.find(start..=end) {
@@ -74,17 +74,17 @@ fn count_paired_end_record(
             Err(_) => continue,
         };
 
-        match (pair_position, record_strand, feature_strand) {
-            (PairPosition::First, Strand::Forward, Strand::Forward)
-            | (PairPosition::First, Strand::Reverse, Strand::Reverse)
-            | (PairPosition::Second, Strand::Forward, Strand::Reverse)
-            | (PairPosition::Second, Strand::Reverse, Strand::Forward) => {
+        match (segment_position, record_strand, feature_strand) {
+            (SegmentPosition::First, Strand::Forward, Strand::Forward)
+            | (SegmentPosition::First, Strand::Reverse, Strand::Reverse)
+            | (SegmentPosition::Second, Strand::Forward, Strand::Reverse)
+            | (SegmentPosition::Second, Strand::Reverse, Strand::Forward) => {
                 counts.forward += 1;
             }
-            (PairPosition::First, Strand::Forward, Strand::Reverse)
-            | (PairPosition::First, Strand::Reverse, Strand::Forward)
-            | (PairPosition::Second, Strand::Forward, Strand::Forward)
-            | (PairPosition::Second, Strand::Reverse, Strand::Reverse) => {
+            (SegmentPosition::First, Strand::Forward, Strand::Reverse)
+            | (SegmentPosition::First, Strand::Reverse, Strand::Forward)
+            | (SegmentPosition::Second, Strand::Forward, Strand::Forward)
+            | (SegmentPosition::Second, Strand::Reverse, Strand::Reverse) => {
                 counts.reverse += 1;
             }
         }

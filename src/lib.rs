@@ -4,7 +4,7 @@ pub use self::{
     feature::Feature,
     match_intervals::MatchIntervals,
     record::Record,
-    record_pairs::{PairPosition, RecordPairs},
+    record_pairs::{RecordPairs, SegmentPosition},
 };
 
 pub mod cli;

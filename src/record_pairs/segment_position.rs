@@ -2,16 +2,16 @@ use noodles::sam;
 use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum PairPosition {
+pub enum SegmentPosition {
     First,
     Second,
 }
 
-impl PairPosition {
-    pub fn mate(self) -> PairPosition {
+impl SegmentPosition {
+    pub fn mate(self) -> SegmentPosition {
         match self {
-            PairPosition::First => PairPosition::Second,
-            PairPosition::Second => PairPosition::First,
+            Self::First => SegmentPosition::Second,
+            Self::Second => SegmentPosition::First,
         }
     }
 }
@@ -20,14 +20,14 @@ impl PairPosition {
 #[error("neither read 1 nor read 2 flag is set")]
 pub struct TryFromFlagsError;
 
-impl TryFrom<sam::record::Flags> for PairPosition {
+impl TryFrom<sam::record::Flags> for SegmentPosition {
     type Error = TryFromFlagsError;
 
     fn try_from(flags: sam::record::Flags) -> Result<Self, Self::Error> {
         if flags.is_first_segment() {
-            Ok(PairPosition::First)
+            Ok(SegmentPosition::First)
         } else if flags.is_last_segment() {
-            Ok(PairPosition::Second)
+            Ok(SegmentPosition::Second)
         } else {
             Err(TryFromFlagsError)
         }
@@ -42,8 +42,8 @@ mod tests {
 
     #[test]
     fn test_mate() {
-        assert_eq!(PairPosition::First.mate(), PairPosition::Second);
-        assert_eq!(PairPosition::Second.mate(), PairPosition::First);
+        assert_eq!(SegmentPosition::First.mate(), SegmentPosition::Second);
+        assert_eq!(SegmentPosition::Second.mate(), SegmentPosition::First);
     }
 
     #[test]
@@ -51,12 +51,15 @@ mod tests {
         use sam::record::Flags;
 
         let flags = Flags::SEGMENTED | Flags::FIRST_SEGMENT;
-        assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::First));
+        assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::First));
 
         let flags = Flags::SEGMENTED | Flags::LAST_SEGMENT;
-        assert_eq!(PairPosition::try_from(flags), Ok(PairPosition::Second));
+        assert_eq!(
+            SegmentPosition::try_from(flags),
+            Ok(SegmentPosition::Second)
+        );
 
         let flags = Flags::SEGMENTED;
-        assert_eq!(PairPosition::try_from(flags), Err(TryFromFlagsError));
+        assert_eq!(SegmentPosition::try_from(flags), Err(TryFromFlagsError));
     }
 }
