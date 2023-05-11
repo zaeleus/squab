@@ -1,6 +1,5 @@
-use std::{error, fmt};
-
 use noodles::sam;
+use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PairPosition {
@@ -17,16 +16,9 @@ impl PairPosition {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Error, Eq, PartialEq)]
+#[error("neither read 1 nor read 2 flag is set")]
 pub struct TryFromFlagsError;
-
-impl error::Error for TryFromFlagsError {}
-
-impl fmt::Display for TryFromFlagsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("neither read 1 nor read 2 flag is set")
-    }
-}
 
 impl TryFrom<sam::record::Flags> for PairPosition {
     type Error = TryFromFlagsError;
