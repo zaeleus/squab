@@ -1,4 +1,4 @@
-mod pair_position;
+pub mod pair_position;
 
 pub use self::pair_position::PairPosition;
 
