@@ -15,10 +15,10 @@ use squab::{
 use tracing::info;
 
 fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
-    let bam_src = &options.bam;
-    let annotations_src = &options.annotations;
+    let bam_src = options.bam;
+    let annotations_src = options.annotations;
 
-    let results_dst = &options.output;
+    let results_dst = options.output;
 
     let threads = match options.threads {
         Some(n) => n,
@@ -49,8 +49,8 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
 }
 
 fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
-    let counts_src = &options.counts;
-    let annotations_src = &options.annotations;
+    let counts_src = options.counts;
+    let annotations_src = options.annotations;
 
     commands::normalize(
         counts_src,
