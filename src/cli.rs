@@ -26,11 +26,11 @@ pub enum Command {
 #[derive(Parser)]
 pub struct Normalize {
     /// Feature type to count.
-    #[arg(short = 't', long, default_value_t = String::from("exon"))]
+    #[arg(short = 't', long, default_value = "exon")]
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    #[arg(short = 'i', long, default_value_t = String::from("gene_id"))]
+    #[arg(short = 'i', long, default_value = "gene_id")]
     pub id: String,
 
     /// Input annotations file (GFF3).
@@ -64,11 +64,11 @@ pub struct Quantify {
     pub strand_specification: StrandSpecificationOption,
 
     /// Feature type to count.
-    #[arg(short = 't', long, default_value_t = String::from("exon"))]
+    #[arg(short = 't', long, default_value = "exon")]
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    #[arg(short = 'i', long, default_value_t = String::from("gene_id"))]
+    #[arg(short = 'i', long, default_value = "gene_id")]
     pub id: String,
 
     #[arg(long, default_value = "10")]
