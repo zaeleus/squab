@@ -42,7 +42,7 @@ pub struct Normalize {
     pub method: Method,
 
     /// Input counts file.
-    pub counts: PathBuf,
+    pub src: PathBuf,
 }
 
 #[derive(Parser)]
@@ -87,5 +87,5 @@ pub struct Quantify {
     pub threads: Option<NonZeroUsize>,
 
     /// Input alignment file.
-    pub bam: PathBuf,
+    pub src: PathBuf,
 }

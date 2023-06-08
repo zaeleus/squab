@@ -15,7 +15,7 @@ use squab::{
 use tracing::info;
 
 fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
-    let bam_src = options.bam;
+    let bam_src = options.src;
     let annotations_src = options.annotations;
 
     let results_dst = options.output;
@@ -49,7 +49,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
 }
 
 fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
-    let counts_src = options.counts;
+    let counts_src = options.src;
     let annotations_src = options.annotations;
 
     commands::normalize(
