@@ -19,7 +19,7 @@ flate2 = "1.0.14"
 git-testament = "0.2.0"
 interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
 mimalloc = { version = "0.1.26", default-features = false }
-noodles = { version = "0.41.0", features = ["bam", "bgzf", "core", "gff", "sam"] }
+noodles = { version = "0.47.0", features = ["bam", "bgzf", "core", "gff", "sam"] }
 noodles-bgzf = { version = "0.22.0", features = ["libdeflate"] }
 thiserror = "1.0.40"
 tracing = "0.1.25"

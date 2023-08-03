@@ -69,13 +69,18 @@ where
 
         let id = record
             .attributes()
-            .iter()
-            .find(|e| e.key() == feature_id)
-            .map(|e| e.value())
+            .get(feature_id)
             .ok_or_else(|| {
                 io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("missing attribute '{feature_id}'"),
+                )
+            })?
+            .as_string()
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("invalid '{feature_id}' value"),
                 )
             })?;
 
