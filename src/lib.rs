@@ -27,6 +27,7 @@ use std::{
 
 use interval_tree::IntervalTree;
 use noodles::core::Position;
+use thiserror::Error;
 use tracing::info;
 
 pub type Entry = (String, noodles::gff::record::Strand);
@@ -39,11 +40,21 @@ pub enum StrandSpecification {
     Reverse,
 }
 
+#[derive(Debug, Error)]
+pub enum ReadFeaturesError {
+    #[error("missing attribute: {0}")]
+    MissingAttribute(String),
+    #[error("invalid attribute: {0}")]
+    InvalidAttribute(String),
+    #[error("I/O error")]
+    Io(#[from] io::Error),
+}
+
 pub fn read_features<R>(
     reader: &mut noodles::gff::Reader<R>,
     feature_type: &str,
     feature_id: &str,
-) -> io::Result<HashMap<String, Vec<Feature>>>
+) -> Result<HashMap<String, Vec<Feature>>, ReadFeaturesError>
 where
     R: BufRead,
 {
@@ -70,19 +81,9 @@ where
         let id = record
             .attributes()
             .get(feature_id)
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("missing attribute '{feature_id}'"),
-                )
-            })?
+            .ok_or_else(|| ReadFeaturesError::MissingAttribute(feature_id.into()))?
             .as_string()
-            .ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("invalid '{feature_id}' value"),
-                )
-            })?;
+            .ok_or_else(|| ReadFeaturesError::InvalidAttribute(feature_id.into()))?;
 
         let list = features.entry(id.into()).or_default();
 
