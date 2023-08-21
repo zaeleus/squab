@@ -5,26 +5,19 @@ mod writer;
 
 pub use self::{fpkm::calculate_fpkms, method::Method, tpm::calculate_tpms, writer::Writer};
 
-use std::{collections::HashMap, error, fmt};
+use std::collections::HashMap;
+
+use thiserror::Error;
 
 use crate::Feature;
 
 type FeatureMap = HashMap<String, Vec<Feature>>;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("missing feature: {0}")]
     MissingFeature(String),
 }
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingFeature(name) => write!(f, "missing feature: {name}"),
-        }
-    }
-}
-
-impl error::Error for Error {}
 
 fn sum_nonoverlapping_feature_lengths(features: &[Feature]) -> usize {
     merge_features(features).iter().map(|f| f.len()).sum()
