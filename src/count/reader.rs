@@ -1,12 +1,25 @@
 use std::{
     collections::HashMap,
     io::{self, BufRead},
+    num,
 };
+
+use thiserror::Error;
 
 use super::context::Counts;
 
 const DELIMITER: char = '\t';
 static HTSEQ_COUNT_META_PREFIX: &str = "__";
+
+#[derive(Debug, Error)]
+pub enum ReadCountsError {
+    #[error("invalid record")]
+    InvalidRecord,
+    #[error("invalid count")]
+    InvalidCount(num::ParseIntError),
+    #[error("I/O error")]
+    Io(#[from] io::Error),
+}
 
 pub struct Reader<R> {
     inner: R,
@@ -20,7 +33,7 @@ where
         Self { inner }
     }
 
-    pub fn read_counts(&mut self) -> io::Result<Counts> {
+    pub fn read_counts(&mut self) -> Result<Counts, ReadCountsError> {
         let mut counts = HashMap::default();
         let mut buf = String::new();
 
@@ -64,14 +77,12 @@ where
     })
 }
 
-fn parse_line(s: &str) -> io::Result<(String, u64)> {
+fn parse_line(s: &str) -> Result<(String, u64), ReadCountsError> {
     let (raw_id, raw_count) = s
         .split_once(DELIMITER)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "malformed record"))?;
+        .ok_or(ReadCountsError::InvalidRecord)?;
 
-    let count = raw_count
-        .parse()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    let count = raw_count.parse().map_err(ReadCountsError::InvalidCount)?;
 
     Ok((raw_id.into(), count))
 }
@@ -99,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn test_read_counts() -> io::Result<()> {
+    fn test_read_counts() -> Result<(), ReadCountsError> {
         let data = b"\
 AADAT\t302
 CLN3\t37
