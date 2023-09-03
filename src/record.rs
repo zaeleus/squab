@@ -86,11 +86,14 @@ impl TryFrom<&bam::lazy::Record> for Record {
 
     fn try_from(record: &bam::lazy::Record) -> Result<Self, Self::Error> {
         Ok(Self {
-            read_name: record.read_name()?,
+            read_name: record
+                .read_name()
+                .map(|read_name| read_name.try_into())
+                .transpose()?,
             flags: record.flags()?,
             reference_sequence_id: record.reference_sequence_id()?,
             alignment_start: record.alignment_start()?,
-            mapping_quality: record.mapping_quality()?,
+            mapping_quality: record.mapping_quality(),
             cigar: sam::record::Cigar::try_from(record.cigar())?,
             mate_reference_sequence_id: record.mate_reference_sequence_id()?,
             mate_alignment_start: record.mate_alignment_start()?,
