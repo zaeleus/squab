@@ -43,7 +43,7 @@ where
     let reference_sequences = header.reference_sequences().clone();
 
     let mut feature_ids = Vec::with_capacity(names.len());
-    feature_ids.extend(names.into_iter());
+    feature_ids.extend(names);
     feature_ids.sort();
 
     info!("detecting library type");

@@ -279,7 +279,7 @@ pub fn count_paired_end_record_pair(
 
     let set2 = find(tree, intervals, strand_specification, is_reverse)?;
 
-    set.extend(set2.into_iter());
+    set.extend(set2);
 
     Ok(update_intersections(set))
 }
