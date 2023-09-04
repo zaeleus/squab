@@ -3,7 +3,6 @@ pub use self::{
     count::{count_paired_end_records, count_single_end_records, Context},
     feature::Feature,
     match_intervals::MatchIntervals,
-    record::Record,
     record_pairs::{RecordPairs, SegmentPosition},
 };
 

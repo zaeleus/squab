@@ -1,9 +1,11 @@
 use std::io;
 
-use noodles::sam::{self, record::MappingQuality};
+use noodles::{
+    bam,
+    sam::{self, record::MappingQuality},
+};
 
 use super::context::Event;
-use crate::Record;
 
 #[derive(Clone)]
 pub struct Filter {
@@ -46,8 +48,8 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, record: &Record) -> io::Result<Option<Event>> {
-        let flags = record.flags();
+    pub fn filter(&self, record: &bam::lazy::Record) -> io::Result<Option<Event>> {
+        let flags = record.flags()?;
 
         if flags.is_unmapped() {
             return Ok(Some(Event::Unmapped));
@@ -72,9 +74,13 @@ impl Filter {
         Ok(None)
     }
 
-    pub fn filter_pair(&self, r1: &Record, r2: &Record) -> io::Result<Option<Event>> {
-        let f1 = r1.flags();
-        let f2 = r2.flags();
+    pub fn filter_pair(
+        &self,
+        r1: &bam::lazy::Record,
+        r2: &bam::lazy::Record,
+    ) -> io::Result<Option<Event>> {
+        let f1 = r1.flags()?;
+        let f2 = r2.flags()?;
 
         if f1.is_unmapped() && f2.is_unmapped() {
             return Ok(Some(Event::Unmapped));
@@ -107,11 +113,13 @@ impl Filter {
     }
 }
 
-fn is_nonunique_record(record: &Record) -> io::Result<bool> {
+fn is_nonunique_record(record: &bam::lazy::Record) -> io::Result<bool> {
     use sam::record::data::field::{tag, Type};
 
-    let value = match record.data().get(&tag::ALIGNMENT_HIT_COUNT) {
-        Some(v) => v,
+    let data = record.data();
+
+    let value = match data.get(&tag::ALIGNMENT_HIT_COUNT) {
+        Some(result) => result?,
         None => return Ok(false),
     };
 

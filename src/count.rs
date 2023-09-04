@@ -26,9 +26,7 @@ use noodles::{
     },
 };
 
-use crate::{
-    Entry, Features, MatchIntervals, Record, RecordPairs, SegmentPosition, StrandSpecification,
-};
+use crate::{Entry, Features, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification};
 
 use self::context::Event;
 
@@ -114,26 +112,24 @@ pub fn count_single_end_record(
     strand_specification: StrandSpecification,
     record: &bam::lazy::Record,
 ) -> io::Result<Event> {
-    let record = Record::try_from(record)?;
-
-    if let Some(event) = filter.filter(&record)? {
+    if let Some(event) = filter.filter(record)? {
         return Ok(event);
     }
 
     let tree = match get_tree(
         features,
         reference_sequences,
-        record.reference_sequence_id(),
+        record.reference_sequence_id()?,
     )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = record.cigar();
-    let start = record.alignment_start().expect("missing alignment start");
-    let intervals = MatchIntervals::new(cigar, start);
+    let start = record.alignment_start()?.expect("missing alignment start");
+    let intervals = MatchIntervals::new(&cigar, start);
 
-    let flags = record.flags();
+    let flags = record.flags()?;
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => !flags.is_reverse_complemented(),
         _ => flags.is_reverse_complemented(),
@@ -242,23 +238,23 @@ pub fn count_paired_end_record_pair(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    r1: &Record,
-    r2: &Record,
+    r1: &bam::lazy::Record,
+    r2: &bam::lazy::Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter_pair(r1, r2)? {
         return Ok(event);
     }
 
-    let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id())? {
+    let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id()?)? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = r1.cigar();
-    let start = r1.alignment_start().expect("missing alignment start");
-    let intervals = MatchIntervals::new(cigar, start);
+    let start = r1.alignment_start()?.expect("missing alignment start");
+    let intervals = MatchIntervals::new(&cigar, start);
 
-    let f1 = r1.flags();
+    let f1 = r1.flags()?;
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => !f1.is_reverse_complemented(),
         _ => f1.is_reverse_complemented(),
@@ -266,16 +262,16 @@ pub fn count_paired_end_record_pair(
 
     let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
-    let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id())? {
+    let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id()?)? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = r2.cigar();
-    let start = r2.alignment_start().expect("missing alignment start");
-    let intervals = MatchIntervals::new(cigar, start);
+    let start = r2.alignment_start()?.expect("missing alignment start");
+    let intervals = MatchIntervals::new(&cigar, start);
 
-    let f2 = r2.flags();
+    let f2 = r2.flags()?;
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => f2.is_reverse_complemented(),
         _ => !f2.is_reverse_complemented(),
@@ -293,7 +289,7 @@ pub fn count_paired_end_singleton_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &Record,
+    record: &bam::lazy::Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
@@ -302,17 +298,17 @@ pub fn count_paired_end_singleton_record(
     let tree = match get_tree(
         features,
         reference_sequences,
-        record.reference_sequence_id(),
+        record.reference_sequence_id()?,
     )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = record.cigar();
-    let start = record.alignment_start().expect("missing alignment start");
-    let intervals = MatchIntervals::new(cigar, start);
+    let start = record.alignment_start()?.expect("missing alignment start");
+    let intervals = MatchIntervals::new(&cigar, start);
 
-    let flags = record.flags();
+    let flags = record.flags()?;
     let is_reverse = match SegmentPosition::try_from(flags) {
         Ok(SegmentPosition::First) => match strand_specification {
             StrandSpecification::Reverse => !flags.is_reverse_complemented(),
@@ -338,7 +334,9 @@ fn find(
 ) -> io::Result<HashSet<String>> {
     let mut set = HashSet::new();
 
-    for interval in intervals {
+    for result in intervals {
+        let interval = result?;
+
         for entry in tree.find(interval.clone()) {
             let (gene_name, strand) = entry.get();
 

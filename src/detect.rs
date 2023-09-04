@@ -157,10 +157,10 @@ where
         };
 
         let alignment_start = record.alignment_start()?;
-        let cigar = sam::record::Cigar::try_from(record.cigar())?;
+        let cigar = record.cigar();
 
         let start = alignment_start.expect("missing alignment start");
-        let end = alignment_end(alignment_start, &cigar).expect("missing alignment end");
+        let end = alignment_end(alignment_start, &cigar).expect("missing alignment end")?;
 
         if flags.is_segmented() {
             counts.paired += 1;
