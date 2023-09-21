@@ -143,7 +143,7 @@ where
     for result in reader.lazy_records().take(MAX_RECORDS) {
         let record = result?;
 
-        let flags = record.flags()?;
+        let flags = record.flags();
 
         if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
             continue;

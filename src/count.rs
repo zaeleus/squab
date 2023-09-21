@@ -129,7 +129,7 @@ pub fn count_single_end_record(
     let start = record.alignment_start()?.expect("missing alignment start");
     let intervals = MatchIntervals::new(&cigar, start);
 
-    let flags = record.flags()?;
+    let flags = record.flags();
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => !flags.is_reverse_complemented(),
         _ => flags.is_reverse_complemented(),
@@ -254,7 +254,7 @@ pub fn count_paired_end_record_pair(
     let start = r1.alignment_start()?.expect("missing alignment start");
     let intervals = MatchIntervals::new(&cigar, start);
 
-    let f1 = r1.flags()?;
+    let f1 = r1.flags();
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => !f1.is_reverse_complemented(),
         _ => f1.is_reverse_complemented(),
@@ -271,7 +271,7 @@ pub fn count_paired_end_record_pair(
     let start = r2.alignment_start()?.expect("missing alignment start");
     let intervals = MatchIntervals::new(&cigar, start);
 
-    let f2 = r2.flags()?;
+    let f2 = r2.flags();
     let is_reverse = match strand_specification {
         StrandSpecification::Reverse => f2.is_reverse_complemented(),
         _ => !f2.is_reverse_complemented(),
@@ -308,7 +308,7 @@ pub fn count_paired_end_singleton_record(
     let start = record.alignment_start()?.expect("missing alignment start");
     let intervals = MatchIntervals::new(&cigar, start);
 
-    let flags = record.flags()?;
+    let flags = record.flags();
     let is_reverse = match SegmentPosition::try_from(flags) {
         Ok(SegmentPosition::First) => match strand_specification {
             StrandSpecification::Reverse => !flags.is_reverse_complemented(),

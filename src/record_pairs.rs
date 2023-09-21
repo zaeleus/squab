@@ -80,14 +80,14 @@ where
 }
 
 fn is_not_primary(record: &bam::lazy::Record) -> io::Result<bool> {
-    let flags = record.flags()?;
+    let flags = record.flags();
     Ok(flags.is_secondary() || flags.is_supplementary())
 }
 
 fn key(record: &bam::lazy::Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().map(|buf| buf.as_ref().to_vec()),
-        SegmentPosition::try_from(record.flags()?)
+        SegmentPosition::try_from(record.flags())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id()?,
         record.alignment_start()?,
@@ -100,7 +100,7 @@ fn key(record: &bam::lazy::Record) -> io::Result<RecordKey> {
 fn mate_key(record: &bam::lazy::Record) -> io::Result<RecordKey> {
     Ok((
         record.read_name().map(|buf| buf.as_ref().to_vec()),
-        SegmentPosition::try_from(record.flags()?)
+        SegmentPosition::try_from(record.flags())
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.mate_reference_sequence_id()?,
