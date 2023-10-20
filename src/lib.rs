@@ -25,7 +25,7 @@ use std::{
 };
 
 use interval_tree::IntervalTree;
-use noodles::core::Position;
+use noodles::core::{self as core, Position};
 use thiserror::Error;
 use tracing::info;
 
@@ -41,6 +41,8 @@ pub enum StrandSpecification {
 
 #[derive(Debug, Error)]
 pub enum ReadFeaturesError {
+    #[error("invalid position")]
+    InvalidPosition(#[from] core::position::ParseError),
     #[error("missing attribute: {0}")]
     MissingAttribute(String),
     #[error("invalid attribute: {0}")]
@@ -61,28 +63,29 @@ where
 
     info!("reading features");
 
-    for result in reader.records() {
-        let record = result?;
+    let mut line = noodles::gff::lazy::Line::default();
 
-        let ty = record.ty();
+    while reader.read_lazy_line(&mut line)? != 0 {
+        let noodles::gff::lazy::Line::Record(ref record) = line else {
+            continue;
+        };
 
-        if ty != feature_type {
+        if record.ty() != feature_type {
             continue;
         }
 
         let reference_sequence_name = record.reference_sequence_name();
-        let start = record.start();
-        let end = record.end();
-        let strand = record.strand();
+        let start = record.start().try_into()?;
+        let end = record.end().try_into()?;
+        let strand = record.strand().try_into()?;
 
         let feature = Feature::new(reference_sequence_name.into(), start, end, strand);
 
-        let id = record
-            .attributes()
+        let attributes = record.attributes();
+        let id = attributes
             .get(feature_id)
             .ok_or_else(|| ReadFeaturesError::MissingAttribute(feature_id.into()))?
-            .as_string()
-            .ok_or_else(|| ReadFeaturesError::InvalidAttribute(feature_id.into()))?;
+            .map_err(|_| ReadFeaturesError::InvalidAttribute(feature_id.into()))?;
 
         let list = features.entry(id.into()).or_default();
 
