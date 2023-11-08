@@ -52,21 +52,7 @@ where
         detect_specification(&bam_src, &reference_sequences, &features)?;
 
     info!("detected library layout: {library_layout}");
-
-    match detected_strand_specification {
-        StrandSpecification::None => info!(
-            "strand specification: none (confidence: {:.2})",
-            strandedness_confidence
-        ),
-        StrandSpecification::Forward => info!(
-            "strand specification: forward (confidence: {:.2})",
-            strandedness_confidence
-        ),
-        StrandSpecification::Reverse => info!(
-            "strand specification: reverse (confidence: {:.2})",
-            strandedness_confidence
-        ),
-    }
+    info!("strand specification: {detected_strand_specification} (confidence: {strandedness_confidence:.2})");
 
     let strand_specification = match strand_specification_option {
         StrandSpecificationOption::None => StrandSpecification::None,

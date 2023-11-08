@@ -21,6 +21,7 @@ pub use self::cli::Cli;
 
 use std::{
     collections::{HashMap, HashSet},
+    fmt,
     io::{self, BufRead},
 };
 
@@ -37,6 +38,16 @@ pub enum StrandSpecification {
     None,
     Forward,
     Reverse,
+}
+
+impl fmt::Display for StrandSpecification {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::None => "none".fmt(f),
+            Self::Forward => "forward".fmt(f),
+            Self::Reverse => "reverse".fmt(f),
+        }
+    }
 }
 
 #[derive(Debug, Error)]
