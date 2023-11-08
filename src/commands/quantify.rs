@@ -51,10 +51,7 @@ where
     let (library_layout, detected_strand_specification, strandedness_confidence) =
         detect_specification(&bam_src, &reference_sequences, &features)?;
 
-    match library_layout {
-        LibraryLayout::SingleEnd => info!("library layout: single end"),
-        LibraryLayout::PairedEnd => info!("library layout: paired end"),
-    }
+    info!("detected library layout: {library_layout}");
 
     match detected_strand_specification {
         StrandSpecification::None => info!(

@@ -1,4 +1,4 @@
-use std::{fs::File, io, path::Path};
+use std::{fmt, fs::File, io, path::Path};
 
 use interval_tree::IntervalTree;
 use noodles::{
@@ -25,6 +25,15 @@ struct Counts {
 pub enum LibraryLayout {
     SingleEnd,
     PairedEnd,
+}
+
+impl fmt::Display for LibraryLayout {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SingleEnd => "single end".fmt(f),
+            Self::PairedEnd => "paired end".fmt(f),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
