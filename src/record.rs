@@ -1,6 +1,6 @@
 use std::io;
 
-use noodles::{bam::lazy::record::Cigar, core::Position};
+use noodles::{bam::record::Cigar, core::Position};
 
 pub fn alignment_end(
     alignment_start: Option<Position>,

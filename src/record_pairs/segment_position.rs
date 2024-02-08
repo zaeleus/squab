@@ -20,10 +20,10 @@ impl SegmentPosition {
 #[error("neither read 1 nor read 2 flag is set")]
 pub struct TryFromFlagsError;
 
-impl TryFrom<sam::record::Flags> for SegmentPosition {
+impl TryFrom<sam::alignment::record::Flags> for SegmentPosition {
     type Error = TryFromFlagsError;
 
-    fn try_from(flags: sam::record::Flags) -> Result<Self, Self::Error> {
+    fn try_from(flags: sam::alignment::record::Flags) -> Result<Self, Self::Error> {
         if flags.is_first_segment() {
             Ok(SegmentPosition::First)
         } else if flags.is_last_segment() {
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_try_from_flag() {
-        use sam::record::Flags;
+        use sam::alignment::record::Flags;
 
         let flags = Flags::SEGMENTED | Flags::FIRST_SEGMENT;
         assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::First));

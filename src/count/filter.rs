@@ -2,7 +2,7 @@ use std::io;
 
 use noodles::{
     bam,
-    sam::{self, record::MappingQuality},
+    sam::{self, alignment::record::MappingQuality},
 };
 
 use super::context::Event;
@@ -48,7 +48,7 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, record: &bam::lazy::Record) -> io::Result<Option<Event>> {
+    pub fn filter(&self, record: &bam::Record) -> io::Result<Option<Event>> {
         let flags = record.flags();
 
         if flags.is_unmapped() {
@@ -74,11 +74,7 @@ impl Filter {
         Ok(None)
     }
 
-    pub fn filter_pair(
-        &self,
-        r1: &bam::lazy::Record,
-        r2: &bam::lazy::Record,
-    ) -> io::Result<Option<Event>> {
+    pub fn filter_pair(&self, r1: &bam::Record, r2: &bam::Record) -> io::Result<Option<Event>> {
         let f1 = r1.flags();
         let f2 = r2.flags();
 
@@ -113,12 +109,12 @@ impl Filter {
     }
 }
 
-fn is_nonunique_record(record: &bam::lazy::Record) -> io::Result<bool> {
-    use sam::record::data::field::{tag, Type};
+fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
+    use sam::alignment::record::data::field::{Tag, Type};
 
     let data = record.data();
 
-    let value = match data.get(&tag::ALIGNMENT_HIT_COUNT) {
+    let value = match data.get(&Tag::ALIGNMENT_HIT_COUNT) {
         Some(result) => result?,
         None => return Ok(false),
     };
@@ -128,8 +124,8 @@ fn is_nonunique_record(record: &bam::lazy::Record) -> io::Result<bool> {
         None => Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "invalid {} value type: expected {:?}, got {:?}",
-                tag::ALIGNMENT_HIT_COUNT,
+                "invalid {:?} value type: expected {:?}, got {:?}",
+                Tag::ALIGNMENT_HIT_COUNT,
                 Type::Int32,
                 value.ty()
             ),

@@ -2,7 +2,7 @@ use std::{num::NonZeroUsize, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use git_testament::{git_testament, render_testament};
-use noodles::sam::record::MappingQuality;
+use noodles::sam::alignment::record::MappingQuality;
 
 use crate::{normalization::Method, StrandSpecificationOption};
 
@@ -71,7 +71,7 @@ pub struct Quantify {
     #[arg(short = 'i', long, default_value = "gene_id")]
     pub id: String,
 
-    #[arg(long, default_value = "10")]
+    #[arg(long, value_parser = parse_mapping_quality, default_value = "10")]
     pub min_mapping_quality: MappingQuality,
 
     /// Output destination for feature counts.
@@ -88,4 +88,10 @@ pub struct Quantify {
 
     /// Input alignment file.
     pub src: PathBuf,
+}
+
+fn parse_mapping_quality(s: &str) -> Result<MappingQuality, &'static str> {
+    s.parse::<u8>()
+        .map_err(|_| "invalid input")
+        .and_then(|n| MappingQuality::new(n).ok_or("missing mapping quality"))
 }

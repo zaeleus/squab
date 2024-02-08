@@ -36,7 +36,7 @@ where
     let mut reader = bgzf::reader::Builder::default()
         .set_worker_count(worker_count)
         .build_from_path(bam_src.as_ref())
-        .map(bam::Reader::from)
+        .map(bam::io::Reader::from)
         .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
 
     let header = reader.read_header()?;

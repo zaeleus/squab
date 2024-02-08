@@ -25,13 +25,14 @@ use std::{
     io::{self, BufRead},
 };
 
+use bstr::BString;
 use interval_tree::IntervalTree;
 use noodles::core::{self as core, Position};
 use thiserror::Error;
 use tracing::info;
 
 pub type Entry = (String, noodles::gff::record::Strand);
-pub type Features = HashMap<String, IntervalTree<Position, Entry>>;
+pub type Features = HashMap<BString, IntervalTree<Position, Entry>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {

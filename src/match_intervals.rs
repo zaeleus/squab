@@ -1,6 +1,10 @@
 use std::{io, ops::RangeInclusive};
 
-use noodles::{bam::lazy::record::Cigar, core::Position, sam::record::cigar::Op};
+use noodles::{
+    bam::record::Cigar,
+    core::Position,
+    sam::alignment::record::cigar::{op::Kind, Op},
+};
 
 pub struct MatchIntervals<'a> {
     ops: Box<dyn Iterator<Item = io::Result<Op>> + 'a>,
@@ -20,8 +24,6 @@ impl<'a> Iterator for MatchIntervals<'a> {
     type Item = io::Result<RangeInclusive<Position>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        use noodles::sam::record::cigar::op::Kind;
-
         loop {
             let op = match self.ops.next()? {
                 Ok(op) => op,
@@ -59,27 +61,44 @@ impl<'a> Iterator for MatchIntervals<'a> {
 
 #[cfg(test)]
 mod tests {
-    use noodles::{bam, sam};
+    use noodles::{
+        bam,
+        sam::{self, alignment::io::Write},
+    };
 
     use super::*;
 
     #[test]
     fn test_next() -> Result<(), Box<dyn std::error::Error>> {
-        let record = sam::alignment::Record::builder()
+        let record = sam::alignment::RecordBuf::builder()
             .set_alignment_start(Position::MIN)
-            .set_cigar("1M2I3D4N5S6H7P8=9X".parse()?)
+            .set_cigar(
+                [
+                    Op::new(Kind::Match, 1),
+                    Op::new(Kind::Insertion, 2),
+                    Op::new(Kind::Deletion, 3),
+                    Op::new(Kind::Skip, 4),
+                    Op::new(Kind::SoftClip, 5),
+                    Op::new(Kind::HardClip, 6),
+                    Op::new(Kind::Pad, 7),
+                    Op::new(Kind::SequenceMatch, 8),
+                    Op::new(Kind::SequenceMismatch, 9),
+                ]
+                .into_iter()
+                .collect(),
+            )
             .build();
 
-        let mut writer = bam::Writer::from(Vec::new());
-        writer.write_record(&sam::Header::default(), &record)?;
-        let buf = writer.into_inner()[4..].to_vec();
+        let mut writer = bam::io::Writer::from(Vec::new());
+        writer.write_alignment_record(&sam::Header::default(), &record)?;
 
-        let raw_record = bam::lazy::Record::try_from(buf)?;
+        let mut reader = bam::io::Reader::from(writer.get_ref().as_slice());
 
-        let cigar = raw_record.cigar();
-        let start = raw_record
-            .alignment_start()?
-            .expect("missing alignment start");
+        let mut record = bam::Record::default();
+        reader.read_record(&mut record)?;
+
+        let cigar = record.cigar();
+        let start = record.alignment_start().expect("missing alignment start")?;
         let mut it = MatchIntervals::new(&cigar, start);
 
         assert_eq!(

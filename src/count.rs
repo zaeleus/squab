@@ -12,17 +12,15 @@ use std::{
     thread,
 };
 
+use bstr::{BStr, ByteSlice};
 use interval_tree::IntervalTree;
 use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{
-        header::{
-            record::value::{map::ReferenceSequence, Map},
-            ReferenceSequences,
-        },
-        record::ReferenceSequenceName,
+    sam::header::{
+        record::value::{map::ReferenceSequence, Map},
+        ReferenceSequences,
     },
 };
 
@@ -33,7 +31,7 @@ use self::context::Event;
 const CHUNK_SIZE: usize = 8192;
 
 pub fn count_single_end_records<R>(
-    mut reader: bam::Reader<R>,
+    mut reader: bam::io::Reader<R>,
     features: &Features,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
@@ -47,7 +45,7 @@ where
         let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
         scope.spawn(move || {
-            let mut records = reader.lazy_records();
+            let mut records = reader.records();
 
             loop {
                 let mut chunk = Vec::with_capacity(CHUNK_SIZE);
@@ -110,7 +108,7 @@ pub fn count_single_end_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &bam::lazy::Record,
+    record: &bam::Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
@@ -119,14 +117,14 @@ pub fn count_single_end_record(
     let tree = match get_tree(
         features,
         reference_sequences,
-        record.reference_sequence_id()?,
+        record.reference_sequence_id().transpose()?,
     )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = record.cigar();
-    let start = record.alignment_start()?.expect("missing alignment start");
+    let start = record.alignment_start().expect("missing alignment start")?;
     let intervals = MatchIntervals::new(&cigar, start);
 
     let flags = record.flags();
@@ -141,7 +139,7 @@ pub fn count_single_end_record(
 }
 
 pub fn count_paired_end_records<R>(
-    reader: bam::Reader<R>,
+    reader: bam::io::Reader<R>,
     features: &Features,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
@@ -238,20 +236,24 @@ pub fn count_paired_end_record_pair(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    r1: &bam::lazy::Record,
-    r2: &bam::lazy::Record,
+    r1: &bam::Record,
+    r2: &bam::Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter_pair(r1, r2)? {
         return Ok(event);
     }
 
-    let tree = match get_tree(features, reference_sequences, r1.reference_sequence_id()?)? {
+    let tree = match get_tree(
+        features,
+        reference_sequences,
+        r1.reference_sequence_id().transpose()?,
+    )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = r1.cigar();
-    let start = r1.alignment_start()?.expect("missing alignment start");
+    let start = r1.alignment_start().expect("missing alignment start")?;
     let intervals = MatchIntervals::new(&cigar, start);
 
     let f1 = r1.flags();
@@ -262,13 +264,17 @@ pub fn count_paired_end_record_pair(
 
     let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
-    let tree = match get_tree(features, reference_sequences, r2.reference_sequence_id()?)? {
+    let tree = match get_tree(
+        features,
+        reference_sequences,
+        r2.reference_sequence_id().transpose()?,
+    )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = r2.cigar();
-    let start = r2.alignment_start()?.expect("missing alignment start");
+    let start = r2.alignment_start().expect("missing alignment start")?;
     let intervals = MatchIntervals::new(&cigar, start);
 
     let f2 = r2.flags();
@@ -289,7 +295,7 @@ pub fn count_paired_end_singleton_record(
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
-    record: &bam::lazy::Record,
+    record: &bam::Record,
 ) -> io::Result<Event> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
@@ -298,14 +304,14 @@ pub fn count_paired_end_singleton_record(
     let tree = match get_tree(
         features,
         reference_sequences,
-        record.reference_sequence_id()?,
+        record.reference_sequence_id().transpose()?,
     )? {
         Some(t) => t,
         None => return Ok(Event::NoFeature),
     };
 
     let cigar = record.cigar();
-    let start = record.alignment_start()?.expect("missing alignment start");
+    let start = record.alignment_start().expect("missing alignment start")?;
     let intervals = MatchIntervals::new(&cigar, start);
 
     let flags = record.flags();
@@ -361,9 +367,10 @@ fn find(
 fn get_reference_sequence(
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<usize>,
-) -> io::Result<(&ReferenceSequenceName, &Map<ReferenceSequence>)> {
+) -> io::Result<(&BStr, &Map<ReferenceSequence>)> {
     reference_sequence_id
         .and_then(|id| reference_sequences.get_index(id))
+        .map(|(name, map)| (name.as_bstr(), map))
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -388,7 +395,7 @@ pub fn get_tree<'t>(
     reference_sequence_id: Option<usize>,
 ) -> io::Result<Option<&'t IntervalTree<Position, Entry>>> {
     let (name, _) = get_reference_sequence(reference_sequences, reference_sequence_id)?;
-    Ok(features.get(name.as_str()))
+    Ok(features.get(name))
 }
 
 #[cfg(test)]
@@ -423,7 +430,7 @@ mod tests {
         let reference_sequence_id = Some(1);
         let (name, reference_sequence) =
             get_reference_sequence(&reference_sequences, reference_sequence_id)?;
-        assert_eq!(name.as_str(), "sq1");
+        assert_eq!(name, &b"sq1"[..]);
         assert_eq!(usize::from(reference_sequence.length()), 13);
 
         let reference_sequence_id = None;

@@ -42,8 +42,8 @@ enum Strand {
     Reverse,
 }
 
-impl From<sam::record::Flags> for Strand {
-    fn from(flags: sam::record::Flags) -> Self {
+impl From<sam::alignment::record::Flags> for Strand {
+    fn from(flags: sam::alignment::record::Flags) -> Self {
         if flags.is_reverse_complemented() {
             Self::Reverse
         } else {
@@ -67,7 +67,7 @@ impl TryFrom<gff::record::Strand> for Strand {
 fn count_paired_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    flags: sam::record::Flags,
+    flags: sam::alignment::record::Flags,
     start: Position,
     end: Position,
 ) -> io::Result<()> {
@@ -107,7 +107,7 @@ fn count_paired_end_record(
 fn count_single_end_record(
     counts: &mut Counts,
     tree: &IntervalTree<Position, Entry>,
-    flags: sam::record::Flags,
+    flags: sam::alignment::record::Flags,
     start: Position,
     end: Position,
 ) {
@@ -144,12 +144,12 @@ where
 {
     use crate::record::alignment_end;
 
-    let mut reader = File::open(src).map(bam::Reader::new)?;
+    let mut reader = File::open(src).map(bam::io::Reader::new)?;
     reader.read_header()?;
 
     let mut counts = Counts::default();
 
-    for result in reader.lazy_records().take(MAX_RECORDS) {
+    for result in reader.records().take(MAX_RECORDS) {
         let record = result?;
 
         let flags = record.flags();
@@ -158,14 +158,14 @@ where
             continue;
         }
 
-        let reference_sequence_id = record.reference_sequence_id()?;
+        let reference_sequence_id = record.reference_sequence_id().transpose()?;
 
         let tree = match get_tree(features, reference_sequences, reference_sequence_id)? {
             Some(t) => t,
             None => continue,
         };
 
-        let alignment_start = record.alignment_start()?;
+        let alignment_start = record.alignment_start().transpose()?;
         let cigar = record.cigar();
 
         let start = alignment_start.expect("missing alignment start");

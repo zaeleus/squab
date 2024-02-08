@@ -1,6 +1,6 @@
 use std::{env, fs, num::NonZeroUsize};
 
-use noodles::sam::record::MappingQuality;
+use noodles::sam::alignment::record::MappingQuality;
 use squab::{commands::quantify, count::Filter, StrandSpecificationOption};
 
 #[test]
