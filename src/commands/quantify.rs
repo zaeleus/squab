@@ -33,11 +33,19 @@ where
     let feature_map = read_features(&mut gff_reader, feature_type, id)?;
     let (features, names) = build_interval_trees(&feature_map);
 
-    let mut reader = bgzf::reader::Builder::default()
-        .set_worker_count(worker_count)
-        .build_from_path(bam_src.as_ref())
-        .map(bam::io::Reader::from)
-        .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?;
+    let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
+        File::open(bam_src.as_ref())
+            .map(|f| bgzf::MultithreadedReader::with_worker_count(worker_count, f))
+            .map(Box::new)
+            .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?
+    } else {
+        bgzf::reader::Builder
+            .build_from_path(bam_src.as_ref())
+            .map(Box::new)
+            .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?
+    };
+
+    let mut reader = bam::io::Reader::from(decoder);
 
     let header = reader.read_header()?;
     let reference_sequences = header.reference_sequences().clone();
