@@ -41,9 +41,6 @@ where
 
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
 
-    let stdout = io::stdout().lock();
-    let mut writer = normalization::Writer::new(stdout);
-
     let values = match method {
         normalization::Method::Fpkm => {
             info!("calculating fpkms");
@@ -60,6 +57,9 @@ where
                 .context("Could not calculate TPM")?
         }
     };
+
+    let stdout = io::stdout().lock();
+    let mut writer = normalization::Writer::new(stdout);
 
     writer
         .write_values(&feature_ids, &values)
