@@ -1,4 +1,4 @@
-FROM rust:1.76.0-bullseye as builder
+FROM rust:1.78.0-bullseye as builder
 
 WORKDIR /tmp/squab/
 
