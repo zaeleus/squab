@@ -1,6 +1,6 @@
 pub mod context;
 mod filter;
-mod reader;
+pub(crate) mod reader;
 mod writer;
 
 pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};

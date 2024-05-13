@@ -58,7 +58,9 @@ fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
         &options.feature_type,
         &options.id,
         options.method,
-    )
+    )?;
+
+    Ok(())
 }
 
 fn main() -> anyhow::Result<()> {
