@@ -1,4 +1,7 @@
-FROM rust:1.78.0-bookworm as builder
+ARG RUST_VERSION=1.78.0
+ARG DEBIAN_CODENAME=bookworm
+
+FROM rust:${RUST_VERSION}-${DEBIAN_CODENAME} as builder
 
 WORKDIR /tmp/squab/
 
@@ -8,7 +11,7 @@ COPY src/ src/
 
 RUN cargo build --release
 
-FROM debian:bullseye
+FROM debian:${DEBIAN_CODENAME}
 
 COPY --from=builder /tmp/squab/target/release/squab /opt/squab/bin/
 
