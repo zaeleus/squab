@@ -14,7 +14,6 @@ pub mod feature;
 mod gff;
 mod match_intervals;
 pub mod normalization;
-pub mod record;
 pub mod record_pairs;
 
 pub use self::cli::Cli;

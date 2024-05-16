@@ -5,7 +5,7 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, header::ReferenceSequences},
+    sam::{self, alignment::Record, header::ReferenceSequences},
 };
 
 use crate::{count::get_tree, Entry, Features, SegmentPosition, StrandSpecification};
@@ -142,8 +142,6 @@ pub fn detect_specification<P>(
 where
     P: AsRef<Path>,
 {
-    use crate::record::alignment_end;
-
     let mut reader = File::open(src).map(bam::io::Reader::new)?;
     reader.read_header()?;
 
@@ -166,10 +164,11 @@ where
         };
 
         let alignment_start = record.alignment_start().transpose()?;
-        let cigar = record.cigar();
+        let alignment_end = record.alignment_end().transpose()?;
 
-        let start = alignment_start.expect("missing alignment start");
-        let end = alignment_end(alignment_start, &cigar).expect("missing alignment end")?;
+        let (Some(start), Some(end)) = (alignment_start, alignment_end) else {
+            panic!("missing alignment context");
+        };
 
         if flags.is_segmented() {
             counts.paired += 1;
