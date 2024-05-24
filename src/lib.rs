@@ -70,14 +70,16 @@ pub fn read_features<R>(
 where
     R: BufRead,
 {
+    use noodles::gff::lazy::{record::attributes::field::Value, Line};
+
     let mut features: HashMap<String, Vec<Feature>> = HashMap::new();
 
     info!("reading features");
 
-    let mut line = noodles::gff::lazy::Line::default();
+    let mut line = Line::default();
 
     while reader.read_lazy_line(&mut line)? != 0 {
-        let noodles::gff::lazy::Line::Record(ref record) = line else {
+        let Line::Record(ref record) = line else {
             continue;
         };
 
@@ -86,9 +88,9 @@ where
         }
 
         let reference_sequence_name = record.reference_sequence_name();
-        let start = record.start().try_into()?;
-        let end = record.end().try_into()?;
-        let strand = record.strand().try_into()?;
+        let start = record.start()?;
+        let end = record.end()?;
+        let strand = record.strand()?;
 
         let feature = Feature::new(reference_sequence_name.into(), start, end, strand);
 
@@ -96,7 +98,11 @@ where
         let id = attributes
             .get(feature_id)
             .ok_or_else(|| ReadFeaturesError::MissingAttribute(feature_id.into()))?
-            .map_err(|_| ReadFeaturesError::InvalidAttribute(feature_id.into()))?;
+            .map_err(|_| ReadFeaturesError::InvalidAttribute(feature_id.into()))
+            .and_then(|value| match value {
+                Value::String(s) => Ok(s),
+                Value::Array(_) => Err(ReadFeaturesError::InvalidAttribute(feature_id.into())),
+            })?;
 
         let list = features.entry(id.into()).or_default();
 
