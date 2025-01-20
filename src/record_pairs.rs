@@ -8,8 +8,6 @@ use std::{
 };
 
 use noodles::{bam, core::Position};
-use tracing::warn;
-
 type RecordKey = (
     Option<Vec<u8>>,
     SegmentPosition,
@@ -25,7 +23,7 @@ where
     R: Read,
 {
     reader: bam::io::Reader<R>,
-    buf: HashMap<RecordKey, bam::Record>,
+    cache: HashMap<RecordKey, bam::Record>,
     primary_only: bool,
 }
 
@@ -36,7 +34,7 @@ where
     pub fn new(reader: bam::io::Reader<R>, primary_only: bool) -> Self {
         Self {
             reader,
-            buf: HashMap::new(),
+            cache: HashMap::new(),
             primary_only,
         }
     }
@@ -46,10 +44,6 @@ where
             let mut record = bam::Record::default();
 
             if self.reader.read_record(&mut record)? == 0 {
-                if !self.buf.is_empty() {
-                    warn!("{} records are singletons", self.buf.len());
-                }
-
                 return Ok(None);
             }
 
@@ -59,7 +53,7 @@ where
 
             let mate_key = mate_key(&record)?;
 
-            if let Some(mate) = self.buf.remove(&mate_key) {
+            if let Some(mate) = self.cache.remove(&mate_key) {
                 return match mate_key.1 {
                     SegmentPosition::First => Ok(Some((mate, record))),
                     SegmentPosition::Last => Ok(Some((record, mate))),
@@ -68,14 +62,12 @@ where
 
             let key = key(&record)?;
 
-            self.buf.insert(key, record);
+            self.cache.insert(key, record);
         }
     }
 
-    pub fn singletons(&mut self) -> Singletons {
-        Singletons {
-            drain: self.buf.drain(),
-        }
+    pub fn unmatched_records(self) -> impl ExactSizeIterator<Item = bam::Record> {
+        self.cache.into_values()
     }
 }
 

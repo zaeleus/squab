@@ -17,6 +17,7 @@ use crate::{
 };
 use interval_tree::IntervalTree;
 use noodles::{bam, core::Position, gff};
+use tracing::warn;
 
 use self::context::Event;
 
@@ -140,7 +141,7 @@ where
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut record_pairs = RecordPairs::new(reader, primary_only);
 
-    let (mut ctx, mut record_pairs) = thread::scope(move |scope| {
+    let (mut ctx, record_pairs) = thread::scope(move |scope| {
         let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
         let reader_handle = scope.spawn(move || {
@@ -203,15 +204,22 @@ where
         Ok::<_, io::Error>((ctx, record_pairs))
     })?;
 
-    for record in record_pairs.singletons() {
-        let event = count_paired_end_singleton_record(
-            interval_trees,
-            filter,
-            strand_specification,
-            &record,
-        )?;
+    let unmatched_records = record_pairs.unmatched_records();
+    let unmatched_record_count = unmatched_records.len();
 
-        ctx.add_event(event);
+    if unmatched_record_count > 0 {
+        warn!(unmatched_record_count, "found unmatched record");
+
+        for record in unmatched_records {
+            let event = count_paired_end_singleton_record(
+                interval_trees,
+                filter,
+                strand_specification,
+                &record,
+            )?;
+
+            ctx.add_event(event);
+        }
     }
 
     Ok(ctx)
