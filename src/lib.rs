@@ -31,7 +31,7 @@ use thiserror::Error;
 use tracing::info;
 
 pub type Entry = (String, noodles::gff::record::Strand);
-pub type Features = HashMap<BString, IntervalTree<Position, Entry>>;
+pub type IntervalTrees = HashMap<BString, IntervalTree<Position, Entry>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {
@@ -116,8 +116,8 @@ where
 
 pub fn build_interval_trees(
     feature_map: &HashMap<String, Vec<Feature>>,
-) -> (Features, HashSet<String>) {
-    let mut interval_trees = Features::new();
+) -> (IntervalTrees, HashSet<String>) {
+    let mut interval_trees = IntervalTrees::new();
     let mut names = HashSet::new();
 
     for (id, features) in feature_map {

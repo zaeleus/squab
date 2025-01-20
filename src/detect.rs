@@ -8,7 +8,7 @@ use noodles::{
     sam::{self, alignment::Record, header::ReferenceSequences},
 };
 
-use crate::{count::get_tree, Entry, Features, SegmentPosition, StrandSpecification};
+use crate::{count::get_tree, Entry, IntervalTrees, SegmentPosition, StrandSpecification};
 
 const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
@@ -137,7 +137,7 @@ fn count_single_end_record(
 pub fn detect_specification<P>(
     src: P,
     reference_sequences: &ReferenceSequences,
-    features: &Features,
+    interval_trees: &IntervalTrees,
 ) -> io::Result<(LibraryLayout, StrandSpecification, f64)>
 where
     P: AsRef<Path>,
@@ -158,7 +158,7 @@ where
 
         let reference_sequence_id = record.reference_sequence_id().transpose()?;
 
-        let tree = match get_tree(features, reference_sequences, reference_sequence_id)? {
+        let tree = match get_tree(interval_trees, reference_sequences, reference_sequence_id)? {
             Some(t) => t,
             None => continue,
         };

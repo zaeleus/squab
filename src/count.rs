@@ -24,7 +24,9 @@ use noodles::{
     },
 };
 
-use crate::{Entry, Features, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification};
+use crate::{
+    Entry, IntervalTrees, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification,
+};
 
 use self::context::Event;
 
@@ -32,7 +34,7 @@ const CHUNK_SIZE: usize = 8192;
 
 pub fn count_single_end_records<R>(
     mut reader: bam::io::Reader<R>,
-    features: &Features,
+    interval_trees: &IntervalTrees,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
@@ -76,7 +78,7 @@ where
                     while let Ok(chunk) = rx.recv() {
                         for record in chunk {
                             let event = count_single_end_record(
-                                features,
+                                interval_trees,
                                 reference_sequences,
                                 filter,
                                 strand_specification,
@@ -104,7 +106,7 @@ where
 }
 
 pub fn count_single_end_record(
-    features: &Features,
+    interval_trees: &IntervalTrees,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
@@ -115,7 +117,7 @@ pub fn count_single_end_record(
     }
 
     let tree = match get_tree(
-        features,
+        interval_trees,
         reference_sequences,
         record.reference_sequence_id().transpose()?,
     )? {
@@ -140,7 +142,7 @@ pub fn count_single_end_record(
 
 pub fn count_paired_end_records<R>(
     reader: bam::io::Reader<R>,
-    features: &Features,
+    interval_trees: &IntervalTrees,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
@@ -187,7 +189,7 @@ where
                     while let Ok(chunk) = rx.recv() {
                         for (r1, r2) in chunk {
                             let event = count_paired_end_record_pair(
-                                features,
+                                interval_trees,
                                 reference_sequences,
                                 filter,
                                 strand_specification,
@@ -218,7 +220,7 @@ where
 
     for record in record_pairs.singletons() {
         let event = count_paired_end_singleton_record(
-            features,
+            interval_trees,
             reference_sequences,
             filter,
             strand_specification,
@@ -232,7 +234,7 @@ where
 }
 
 pub fn count_paired_end_record_pair(
-    features: &Features,
+    interval_trees: &IntervalTrees,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
@@ -244,7 +246,7 @@ pub fn count_paired_end_record_pair(
     }
 
     let tree = match get_tree(
-        features,
+        interval_trees,
         reference_sequences,
         r1.reference_sequence_id().transpose()?,
     )? {
@@ -265,7 +267,7 @@ pub fn count_paired_end_record_pair(
     let mut set = find(tree, intervals, strand_specification, is_reverse)?;
 
     let tree = match get_tree(
-        features,
+        interval_trees,
         reference_sequences,
         r2.reference_sequence_id().transpose()?,
     )? {
@@ -291,7 +293,7 @@ pub fn count_paired_end_record_pair(
 }
 
 pub fn count_paired_end_singleton_record(
-    features: &Features,
+    interval_trees: &IntervalTrees,
     reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
@@ -302,7 +304,7 @@ pub fn count_paired_end_singleton_record(
     }
 
     let tree = match get_tree(
-        features,
+        interval_trees,
         reference_sequences,
         record.reference_sequence_id().transpose()?,
     )? {
@@ -390,12 +392,12 @@ fn update_intersections(mut intersections: HashSet<String>) -> Event {
 }
 
 pub fn get_tree<'t>(
-    features: &'t Features,
+    interval_trees: &'t IntervalTrees,
     reference_sequences: &ReferenceSequences,
     reference_sequence_id: Option<usize>,
 ) -> io::Result<Option<&'t IntervalTree<Position, Entry>>> {
     let (name, _) = get_reference_sequence(reference_sequences, reference_sequence_id)?;
-    Ok(features.get(name))
+    Ok(interval_trees.get(name))
 }
 
 #[cfg(test)]
