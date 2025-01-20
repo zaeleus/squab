@@ -16,7 +16,7 @@ use crate::{
     Entry, IntervalTrees, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification,
 };
 use interval_tree::IntervalTree;
-use noodles::{bam, core::Position, gff};
+use noodles::{bam, core::Position};
 use tracing::warn;
 
 use self::context::Event;
@@ -123,7 +123,15 @@ pub fn count_single_end_record(
         _ => flags.is_reverse_complemented(),
     };
 
-    let set = find(interval_tree, intervals, strand_specification, is_reverse)?;
+    let mut set = HashSet::new();
+
+    intersect(
+        &mut set,
+        interval_tree,
+        intervals,
+        strand_specification,
+        is_reverse,
+    )?;
 
     Ok(update_intersections(set))
 }
@@ -255,7 +263,15 @@ pub fn count_paired_end_record_pair(
         _ => f1.is_reverse_complemented(),
     };
 
-    let mut set = find(interval_tree, intervals, strand_specification, is_reverse)?;
+    let mut set = HashSet::new();
+
+    intersect(
+        &mut set,
+        interval_tree,
+        intervals,
+        strand_specification,
+        is_reverse,
+    )?;
 
     let reference_sequence_id = r2
         .reference_sequence_id()
@@ -276,9 +292,13 @@ pub fn count_paired_end_record_pair(
         _ => !f2.is_reverse_complemented(),
     };
 
-    let set2 = find(interval_tree, intervals, strand_specification, is_reverse)?;
-
-    set.extend(set2);
+    intersect(
+        &mut set,
+        interval_tree,
+        intervals,
+        strand_specification,
+        is_reverse,
+    )?;
 
     Ok(update_intersections(set))
 }
@@ -319,41 +339,44 @@ pub fn count_paired_end_singleton_record(
         Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
     };
 
-    let set = find(interval_tree, intervals, strand_specification, is_reverse)?;
+    let mut set = HashSet::new();
+
+    intersect(
+        &mut set,
+        interval_tree,
+        intervals,
+        strand_specification,
+        is_reverse,
+    )?;
 
     Ok(update_intersections(set))
 }
 
-fn find(
-    tree: &IntervalTree<Position, Entry>,
+fn intersect(
+    intersections: &mut HashSet<String>,
+    interval_tree: &IntervalTree<Position, Entry>,
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
-    is_reverse: bool,
-) -> io::Result<HashSet<String>> {
-    let mut set = HashSet::new();
+    is_reverse_complemented: bool,
+) -> io::Result<()> {
+    use noodles::gff::record::Strand;
 
     for result in intervals {
         let interval = result?;
 
-        for entry in tree.find(interval.clone()) {
+        for entry in interval_tree.find(interval.clone()) {
             let (gene_name, strand) = entry.get();
 
-            match strand_specification {
-                StrandSpecification::None => {
-                    set.insert(gene_name.to_string());
-                }
-                StrandSpecification::Forward | StrandSpecification::Reverse => {
-                    if (strand == &gff::record::Strand::Reverse && is_reverse)
-                        || (strand == &gff::record::Strand::Forward && !is_reverse)
-                    {
-                        set.insert(gene_name.to_string());
-                    }
-                }
+            if strand_specification == StrandSpecification::None
+                || (*strand == Strand::Reverse && is_reverse_complemented)
+                || (*strand == Strand::Forward && !is_reverse_complemented)
+            {
+                intersections.insert(gene_name.to_string());
             }
         }
     }
 
-    Ok(set)
+    Ok(())
 }
 
 fn update_intersections(mut intersections: HashSet<String>) -> Event {
