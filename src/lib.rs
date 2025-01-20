@@ -19,7 +19,7 @@ pub mod record_pairs;
 pub use self::cli::Cli;
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fmt,
     io::{self, BufRead},
 };
@@ -132,9 +132,8 @@ where
 pub fn build_interval_trees(
     reference_sequence_names: &ReferenceSequenceNames,
     feature_map: &Features,
-) -> (IntervalTrees, HashSet<String>) {
+) -> IntervalTrees {
     let mut interval_trees = IntervalTrees::new();
-    let mut names = HashSet::new();
 
     for (id, features) in feature_map {
         for feature in features {
@@ -155,11 +154,9 @@ pub fn build_interval_trees(
 
             tree.insert(start..=end, (id.into(), strand));
         }
-
-        names.insert(id.into());
     }
 
-    (interval_trees, names)
+    interval_trees
 }
 
 #[cfg(test)]

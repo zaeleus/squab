@@ -18,9 +18,9 @@ where
         &self.inner
     }
 
-    pub fn write_counts(&mut self, ids: &[String], counts: &Counts) -> io::Result<()> {
+    pub fn write_counts(&mut self, ids: &[&String], counts: &Counts) -> io::Result<()> {
         for id in ids {
-            let count = counts.get(id).unwrap_or(&0);
+            let count = counts.get(id.as_str()).unwrap_or(&0);
             writeln!(self.inner, "{id}\t{count}")?;
         }
 
@@ -51,15 +51,17 @@ mod tests {
         .into_iter()
         .collect();
 
-        let ids = vec![
+        let ids = [
             String::from("AADAT"),
             String::from("CLN3"),
             String::from("NEO1"),
             String::from("PAK4"),
         ];
 
+        let ids_refs: Vec<_> = ids.iter().collect();
+
         let mut writer = Writer::new(Vec::new());
-        writer.write_counts(&ids, &counts)?;
+        writer.write_counts(&ids_refs, &counts)?;
 
         let actual = writer.get_ref();
         let expected = b"\

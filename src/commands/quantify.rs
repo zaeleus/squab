@@ -31,7 +31,7 @@ where
         .with_context(|| format!("Could not open {}", annotations_src.as_ref().display()))?;
 
     let (reference_sequence_names, feature_map) = read_features(&mut gff_reader, feature_type, id)?;
-    let (features, names) = build_interval_trees(&reference_sequence_names, &feature_map);
+    let interval_trees = build_interval_trees(&reference_sequence_names, &feature_map);
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
         File::open(bam_src.as_ref())
@@ -50,14 +50,13 @@ where
     let header = reader.read_header()?;
     let reference_sequences = header.reference_sequences().clone();
 
-    let mut feature_ids = Vec::with_capacity(names.len());
-    feature_ids.extend(names);
+    let mut feature_ids: Vec<_> = feature_map.keys().collect();
     feature_ids.sort();
 
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, &reference_sequences, &features)?;
+        detect_specification(&bam_src, &reference_sequences, &interval_trees)?;
 
     info!("detected library layout: {library_layout}");
     info!("strand specification: {detected_strand_specification} (confidence: {strandedness_confidence:.2})");
@@ -81,7 +80,7 @@ where
     let ctx = match library_layout {
         LibraryLayout::SingleEnd => count_single_end_records(
             reader,
-            &features,
+            &interval_trees,
             &reference_sequences,
             &filter,
             strand_specification,
@@ -89,7 +88,7 @@ where
         )?,
         LibraryLayout::PairedEnd => count_paired_end_records(
             reader,
-            &features,
+            &interval_trees,
             &reference_sequences,
             &filter,
             strand_specification,
