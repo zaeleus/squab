@@ -70,7 +70,7 @@ pub fn read_features<R>(
 where
     R: BufRead,
 {
-    use noodles::gff::lazy::{record::attributes::field::Value, Line};
+    use noodles::gff::{record::attributes::field::Value, Line};
 
     let mut features: HashMap<String, Vec<Feature>> = HashMap::new();
 
@@ -78,8 +78,8 @@ where
 
     let mut line = Line::default();
 
-    while reader.read_lazy_line(&mut line)? != 0 {
-        let Line::Record(ref record) = line else {
+    while reader.read_line(&mut line)? != 0 {
+        let Some(record) = line.as_record().transpose()? else {
             continue;
         };
 

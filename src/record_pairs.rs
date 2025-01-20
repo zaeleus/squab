@@ -86,7 +86,7 @@ fn is_not_primary(record: &bam::Record) -> io::Result<bool> {
 
 fn key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record.name().map(|name| name.as_bytes().to_vec()),
+        record.name().map(|name| name.to_vec()),
         SegmentPosition::try_from(record.flags())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
         record.reference_sequence_id().transpose()?,
@@ -99,7 +99,7 @@ fn key(record: &bam::Record) -> io::Result<RecordKey> {
 
 fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
     Ok((
-        record.name().map(|name| name.as_bytes().to_vec()),
+        record.name().map(|name| name.to_vec()),
         SegmentPosition::try_from(record.flags())
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
@@ -127,16 +127,17 @@ impl Iterator for Singletons<'_> {
 mod tests {
     use std::num::NonZeroUsize;
 
+    use bstr::BString;
     use noodles::sam::{
         self,
-        alignment::{io::Write, record::Flags, record_buf::Name},
+        alignment::{io::Write, record::Flags},
         header::record::value::{map::ReferenceSequence, Map},
     };
 
     use super::*;
 
     fn build_record_pair() -> Result<(bam::Record, bam::Record), Box<dyn std::error::Error>> {
-        let name = Name::from(b"r0");
+        let name = BString::from(b"r0");
         let reference_sequence_id = 0;
         let alignment_start = Position::try_from(8)?;
         let mate_reference_sequence_id = 1;
@@ -188,7 +189,7 @@ mod tests {
 
         let actual = key(&r1)?;
         let expected = (
-            r1.name().map(|name| name.as_bytes().to_vec()),
+            r1.name().map(|name| name.to_vec()),
             SegmentPosition::First,
             r1.reference_sequence_id().transpose()?,
             r1.alignment_start().transpose()?,
@@ -208,7 +209,7 @@ mod tests {
 
         let actual = mate_key(&r1)?;
         let expected = (
-            r1.name().map(|name| name.as_bytes().to_vec()),
+            r1.name().map(|name| name.to_vec()),
             SegmentPosition::Last,
             r1.mate_reference_sequence_id().transpose()?,
             r1.mate_alignment_start().transpose()?,
