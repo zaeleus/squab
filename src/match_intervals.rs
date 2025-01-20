@@ -20,7 +20,7 @@ impl<'a> MatchIntervals<'a> {
     }
 }
 
-impl<'a> Iterator for MatchIntervals<'a> {
+impl Iterator for MatchIntervals<'_> {
     type Item = io::Result<RangeInclusive<Position>>;
 
     fn next(&mut self) -> Option<Self::Item> {

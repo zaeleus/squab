@@ -115,7 +115,7 @@ pub struct Singletons<'a> {
     drain: Drain<'a, RecordKey, bam::Record>,
 }
 
-impl<'a> Iterator for Singletons<'a> {
+impl Iterator for Singletons<'_> {
     type Item = bam::Record;
 
     fn next(&mut self) -> Option<Self::Item> {
