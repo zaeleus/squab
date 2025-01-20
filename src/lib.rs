@@ -25,10 +25,14 @@ use std::{
 };
 
 use bstr::BString;
+use indexmap::IndexSet;
 use interval_tree::IntervalTree;
 use noodles::core::{self as core, Position};
 use thiserror::Error;
 use tracing::info;
+
+pub type ReferenceSequenceNames = IndexSet<String>;
+pub type Features = HashMap<String, Vec<Feature>>;
 
 pub type Entry = (String, noodles::gff::record::Strand);
 pub type IntervalTrees = HashMap<BString, IntervalTree<Position, Entry>>;
@@ -66,13 +70,14 @@ pub fn read_features<R>(
     reader: &mut noodles::gff::Reader<R>,
     feature_type: &str,
     feature_id: &str,
-) -> Result<HashMap<String, Vec<Feature>>, ReadFeaturesError>
+) -> Result<(ReferenceSequenceNames, Features), ReadFeaturesError>
 where
     R: BufRead,
 {
     use noodles::gff::{record::attributes::field::Value, Line};
 
-    let mut features: HashMap<String, Vec<Feature>> = HashMap::new();
+    let mut reference_sequence_names = ReferenceSequenceNames::new();
+    let mut features = Features::new();
 
     info!("reading features");
 
@@ -88,11 +93,22 @@ where
         }
 
         let reference_sequence_name = record.reference_sequence_name();
+
+        let reference_sequence_id = match reference_sequence_names
+            .get_index_of(reference_sequence_name)
+        {
+            Some(id) => id,
+            None => {
+                let (id, _) = reference_sequence_names.insert_full(reference_sequence_name.into());
+                id
+            }
+        };
+
         let start = record.start()?;
         let end = record.end()?;
         let strand = record.strand()?;
 
-        let feature = Feature::new(reference_sequence_name.into(), start, end, strand);
+        let feature = Feature::new(reference_sequence_id, start, end, strand);
 
         let attributes = record.attributes();
         let id = attributes
@@ -104,33 +120,37 @@ where
                 Value::Array(_) => Err(ReadFeaturesError::InvalidAttribute(feature_id.into())),
             })?;
 
-        let list = features.entry(id.into()).or_default();
-
-        list.push(feature);
+        let segments = features.entry(id.into()).or_default();
+        segments.push(feature);
     }
 
     info!("read {} unique features", features.len());
 
-    Ok(features)
+    Ok((reference_sequence_names, features))
 }
 
 pub fn build_interval_trees(
-    feature_map: &HashMap<String, Vec<Feature>>,
+    reference_sequence_names: &ReferenceSequenceNames,
+    feature_map: &Features,
 ) -> (IntervalTrees, HashSet<String>) {
     let mut interval_trees = IntervalTrees::new();
     let mut names = HashSet::new();
 
     for (id, features) in feature_map {
         for feature in features {
-            let reference_sequence_name = feature.reference_sequence_name();
+            let reference_sequence_id = feature.reference_sequence_id();
 
             let start = feature.start();
             let end = feature.end();
 
             let strand = feature.strand();
 
+            let reference_sequence_name = reference_sequence_names
+                .get_index(reference_sequence_id)
+                .unwrap();
+
             let tree = interval_trees
-                .entry(reference_sequence_name.into())
+                .entry(reference_sequence_name.clone().into())
                 .or_insert_with(IntervalTree::new);
 
             tree.insert(start..=end, (id.into(), strand));
@@ -157,20 +177,27 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 ";
         let mut reader = noodles::gff::Reader::new(&data[..]);
 
-        let features = read_features(&mut reader, "exon", "gene_id")?;
+        let (reference_sequence_names, features) = read_features(&mut reader, "exon", "gene_id")?;
+
+        assert_eq!(
+            reference_sequence_names,
+            [String::from("sq0"), String::from("sq1")]
+                .into_iter()
+                .collect::<IndexSet<_>>()
+        );
 
         assert_eq!(features.len(), 2);
         assert_eq!(
             features["gene0"],
             [
                 Feature::new(
-                    String::from("sq0"),
+                    0,
                     Position::try_from(1)?,
                     Position::try_from(10)?,
                     Strand::Forward
                 ),
                 Feature::new(
-                    String::from("sq0"),
+                    0,
                     Position::try_from(21)?,
                     Position::try_from(30)?,
                     Strand::Forward
@@ -180,7 +207,7 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
         assert_eq!(
             features["gene1"],
             [Feature::new(
-                String::from("sq1"),
+                1,
                 Position::try_from(41)?,
                 Position::try_from(50)?,
                 Strand::Reverse

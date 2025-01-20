@@ -2,7 +2,7 @@ use noodles::{core::Position, gff};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Feature {
-    reference_sequence_name: String,
+    reference_sequence_id: usize,
     start: Position,
     end: Position,
     strand: gff::record::Strand,
@@ -10,21 +10,21 @@ pub struct Feature {
 
 impl Feature {
     pub fn new(
-        reference_sequence_name: String,
+        reference_sequence_id: usize,
         start: Position,
         end: Position,
         strand: gff::record::Strand,
     ) -> Self {
         Self {
-            reference_sequence_name,
+            reference_sequence_id,
             start,
             end,
             strand,
         }
     }
 
-    pub fn reference_sequence_name(&self) -> &str {
-        &self.reference_sequence_name
+    pub fn reference_sequence_id(&self) -> usize {
+        self.reference_sequence_id
     }
 
     pub fn start(&self) -> Position {
@@ -58,7 +58,7 @@ mod tests {
 
     fn build_feature() -> Result<Feature, noodles::core::position::TryFromIntError> {
         Ok(Feature::new(
-            String::from("sq0"),
+            0,
             Position::try_from(8)?,
             Position::try_from(13)?,
             gff::record::Strand::Forward,
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn test_reference_sequence_name() -> Result<(), noodles::core::position::TryFromIntError> {
         let feature = build_feature()?;
-        assert_eq!(feature.reference_sequence_name(), "sq0");
+        assert_eq!(feature.reference_sequence_id(), 0);
         Ok(())
     }
 
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn test_is_empty() -> Result<(), noodles::core::position::TryFromIntError> {
         let feature = Feature::new(
-            String::from("sq0"),
+            0,
             Position::MIN,
             Position::MIN,
             gff::record::Strand::Forward,

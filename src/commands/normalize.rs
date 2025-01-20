@@ -51,7 +51,7 @@ where
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
 
-    let feature_map = read_features(&mut gff_reader, feature_type, id)
+    let (_, feature_map) = read_features(&mut gff_reader, feature_type, id)
         .map_err(NormalizeError::ReadAnnotations)?;
 
     let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();

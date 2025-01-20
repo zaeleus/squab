@@ -51,14 +51,13 @@ mod tests {
     }
 
     fn build_feature_map() -> Result<FeatureMap, noodles::core::position::TryFromIntError> {
-        let reference_name = String::from("chr1");
         let strand = gff::record::Strand::Forward;
 
         let features = [
             (
                 String::from("AAAS"),
                 vec![Feature::new(
-                    reference_name.clone(),
+                    0,
                     Position::try_from(53307456)?,
                     Position::try_from(53324864)?,
                     strand,
@@ -67,7 +66,7 @@ mod tests {
             (
                 String::from("AC009952.3"),
                 vec![Feature::new(
-                    reference_name.clone(),
+                    0,
                     Position::try_from(9189629)?,
                     Position::try_from(9204611)?,
                     strand,
@@ -76,7 +75,7 @@ mod tests {
             (
                 String::from("RPL37AP1"),
                 vec![Feature::new(
-                    reference_name,
+                    0,
                     Position::try_from(44466564)?,
                     Position::try_from(44466842)?,
                     strand,

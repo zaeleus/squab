@@ -612,6 +612,7 @@ dependencies = [
  "crossbeam-channel",
  "flate2",
  "git-testament",
+ "indexmap",
  "interval-tree",
  "mimalloc",
  "noodles",
