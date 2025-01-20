@@ -109,7 +109,7 @@ pub fn count_single_end_record(
         .expect("missing reference sequence ID");
 
     let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::NoFeature);
+        return Ok(Event::Miss);
     };
 
     let cigar = record.cigar();
@@ -234,7 +234,7 @@ pub fn count_paired_end_record_pair(
         .expect("missing reference sequence ID");
 
     let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::NoFeature);
+        return Ok(Event::Miss);
     };
 
     let cigar = r1.cigar();
@@ -255,7 +255,7 @@ pub fn count_paired_end_record_pair(
         .expect("missing reference sequence ID");
 
     let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::NoFeature);
+        return Ok(Event::Miss);
     };
 
     let cigar = r2.cigar();
@@ -291,7 +291,7 @@ pub fn count_paired_end_singleton_record(
         .expect("missing reference sequence ID");
 
     let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::NoFeature);
+        return Ok(Event::Miss);
     };
 
     let cigar = record.cigar();
@@ -350,7 +350,7 @@ fn find(
 
 fn update_intersections(mut intersections: HashSet<String>) -> Event {
     if intersections.is_empty() {
-        Event::NoFeature
+        Event::Miss
     } else if intersections.len() == 1 {
         intersections.drain().next().map(Event::Hit).unwrap()
     } else {

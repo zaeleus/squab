@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Event {
     Hit(String),
-    NoFeature,
+    Miss,
     Ambiguous,
     LowQuality,
     Unmapped,

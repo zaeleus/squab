@@ -28,7 +28,7 @@ where
     }
 
     pub fn write_stats(&mut self, ctx: &Context) -> io::Result<()> {
-        writeln!(self.inner, "__no_feature\t{}", ctx.no_feature)?;
+        writeln!(self.inner, "__no_feature\t{}", ctx.miss)?;
         writeln!(self.inner, "__ambiguous\t{}", ctx.ambiguous)?;
         writeln!(self.inner, "__too_low_aQual\t{}", ctx.low_quality)?;
         writeln!(self.inner, "__not_aligned\t{}", ctx.unmapped)?;
@@ -79,7 +79,7 @@ PAK4\t145
     #[test]
     fn test_write_stats() -> io::Result<()> {
         let ctx = Context {
-            no_feature: 735,
+            miss: 735,
             ambiguous: 5,
             low_quality: 60,
             unmapped: 8,

@@ -9,7 +9,7 @@ pub type Counts = HashMap<String, u64>;
 #[derive(Default)]
 pub struct Context {
     pub counts: Counts,
-    pub no_feature: u64,
+    pub miss: u64,
     pub ambiguous: u64,
     pub low_quality: u64,
     pub unmapped: u64,
@@ -23,7 +23,7 @@ impl Context {
             *entry += count;
         }
 
-        self.no_feature += other.no_feature;
+        self.miss += other.miss;
         self.ambiguous += other.ambiguous;
         self.low_quality += other.low_quality;
         self.unmapped += other.unmapped;
@@ -36,7 +36,7 @@ impl Context {
                 let count = self.counts.entry(id).or_insert(0);
                 *count += 1;
             }
-            Event::NoFeature => self.no_feature += 1,
+            Event::Miss => self.miss += 1,
             Event::Ambiguous => self.ambiguous += 1,
             Event::LowQuality => self.low_quality += 1,
             Event::Unmapped => self.unmapped += 1,
@@ -55,7 +55,7 @@ mod tests {
         let mut ctx_a = Context::default();
 
         ctx_a.counts.insert(String::from("AADAT"), 2);
-        ctx_a.no_feature = 3;
+        ctx_a.miss = 3;
         ctx_a.ambiguous = 5;
         ctx_a.low_quality = 8;
         ctx_a.unmapped = 13;
@@ -65,7 +65,7 @@ mod tests {
 
         ctx_b.counts.insert(String::from("AADAT"), 2);
         ctx_b.counts.insert(String::from("CLN3"), 3);
-        ctx_b.no_feature = 5;
+        ctx_b.miss = 5;
         ctx_b.ambiguous = 8;
         ctx_b.low_quality = 13;
         ctx_b.unmapped = 21;
@@ -77,7 +77,7 @@ mod tests {
         assert_eq!(ctx_a.counts["AADAT"], 4);
         assert_eq!(ctx_a.counts["CLN3"], 3);
 
-        assert_eq!(ctx_a.no_feature, 8);
+        assert_eq!(ctx_a.miss, 8);
         assert_eq!(ctx_a.ambiguous, 13);
         assert_eq!(ctx_a.low_quality, 21);
         assert_eq!(ctx_a.unmapped, 34);
@@ -88,7 +88,7 @@ mod tests {
     fn test_add_event() {
         let mut ctx = Context::default();
         ctx.add_event(Event::Hit(String::from("AADAT")));
-        ctx.add_event(Event::NoFeature);
+        ctx.add_event(Event::Miss);
         ctx.add_event(Event::Ambiguous);
         ctx.add_event(Event::LowQuality);
         ctx.add_event(Event::Unmapped);
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(ctx.counts.len(), 1);
         assert_eq!(ctx.counts["AADAT"], 1);
 
-        assert_eq!(ctx.no_feature, 1);
+        assert_eq!(ctx.miss, 1);
         assert_eq!(ctx.ambiguous, 1);
         assert_eq!(ctx.low_quality, 1);
         assert_eq!(ctx.unmapped, 1);
