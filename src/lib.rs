@@ -24,10 +24,12 @@ use std::{
     io::{self, BufRead},
 };
 
-use bstr::BString;
 use indexmap::IndexSet;
 use interval_tree::IntervalTree;
-use noodles::core::{self as core, Position};
+use noodles::{
+    core::{self as core, Position},
+    sam,
+};
 use thiserror::Error;
 use tracing::info;
 
@@ -35,7 +37,7 @@ pub type ReferenceSequenceNames = IndexSet<String>;
 pub type Features = HashMap<String, Vec<Feature>>;
 
 pub type Entry = (String, noodles::gff::record::Strand);
-pub type IntervalTrees = HashMap<BString, IntervalTree<Position, Entry>>;
+pub type IntervalTrees = Vec<IntervalTree<Position, Entry>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {
@@ -130,29 +132,35 @@ where
 }
 
 pub fn build_interval_trees(
+    header: &sam::Header,
     reference_sequence_names: &ReferenceSequenceNames,
-    feature_map: &Features,
+    features: &Features,
 ) -> IntervalTrees {
-    let mut interval_trees = IntervalTrees::new();
+    let reference_sequences = header.reference_sequences();
 
-    for (id, features) in feature_map {
-        for feature in features {
+    let mut interval_trees = Vec::new();
+    interval_trees.resize_with(reference_sequences.len(), IntervalTree::new);
+
+    for (name, segments) in features {
+        for feature in segments {
             let reference_sequence_id = feature.reference_sequence_id();
-
             let start = feature.start();
             let end = feature.end();
-
             let strand = feature.strand();
 
             let reference_sequence_name = reference_sequence_names
                 .get_index(reference_sequence_id)
                 .unwrap();
 
-            let tree = interval_trees
-                .entry(reference_sequence_name.clone().into())
-                .or_insert_with(IntervalTree::new);
+            let Some(i) = reference_sequences.get_index_of(reference_sequence_name.as_bytes())
+            else {
+                continue;
+            };
 
-            tree.insert(start..=end, (id.into(), strand));
+            // SAFETY: `intervals_trees.len() == reference_sequences.len()`
+            let tree = &mut interval_trees[i];
+
+            tree.insert(start..=end, (name.into(), strand));
         }
     }
 

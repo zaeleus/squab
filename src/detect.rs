@@ -5,10 +5,10 @@ use noodles::{
     bam,
     core::Position,
     gff,
-    sam::{self, alignment::Record, header::ReferenceSequences},
+    sam::{self, alignment::Record},
 };
 
-use crate::{count::get_tree, Entry, IntervalTrees, SegmentPosition, StrandSpecification};
+use crate::{Entry, IntervalTrees, SegmentPosition, StrandSpecification};
 
 const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
@@ -136,7 +136,6 @@ fn count_single_end_record(
 
 pub fn detect_specification<P>(
     src: P,
-    reference_sequences: &ReferenceSequences,
     interval_trees: &IntervalTrees,
 ) -> io::Result<(LibraryLayout, StrandSpecification, f64)>
 where
@@ -156,11 +155,13 @@ where
             continue;
         }
 
-        let reference_sequence_id = record.reference_sequence_id().transpose()?;
+        let reference_sequence_id = record
+            .reference_sequence_id()
+            .transpose()?
+            .expect("missing reference sequence ID");
 
-        let tree = match get_tree(interval_trees, reference_sequences, reference_sequence_id)? {
-            Some(t) => t,
-            None => continue,
+        let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+            continue;
         };
 
         let alignment_start = record.alignment_start().transpose()?;
@@ -172,9 +173,9 @@ where
 
         if flags.is_segmented() {
             counts.paired += 1;
-            count_paired_end_record(&mut counts, tree, flags, start, end)?;
+            count_paired_end_record(&mut counts, interval_tree, flags, start, end)?;
         } else {
-            count_single_end_record(&mut counts, tree, flags, start, end);
+            count_single_end_record(&mut counts, interval_tree, flags, start, end);
         }
     }
 

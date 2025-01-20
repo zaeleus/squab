@@ -12,21 +12,11 @@ use std::{
     thread,
 };
 
-use bstr::{BStr, ByteSlice};
-use interval_tree::IntervalTree;
-use noodles::{
-    bam,
-    core::Position,
-    gff,
-    sam::header::{
-        record::value::{map::ReferenceSequence, Map},
-        ReferenceSequences,
-    },
-};
-
 use crate::{
     Entry, IntervalTrees, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification,
 };
+use interval_tree::IntervalTree;
+use noodles::{bam, core::Position, gff};
 
 use self::context::Event;
 
@@ -35,7 +25,6 @@ const CHUNK_SIZE: usize = 8192;
 pub fn count_single_end_records<R>(
     mut reader: bam::io::Reader<R>,
     interval_trees: &IntervalTrees,
-    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
@@ -79,7 +68,6 @@ where
                         for record in chunk {
                             let event = count_single_end_record(
                                 interval_trees,
-                                reference_sequences,
                                 filter,
                                 strand_specification,
                                 &record,
@@ -107,7 +95,6 @@ where
 
 pub fn count_single_end_record(
     interval_trees: &IntervalTrees,
-    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     record: &bam::Record,
@@ -116,13 +103,13 @@ pub fn count_single_end_record(
         return Ok(event);
     }
 
-    let tree = match get_tree(
-        interval_trees,
-        reference_sequences,
-        record.reference_sequence_id().transpose()?,
-    )? {
-        Some(t) => t,
-        None => return Ok(Event::NoFeature),
+    let reference_sequence_id = record
+        .reference_sequence_id()
+        .transpose()?
+        .expect("missing reference sequence ID");
+
+    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+        return Ok(Event::NoFeature);
     };
 
     let cigar = record.cigar();
@@ -135,7 +122,7 @@ pub fn count_single_end_record(
         _ => flags.is_reverse_complemented(),
     };
 
-    let set = find(tree, intervals, strand_specification, is_reverse)?;
+    let set = find(interval_tree, intervals, strand_specification, is_reverse)?;
 
     Ok(update_intersections(set))
 }
@@ -143,7 +130,6 @@ pub fn count_single_end_record(
 pub fn count_paired_end_records<R>(
     reader: bam::io::Reader<R>,
     interval_trees: &IntervalTrees,
-    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
@@ -190,7 +176,6 @@ where
                         for (r1, r2) in chunk {
                             let event = count_paired_end_record_pair(
                                 interval_trees,
-                                reference_sequences,
                                 filter,
                                 strand_specification,
                                 &r1,
@@ -221,7 +206,6 @@ where
     for record in record_pairs.singletons() {
         let event = count_paired_end_singleton_record(
             interval_trees,
-            reference_sequences,
             filter,
             strand_specification,
             &record,
@@ -235,7 +219,6 @@ where
 
 pub fn count_paired_end_record_pair(
     interval_trees: &IntervalTrees,
-    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     r1: &bam::Record,
@@ -245,13 +228,13 @@ pub fn count_paired_end_record_pair(
         return Ok(event);
     }
 
-    let tree = match get_tree(
-        interval_trees,
-        reference_sequences,
-        r1.reference_sequence_id().transpose()?,
-    )? {
-        Some(t) => t,
-        None => return Ok(Event::NoFeature),
+    let reference_sequence_id = r1
+        .reference_sequence_id()
+        .transpose()?
+        .expect("missing reference sequence ID");
+
+    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+        return Ok(Event::NoFeature);
     };
 
     let cigar = r1.cigar();
@@ -264,15 +247,15 @@ pub fn count_paired_end_record_pair(
         _ => f1.is_reverse_complemented(),
     };
 
-    let mut set = find(tree, intervals, strand_specification, is_reverse)?;
+    let mut set = find(interval_tree, intervals, strand_specification, is_reverse)?;
 
-    let tree = match get_tree(
-        interval_trees,
-        reference_sequences,
-        r2.reference_sequence_id().transpose()?,
-    )? {
-        Some(t) => t,
-        None => return Ok(Event::NoFeature),
+    let reference_sequence_id = r2
+        .reference_sequence_id()
+        .transpose()?
+        .expect("missing reference sequence ID");
+
+    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+        return Ok(Event::NoFeature);
     };
 
     let cigar = r2.cigar();
@@ -285,7 +268,7 @@ pub fn count_paired_end_record_pair(
         _ => !f2.is_reverse_complemented(),
     };
 
-    let set2 = find(tree, intervals, strand_specification, is_reverse)?;
+    let set2 = find(interval_tree, intervals, strand_specification, is_reverse)?;
 
     set.extend(set2);
 
@@ -294,7 +277,6 @@ pub fn count_paired_end_record_pair(
 
 pub fn count_paired_end_singleton_record(
     interval_trees: &IntervalTrees,
-    reference_sequences: &ReferenceSequences,
     filter: &Filter,
     strand_specification: StrandSpecification,
     record: &bam::Record,
@@ -303,13 +285,13 @@ pub fn count_paired_end_singleton_record(
         return Ok(event);
     }
 
-    let tree = match get_tree(
-        interval_trees,
-        reference_sequences,
-        record.reference_sequence_id().transpose()?,
-    )? {
-        Some(t) => t,
-        None => return Ok(Event::NoFeature),
+    let reference_sequence_id = record
+        .reference_sequence_id()
+        .transpose()?
+        .expect("missing reference sequence ID");
+
+    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+        return Ok(Event::NoFeature);
     };
 
     let cigar = record.cigar();
@@ -329,7 +311,7 @@ pub fn count_paired_end_singleton_record(
         Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
     };
 
-    let set = find(tree, intervals, strand_specification, is_reverse)?;
+    let set = find(interval_tree, intervals, strand_specification, is_reverse)?;
 
     Ok(update_intersections(set))
 }
@@ -366,21 +348,6 @@ fn find(
     Ok(set)
 }
 
-fn get_reference_sequence(
-    reference_sequences: &ReferenceSequences,
-    reference_sequence_id: Option<usize>,
-) -> io::Result<(&BStr, &Map<ReferenceSequence>)> {
-    reference_sequence_id
-        .and_then(|id| reference_sequences.get_index(id))
-        .map(|(name, map)| (name.as_bstr(), map))
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("invalid reference sequence ID: {reference_sequence_id:?}"),
-            )
-        })
-}
-
 fn update_intersections(mut intersections: HashSet<String>) -> Event {
     if intersections.is_empty() {
         Event::NoFeature
@@ -388,63 +355,5 @@ fn update_intersections(mut intersections: HashSet<String>) -> Event {
         intersections.drain().next().map(Event::Hit).unwrap()
     } else {
         Event::Ambiguous
-    }
-}
-
-pub fn get_tree<'t>(
-    interval_trees: &'t IntervalTrees,
-    reference_sequences: &ReferenceSequences,
-    reference_sequence_id: Option<usize>,
-) -> io::Result<Option<&'t IntervalTree<Position, Entry>>> {
-    let (name, _) = get_reference_sequence(reference_sequences, reference_sequence_id)?;
-    Ok(interval_trees.get(name))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn build_reference_sequences() -> Result<ReferenceSequences, Box<dyn std::error::Error>> {
-        let reference_sequences = [
-            (
-                "sq0".parse()?,
-                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(8)?),
-            ),
-            (
-                "sq1".parse()?,
-                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(13)?),
-            ),
-            (
-                "sq2".parse()?,
-                Map::<ReferenceSequence>::new(NonZeroUsize::try_from(21)?),
-            ),
-        ]
-        .into_iter()
-        .collect();
-
-        Ok(reference_sequences)
-    }
-
-    #[test]
-    fn test_get_reference_sequence() -> Result<(), Box<dyn std::error::Error>> {
-        let reference_sequences = build_reference_sequences()?;
-
-        let reference_sequence_id = Some(1);
-        let (name, reference_sequence) =
-            get_reference_sequence(&reference_sequences, reference_sequence_id)?;
-        assert_eq!(name, &b"sq1"[..]);
-        assert_eq!(usize::from(reference_sequence.length()), 13);
-
-        let reference_sequence_id = None;
-        let reference_sequence =
-            get_reference_sequence(&reference_sequences, reference_sequence_id);
-        assert!(reference_sequence.is_err());
-
-        let reference_sequence_id = Some(5);
-        let reference_sequence =
-            get_reference_sequence(&reference_sequences, reference_sequence_id);
-        assert!(reference_sequence.is_err());
-
-        Ok(())
     }
 }
