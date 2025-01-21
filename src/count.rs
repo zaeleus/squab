@@ -12,9 +12,7 @@ use std::{
     thread,
 };
 
-use crate::{
-    Entry, IntervalTrees, MatchIntervals, RecordPairs, SegmentPosition, StrandSpecification,
-};
+use crate::{Entry, IntervalTrees, MatchIntervals, RecordPairs, StrandSpecification};
 use interval_tree::IntervalTree;
 use noodles::{bam, core::Position};
 use tracing::warn;
@@ -104,36 +102,24 @@ pub fn count_single_end_record(
         return Ok(event);
     }
 
-    let reference_sequence_id = record
-        .reference_sequence_id()
-        .transpose()?
-        .expect("missing reference sequence ID");
+    let mut intersections = HashSet::new();
 
-    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::Miss);
-    };
-
-    let cigar = record.cigar();
-    let start = record.alignment_start().expect("missing alignment start")?;
-    let intervals = MatchIntervals::new(&cigar, start);
-
-    let flags = record.flags();
-    let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => !flags.is_reverse_complemented(),
-        _ => flags.is_reverse_complemented(),
-    };
-
-    let mut set = HashSet::new();
-
-    intersect(
-        &mut set,
-        interval_tree,
-        intervals,
+    let is_reverse_complemented = resolve_is_reverse_complemented(
+        record.flags().is_reverse_complemented(),
         strand_specification,
-        is_reverse,
-    )?;
+    );
 
-    Ok(update_intersections(set))
+    if let Some(event) = count_record(
+        interval_trees,
+        strand_specification,
+        is_reverse_complemented,
+        record,
+        &mut intersections,
+    )? {
+        return Ok(event);
+    }
+
+    Ok(resolve_intersections(intersections))
 }
 
 pub fn count_paired_end_records<R>(
@@ -219,12 +205,8 @@ where
         warn!(unmatched_record_count, "found unmatched record");
 
         for record in unmatched_records {
-            let event = count_paired_end_singleton_record(
-                interval_trees,
-                filter,
-                strand_specification,
-                &record,
-            )?;
+            let event =
+                count_single_end_record(interval_trees, filter, strand_specification, &record)?;
 
             ctx.add_event(event);
         }
@@ -244,112 +226,73 @@ pub fn count_paired_end_record_pair(
         return Ok(event);
     }
 
-    let reference_sequence_id = r1
-        .reference_sequence_id()
-        .transpose()?
-        .expect("missing reference sequence ID");
+    let mut intersections = HashSet::new();
 
-    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::Miss);
-    };
+    let r1_is_reverse_complemented =
+        resolve_is_reverse_complemented(r1.flags().is_reverse_complemented(), strand_specification);
 
-    let cigar = r1.cigar();
-    let start = r1.alignment_start().expect("missing alignment start")?;
-    let intervals = MatchIntervals::new(&cigar, start);
-
-    let f1 = r1.flags();
-    let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => !f1.is_reverse_complemented(),
-        _ => f1.is_reverse_complemented(),
-    };
-
-    let mut set = HashSet::new();
-
-    intersect(
-        &mut set,
-        interval_tree,
-        intervals,
+    if let Some(event) = count_record(
+        interval_trees,
         strand_specification,
-        is_reverse,
-    )?;
-
-    let reference_sequence_id = r2
-        .reference_sequence_id()
-        .transpose()?
-        .expect("missing reference sequence ID");
-
-    let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::Miss);
-    };
-
-    let cigar = r2.cigar();
-    let start = r2.alignment_start().expect("missing alignment start")?;
-    let intervals = MatchIntervals::new(&cigar, start);
-
-    let f2 = r2.flags();
-    let is_reverse = match strand_specification {
-        StrandSpecification::Reverse => f2.is_reverse_complemented(),
-        _ => !f2.is_reverse_complemented(),
-    };
-
-    intersect(
-        &mut set,
-        interval_tree,
-        intervals,
-        strand_specification,
-        is_reverse,
-    )?;
-
-    Ok(update_intersections(set))
-}
-
-pub fn count_paired_end_singleton_record(
-    interval_trees: &IntervalTrees,
-    filter: &Filter,
-    strand_specification: StrandSpecification,
-    record: &bam::Record,
-) -> io::Result<Event> {
-    if let Some(event) = filter.filter(record)? {
+        r1_is_reverse_complemented,
+        r1,
+        &mut intersections,
+    )? {
         return Ok(event);
     }
 
+    let r2_is_reverse_complemented = !resolve_is_reverse_complemented(
+        r2.flags().is_reverse_complemented(),
+        strand_specification,
+    );
+
+    if let Some(event) = count_record(
+        interval_trees,
+        strand_specification,
+        r2_is_reverse_complemented,
+        r2,
+        &mut intersections,
+    )? {
+        return Ok(event);
+    }
+
+    Ok(resolve_intersections(intersections))
+}
+
+fn count_record(
+    interval_trees: &IntervalTrees,
+    strand_specification: StrandSpecification,
+    is_reverse_complemented: bool,
+    record: &bam::Record,
+    intersections: &mut HashSet<String>,
+) -> io::Result<Option<Event>> {
     let reference_sequence_id = record
         .reference_sequence_id()
         .transpose()?
         .expect("missing reference sequence ID");
 
     let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
-        return Ok(Event::Miss);
+        return Ok(Some(Event::Miss));
     };
 
     let cigar = record.cigar();
-    let start = record.alignment_start().expect("missing alignment start")?;
-    let intervals = MatchIntervals::new(&cigar, start);
 
-    let flags = record.flags();
-    let is_reverse = match SegmentPosition::try_from(flags) {
-        Ok(SegmentPosition::First) => match strand_specification {
-            StrandSpecification::Reverse => !flags.is_reverse_complemented(),
-            _ => flags.is_reverse_complemented(),
-        },
-        Ok(SegmentPosition::Last) => match strand_specification {
-            StrandSpecification::Reverse => flags.is_reverse_complemented(),
-            _ => !flags.is_reverse_complemented(),
-        },
-        Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidData, e)),
-    };
+    let alignment_start = record
+        .alignment_start()
+        .transpose()?
+        .expect("missing alignment start");
 
-    let mut set = HashSet::new();
+    let intervals = MatchIntervals::new(&cigar, alignment_start);
 
     intersect(
-        &mut set,
+        intersections,
         interval_tree,
         intervals,
         strand_specification,
-        is_reverse,
+        is_reverse_complemented,
     )?;
 
-    Ok(update_intersections(set))
+    Ok(None)
 }
 
 fn intersect(
@@ -379,12 +322,23 @@ fn intersect(
     Ok(())
 }
 
-fn update_intersections(mut intersections: HashSet<String>) -> Event {
+fn resolve_intersections(mut intersections: HashSet<String>) -> Event {
     if intersections.is_empty() {
         Event::Miss
     } else if intersections.len() == 1 {
         intersections.drain().next().map(Event::Hit).unwrap()
     } else {
         Event::Ambiguous
+    }
+}
+
+fn resolve_is_reverse_complemented(
+    is_reverse_complemented: bool,
+    strand_specification: StrandSpecification,
+) -> bool {
+    if strand_specification == StrandSpecification::Reverse {
+        !is_reverse_complemented
+    } else {
+        is_reverse_complemented
     }
 }
