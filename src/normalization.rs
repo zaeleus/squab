@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use crate::Feature;
 
+type Counts = HashMap<String, u64>;
 type FeatureMap = HashMap<String, Vec<Feature>>;
 
 #[derive(Debug, Error)]

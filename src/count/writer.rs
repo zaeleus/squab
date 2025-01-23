@@ -43,13 +43,9 @@ mod tests {
 
     #[test]
     fn test_write_counts() -> io::Result<()> {
-        let counts = [
-            (String::from("AADAT"), 302),
-            (String::from("CLN3"), 37),
-            (String::from("PAK4"), 145),
-        ]
-        .into_iter()
-        .collect();
+        let counts = [("AADAT", 302), ("CLN3", 37), ("PAK4", 145)]
+            .into_iter()
+            .collect();
 
         let ids = [
             String::from("AADAT"),

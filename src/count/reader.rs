@@ -6,8 +6,6 @@ use std::{
 
 use thiserror::Error;
 
-use super::context::Counts;
-
 const DELIMITER: char = '\t';
 static HTSEQ_COUNT_META_PREFIX: &str = "__";
 
@@ -33,7 +31,7 @@ where
         Self { inner }
     }
 
-    pub fn read_counts(&mut self) -> Result<Counts, ReadCountsError> {
+    pub fn read_counts(&mut self) -> Result<HashMap<String, u64>, ReadCountsError> {
         let mut counts = HashMap::default();
         let mut buf = String::new();
 

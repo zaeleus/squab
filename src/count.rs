@@ -21,13 +21,13 @@ use self::context::Event;
 
 const CHUNK_SIZE: usize = 8192;
 
-pub fn count_single_end_records<R>(
+pub fn count_single_end_records<'f, R>(
     mut reader: bam::io::Reader<R>,
-    interval_trees: &IntervalTrees,
-    filter: &Filter,
+    interval_trees: &IntervalTrees<'f>,
+    filter: &'f Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
-) -> io::Result<Context>
+) -> io::Result<Context<'f>>
 where
     R: Read + Send,
 {
@@ -92,12 +92,12 @@ where
     })
 }
 
-pub fn count_single_end_record(
-    interval_trees: &IntervalTrees,
-    filter: &Filter,
+pub fn count_single_end_record<'f>(
+    interval_trees: &IntervalTrees<'f>,
+    filter: &'f Filter,
     strand_specification: StrandSpecification,
     record: &bam::Record,
-) -> io::Result<Event> {
+) -> io::Result<Event<'f>> {
     if let Some(event) = filter.filter(record)? {
         return Ok(event);
     }
@@ -119,16 +119,16 @@ pub fn count_single_end_record(
         return Ok(event);
     }
 
-    Ok(resolve_intersections(intersections))
+    Ok(resolve_intersections(&intersections))
 }
 
-pub fn count_paired_end_records<R>(
+pub fn count_paired_end_records<'f, R>(
     reader: bam::io::Reader<R>,
-    interval_trees: &IntervalTrees,
-    filter: &Filter,
+    interval_trees: &IntervalTrees<'f>,
+    filter: &'f Filter,
     strand_specification: StrandSpecification,
     worker_count: NonZeroUsize,
-) -> io::Result<Context>
+) -> io::Result<Context<'f>>
 where
     R: Read + Send,
 {
@@ -215,13 +215,13 @@ where
     Ok(ctx)
 }
 
-pub fn count_paired_end_record_pair(
-    interval_trees: &IntervalTrees,
-    filter: &Filter,
+pub fn count_paired_end_record_pair<'f>(
+    interval_trees: &IntervalTrees<'f>,
+    filter: &'f Filter,
     strand_specification: StrandSpecification,
     r1: &bam::Record,
     r2: &bam::Record,
-) -> io::Result<Event> {
+) -> io::Result<Event<'f>> {
     if let Some(event) = filter.filter_pair(r1, r2)? {
         return Ok(event);
     }
@@ -256,16 +256,16 @@ pub fn count_paired_end_record_pair(
         return Ok(event);
     }
 
-    Ok(resolve_intersections(intersections))
+    Ok(resolve_intersections(&intersections))
 }
 
-fn count_record(
-    interval_trees: &IntervalTrees,
+fn count_record<'f>(
+    interval_trees: &IntervalTrees<'f>,
     strand_specification: StrandSpecification,
     is_reverse_complemented: bool,
     record: &bam::Record,
-    intersections: &mut HashSet<String>,
-) -> io::Result<Option<Event>> {
+    intersections: &mut HashSet<&'f str>,
+) -> io::Result<Option<Event<'f>>> {
     let reference_sequence_id = record
         .reference_sequence_id()
         .transpose()?
@@ -295,9 +295,9 @@ fn count_record(
     Ok(None)
 }
 
-fn intersect(
-    intersections: &mut HashSet<String>,
-    interval_tree: &IntervalTree<Position, Entry>,
+fn intersect<'f>(
+    intersections: &mut HashSet<&'f str>,
+    interval_tree: &IntervalTree<Position, Entry<'f>>,
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
     is_reverse_complemented: bool,
@@ -308,13 +308,13 @@ fn intersect(
         let interval = result?;
 
         for entry in interval_tree.find(interval.clone()) {
-            let (gene_name, strand) = entry.get();
+            let (name, strand) = entry.get();
 
             if strand_specification == StrandSpecification::None
                 || (*strand == Strand::Reverse && is_reverse_complemented)
                 || (*strand == Strand::Forward && !is_reverse_complemented)
             {
-                intersections.insert(gene_name.to_string());
+                intersections.insert(name);
             }
         }
     }
@@ -322,11 +322,13 @@ fn intersect(
     Ok(())
 }
 
-fn resolve_intersections(mut intersections: HashSet<String>) -> Event {
+fn resolve_intersections<'f>(intersections: &HashSet<&'f str>) -> Event<'f> {
     if intersections.is_empty() {
         Event::Miss
     } else if intersections.len() == 1 {
-        intersections.drain().next().map(Event::Hit).unwrap()
+        // SAFETY: `intersections` is nonempty.
+        let name = intersections.iter().next().unwrap();
+        Event::Hit(name)
     } else {
         Event::Ambiguous
     }

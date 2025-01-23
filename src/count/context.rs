@@ -4,11 +4,11 @@ pub use self::event::Event;
 
 use std::collections::HashMap;
 
-pub type Counts = HashMap<String, u64>;
+pub type Counts<'f> = HashMap<&'f str, u64>;
 
 #[derive(Default)]
-pub struct Context {
-    pub counts: Counts,
+pub struct Context<'f> {
+    pub counts: Counts<'f>,
     pub miss: u64,
     pub ambiguous: u64,
     pub low_quality: u64,
@@ -16,10 +16,10 @@ pub struct Context {
     pub nonunique: u64,
 }
 
-impl Context {
-    pub fn add(&mut self, other: &Context) {
+impl<'f> Context<'f> {
+    pub fn add(&mut self, other: &Context<'f>) {
         for (name, count) in other.counts.iter() {
-            let entry = self.counts.entry(name.to_string()).or_insert(0);
+            let entry = self.counts.entry(name).or_insert(0);
             *entry += count;
         }
 
@@ -30,10 +30,10 @@ impl Context {
         self.nonunique += other.nonunique;
     }
 
-    pub fn add_event(&mut self, event: Event) {
+    pub fn add_event(&mut self, event: Event<'f>) {
         match event {
-            Event::Hit(id) => {
-                let count = self.counts.entry(id).or_insert(0);
+            Event::Hit(name) => {
+                let count = self.counts.entry(name).or_insert(0);
                 *count += 1;
             }
             Event::Miss => self.miss += 1,
@@ -54,7 +54,7 @@ mod tests {
     fn test_add() {
         let mut ctx_a = Context::default();
 
-        ctx_a.counts.insert(String::from("AADAT"), 2);
+        ctx_a.counts.insert("AADAT", 2);
         ctx_a.miss = 3;
         ctx_a.ambiguous = 5;
         ctx_a.low_quality = 8;
@@ -63,8 +63,8 @@ mod tests {
 
         let mut ctx_b = Context::default();
 
-        ctx_b.counts.insert(String::from("AADAT"), 2);
-        ctx_b.counts.insert(String::from("CLN3"), 3);
+        ctx_b.counts.insert("AADAT", 2);
+        ctx_b.counts.insert("CLN3", 3);
         ctx_b.miss = 5;
         ctx_b.ambiguous = 8;
         ctx_b.low_quality = 13;
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_add_event() {
         let mut ctx = Context::default();
-        ctx.add_event(Event::Hit(String::from("AADAT")));
+        ctx.add_event(Event::Hit("AADAT"));
         ctx.add_event(Event::Miss);
         ctx.add_event(Event::Ambiguous);
         ctx.add_event(Event::LowQuality);

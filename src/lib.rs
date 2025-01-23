@@ -36,8 +36,8 @@ use tracing::info;
 pub type ReferenceSequenceNames = IndexSet<String>;
 pub type Features = HashMap<String, Vec<Feature>>;
 
-pub type Entry = (String, noodles::gff::record::Strand);
-pub type IntervalTrees = Vec<IntervalTree<Position, Entry>>;
+pub type Entry<'f> = (&'f str, noodles::gff::record::Strand);
+pub type IntervalTrees<'f> = Vec<IntervalTree<Position, Entry<'f>>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrandSpecification {
@@ -131,11 +131,11 @@ where
     Ok((reference_sequence_names, features))
 }
 
-pub fn build_interval_trees(
+pub fn build_interval_trees<'f>(
     header: &sam::Header,
     reference_sequence_names: &ReferenceSequenceNames,
-    features: &Features,
-) -> IntervalTrees {
+    features: &'f Features,
+) -> IntervalTrees<'f> {
     let reference_sequences = header.reference_sequences();
 
     let mut interval_trees = Vec::new();
@@ -160,7 +160,7 @@ pub fn build_interval_trees(
             // SAFETY: `intervals_trees.len() == reference_sequences.len()`
             let tree = &mut interval_trees[i];
 
-            tree.insert(start..=end, (name.into(), strand));
+            tree.insert(start..=end, (name.as_str(), strand));
         }
     }
 

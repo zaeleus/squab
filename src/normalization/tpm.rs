@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use super::{sum_nonoverlapping_feature_lengths, Error, FeatureMap};
-use crate::count::context::Counts;
+use super::{sum_nonoverlapping_feature_lengths, Counts, Error, FeatureMap};
 
 pub fn calculate_tpms(
     counts: &Counts,
@@ -15,9 +14,9 @@ pub fn calculate_tpms(
                 .map(|features| {
                     let len = sum_nonoverlapping_feature_lengths(features);
                     let cpb = count as f64 / len as f64;
-                    (name.clone(), cpb)
+                    (name.into(), cpb)
                 })
-                .ok_or_else(|| Error::MissingFeature(name.clone()))
+                .ok_or_else(|| Error::MissingFeature(name.into()))
         })
         .collect::<Result<_, _>>()?;
 
@@ -43,7 +42,7 @@ mod tests {
 
     use super::*;
 
-    fn build_counts() -> HashMap<String, u64> {
+    fn build_counts() -> Counts {
         [
             (String::from("AAAS"), 645),
             (String::from("AC009952.3"), 1),

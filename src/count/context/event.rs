@@ -1,6 +1,6 @@
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Event {
-    Hit(String),
+pub enum Event<'f> {
+    Hit(&'f str),
     Miss,
     Ambiguous,
     LowQuality,
