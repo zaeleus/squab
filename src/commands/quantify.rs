@@ -33,8 +33,8 @@ where
     let mut reader = bam::io::reader::Builder.build_from_path(bam_src.as_ref())?;
     let header = reader.read_header()?;
 
-    let (reference_sequence_names, feature_map) = read_features(&mut gff_reader, feature_type, id)?;
-    let interval_trees = build_interval_trees(&header, &reference_sequence_names, &feature_map);
+    let (reference_sequence_names, features) = read_features(&mut gff_reader, feature_type, id)?;
+    let interval_trees = build_interval_trees(&header, &reference_sequence_names, &features);
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
         File::open(bam_src.as_ref())
@@ -50,9 +50,6 @@ where
 
     let mut reader = bam::io::Reader::from(decoder);
     reader.read_header()?;
-
-    let mut feature_ids: Vec<_> = feature_map.keys().collect();
-    feature_ids.sort();
 
     info!("detecting library type");
 
@@ -102,7 +99,11 @@ where
     info!("writing counts");
 
     let mut count_writer = count::Writer::new(writer);
-    count_writer.write_counts(&feature_ids, &ctx.counts)?;
+
+    let mut feature_names: Vec<_> = features.keys().collect();
+    feature_names.sort();
+
+    count_writer.write_counts(&feature_names, &ctx.counts)?;
     count_writer.write_stats(&ctx)?;
 
     Ok(())

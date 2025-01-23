@@ -46,32 +46,32 @@ where
         .map(count::Reader::new)
         .map_err(|e| NormalizeError::OpenFile(e, counts_src.into()))?;
 
-    let count_map = reader.read_counts().map_err(NormalizeError::ReadCounts)?;
+    let counts = reader.read_counts().map_err(NormalizeError::ReadCounts)?;
 
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
 
-    let (_, feature_map) = read_features(&mut gff_reader, feature_type, id)
+    let (_, features) = read_features(&mut gff_reader, feature_type, id)
         .map_err(NormalizeError::ReadAnnotations)?;
-
-    let feature_ids: Vec<_> = feature_map.keys().map(|id| id.into()).collect();
 
     let values = match method {
         normalization::Method::Fpkm => {
             info!("calculating fpkms");
-            calculate_fpkms(&count_map, &feature_map).map_err(NormalizeError::Normalization)?
+            calculate_fpkms(&counts, &features).map_err(NormalizeError::Normalization)?
         }
         normalization::Method::Tpm => {
             info!("calculating tpms");
-            calculate_tpms(&count_map, &feature_map).map_err(NormalizeError::Normalization)?
+            calculate_tpms(&counts, &features).map_err(NormalizeError::Normalization)?
         }
     };
 
     let stdout = io::stdout().lock();
     let mut writer = normalization::Writer::new(stdout);
 
+    let feature_names: Vec<_> = features.keys().map(|id| id.into()).collect();
+
     writer
-        .write_values(&feature_ids, &values)
+        .write_values(&feature_names, &values)
         .map_err(NormalizeError::Io)?;
 
     Ok(())
