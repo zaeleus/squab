@@ -1,24 +1,25 @@
 use std::collections::HashMap;
 
-use super::{sum_nonoverlapping_feature_lengths, Counts, Error, FeatureMap};
+use super::{sum_nonoverlapping_feature_lengths, Counts, Error};
+use crate::Features;
 
-pub fn calculate_fpkms(
+pub fn calculate_fpkms<'f>(
     counts: &Counts,
-    feature_map: &FeatureMap,
-) -> Result<HashMap<String, f64>, Error> {
+    features: &'f Features,
+) -> Result<HashMap<&'f str, f64>, Error> {
     let counts_sum = sum_counts(counts);
 
     counts
         .iter()
-        .map(|(name, &count)| {
-            feature_map
-                .get(name)
-                .map(|features| {
+        .map(|(key, &count)| {
+            features
+                .get_key_value(key)
+                .map(|(name, features)| {
                     let len = sum_nonoverlapping_feature_lengths(features);
                     let fpkm = calculate_fpkm(count, len, counts_sum);
-                    (name.into(), fpkm)
+                    (name.as_str(), fpkm)
                 })
-                .ok_or_else(|| Error::MissingFeature(name.into()))
+                .ok_or_else(|| Error::MissingFeature(key.into()))
         })
         .collect()
 }
@@ -49,7 +50,7 @@ mod tests {
         .collect()
     }
 
-    fn build_feature_map() -> Result<FeatureMap, noodles::core::position::TryFromIntError> {
+    fn build_features() -> Result<Features, noodles::core::position::TryFromIntError> {
         let strand = gff::record::Strand::Forward;
 
         let features = [
@@ -91,8 +92,8 @@ mod tests {
     fn test_calculate_fpkms() -> Result<(), Box<dyn std::error::Error>> {
         let counts = build_counts();
 
-        let feature_map = build_feature_map()?;
-        let fpkms = calculate_fpkms(&counts, &feature_map)?;
+        let features = build_features()?;
+        let fpkms = calculate_fpkms(&counts, &features)?;
 
         assert_eq!(fpkms.len(), 3);
 
@@ -116,10 +117,10 @@ mod tests {
     ) -> Result<(), noodles::core::position::TryFromIntError> {
         let counts = build_counts();
 
-        let mut feature_map = build_feature_map()?;
-        feature_map.remove("AC009952.3");
+        let mut features = build_features()?;
+        features.remove("AC009952.3");
 
-        assert!(calculate_fpkms(&counts, &feature_map).is_err());
+        assert!(calculate_fpkms(&counts, &features).is_err());
 
         Ok(())
     }

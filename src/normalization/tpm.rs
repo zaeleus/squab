@@ -1,30 +1,31 @@
 use std::collections::HashMap;
 
-use super::{sum_nonoverlapping_feature_lengths, Counts, Error, FeatureMap};
+use super::{sum_nonoverlapping_feature_lengths, Counts, Error};
+use crate::Features;
 
-pub fn calculate_tpms(
+pub fn calculate_tpms<'f>(
     counts: &Counts,
-    feature_map: &FeatureMap,
-) -> Result<HashMap<String, f64>, Error> {
-    let cpbs: HashMap<String, f64> = counts
+    features: &'f Features,
+) -> Result<HashMap<&'f str, f64>, Error> {
+    let cpbs: HashMap<_, _> = counts
         .iter()
-        .map(|(name, &count)| {
-            feature_map
-                .get(name)
-                .map(|features| {
+        .map(|(key, &count)| {
+            features
+                .get_key_value(key)
+                .map(|(name, features)| {
                     let len = sum_nonoverlapping_feature_lengths(features);
                     let cpb = count as f64 / len as f64;
-                    (name.into(), cpb)
+                    (name.as_str(), cpb)
                 })
-                .ok_or_else(|| Error::MissingFeature(name.into()))
+                .ok_or_else(|| Error::MissingFeature(key.into()))
         })
         .collect::<Result<_, _>>()?;
 
     let cpbs_sum = cpbs.values().sum();
 
     let tpms = cpbs
-        .iter()
-        .map(|(name, &cpb)| (name.clone(), calculate_tpm(cpb, cpbs_sum)))
+        .into_iter()
+        .map(|(name, cpb)| (name, calculate_tpm(cpb, cpbs_sum)))
         .collect();
 
     Ok(tpms)
@@ -52,7 +53,7 @@ mod tests {
         .collect()
     }
 
-    fn build_feature_map() -> Result<FeatureMap, noodles::core::position::TryFromIntError> {
+    fn build_features() -> Result<Features, noodles::core::position::TryFromIntError> {
         let strand = gff::record::Strand::Forward;
 
         let features = [
@@ -93,8 +94,8 @@ mod tests {
     fn test_calculate_tpms() -> Result<(), Box<dyn std::error::Error>> {
         let counts = build_counts();
 
-        let feature_map = build_feature_map()?;
-        let tpms = calculate_tpms(&counts, &feature_map)?;
+        let features = build_features()?;
+        let tpms = calculate_tpms(&counts, &features)?;
 
         assert_eq!(tpms.len(), 3);
 
@@ -118,10 +119,10 @@ mod tests {
     ) -> Result<(), noodles::core::position::TryFromIntError> {
         let counts = build_counts();
 
-        let mut feature_map = build_feature_map()?;
-        feature_map.remove("AC009952.3");
+        let mut features = build_features()?;
+        features.remove("AC009952.3");
 
-        assert!(calculate_tpms(&counts, &feature_map).is_err());
+        assert!(calculate_tpms(&counts, &features).is_err());
 
         Ok(())
     }
