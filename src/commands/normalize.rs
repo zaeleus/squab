@@ -68,7 +68,8 @@ where
     let stdout = io::stdout().lock();
     let mut writer = normalization::Writer::new(stdout);
 
-    let feature_names: Vec<_> = features.keys().map(|id| id.into()).collect();
+    let mut feature_names: Vec<_> = features.keys().collect();
+    feature_names.sort();
 
     writer
         .write_values(&feature_names, &values)
