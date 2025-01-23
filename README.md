@@ -1,4 +1,4 @@
-# noodles squab
+# squab
 
 [![GitHub Actions status](https://github.com/zaeleus/squab/workflows/CI/badge.svg)](https://github.com/zaeleus/squab/actions)
 
