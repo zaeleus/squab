@@ -276,13 +276,14 @@ fn count_record<'f>(
     };
 
     let cigar = record.cigar();
+    let mut ops = cigar.iter();
 
     let alignment_start = record
         .alignment_start()
         .transpose()?
         .expect("missing alignment start");
 
-    let intervals = MatchIntervals::new(&cigar, alignment_start);
+    let intervals = MatchIntervals::new(&mut ops, alignment_start);
 
     intersect(
         intersections,
