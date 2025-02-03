@@ -3,7 +3,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use std::thread;
+use std::{io, thread};
 
 use clap::Parser;
 use squab::{
@@ -64,7 +64,7 @@ fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_writer(io::stderr).init();
 
     let cli = Cli::parse();
 
