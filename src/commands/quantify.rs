@@ -33,7 +33,12 @@ where
     let mut reader = bam::io::reader::Builder.build_from_path(bam_src.as_ref())?;
     let header = reader.read_header()?;
 
+    info!(src = ?annotations_src.as_ref(), feature_type, feature_id = id, "reading features");
+
     let (reference_sequence_names, features) = read_features(&mut gff_reader, feature_type, id)?;
+
+    info!(feature_count = features.len(), "read features");
+
     let interval_trees = build_interval_trees(&header, &reference_sequence_names, &features);
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {

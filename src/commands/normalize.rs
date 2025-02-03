@@ -51,8 +51,12 @@ where
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
 
+    info!(src = ?annotations_src, feature_type, feature_id = id, "reading features");
+
     let (_, features) = read_features(&mut gff_reader, feature_type, id)
         .map_err(NormalizeError::ReadAnnotations)?;
+
+    info!(feature_count = features.len(), "read features");
 
     let values = match method {
         normalization::Method::Fpkm => {

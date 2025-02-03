@@ -81,8 +81,6 @@ where
     let mut reference_sequence_names = ReferenceSequenceNames::new();
     let mut features = Features::new();
 
-    info!("reading features");
-
     let mut line = Line::default();
 
     while reader.read_line(&mut line)? != 0 {
