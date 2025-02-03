@@ -57,14 +57,13 @@ where
         .map_err(NormalizeError::ReadAnnotations)?;
 
     info!(feature_count = features.len(), "read features");
+    info!(normalization_method = ?method, "normalizing counts");
 
     let values = match method {
         normalization::Method::Fpkm => {
-            info!("calculating fpkms");
             calculate_fpkms(&counts, &features).map_err(NormalizeError::Normalization)?
         }
         normalization::Method::Tpm => {
-            info!("calculating tpms");
             calculate_tpms(&counts, &features).map_err(NormalizeError::Normalization)?
         }
     };
