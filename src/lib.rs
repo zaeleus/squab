@@ -9,6 +9,7 @@ pub use self::{
 pub mod cli;
 pub mod commands;
 pub mod count;
+pub mod counts;
 pub mod detect;
 pub mod feature;
 mod gff;

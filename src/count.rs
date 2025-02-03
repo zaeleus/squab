@@ -1,9 +1,8 @@
 pub mod context;
 mod filter;
-pub(crate) mod reader;
 mod writer;
 
-pub use self::{context::Context, filter::Filter, reader::Reader, writer::Writer};
+pub use self::{context::Context, filter::Filter, writer::Writer};
 
 use std::{
     collections::HashSet,

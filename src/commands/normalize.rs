@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{self, BufReader},
     path::{Path, PathBuf},
@@ -8,7 +9,7 @@ use thiserror::Error;
 use tracing::info;
 
 use crate::{
-    count,
+    counts,
     normalization::{self, calculate_fpkms, calculate_tpms},
     read_features,
 };
@@ -20,7 +21,7 @@ pub enum NormalizeError {
     #[error("could not open file: {1}")]
     OpenFile(#[source] io::Error, PathBuf),
     #[error("invalid counts")]
-    ReadCounts(#[source] count::reader::ReadCountsError),
+    ReadCounts(#[source] counts::ReadCountsError),
     #[error("invalid annotations")]
     ReadAnnotations(#[source] crate::ReadFeaturesError),
     #[error("normalization error")]
@@ -28,7 +29,7 @@ pub enum NormalizeError {
 }
 
 pub fn normalize<P, Q>(
-    counts_src: P,
+    src: P,
     annotations_src: Q,
     feature_type: &str,
     id: &str,
@@ -38,15 +39,10 @@ where
     P: AsRef<Path>,
     Q: AsRef<Path>,
 {
-    let counts_src = counts_src.as_ref();
+    let src = src.as_ref();
     let annotations_src = annotations_src.as_ref();
 
-    let mut reader = File::open(counts_src)
-        .map(BufReader::new)
-        .map(count::Reader::new)
-        .map_err(|e| NormalizeError::OpenFile(e, counts_src.into()))?;
-
-    let counts = reader.read_counts().map_err(NormalizeError::ReadCounts)?;
+    let counts = read_counts(src)?;
 
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
@@ -79,4 +75,15 @@ where
         .map_err(NormalizeError::Io)?;
 
     Ok(())
+}
+
+fn read_counts<P>(src: P) -> Result<HashMap<String, u64>, NormalizeError>
+where
+    P: AsRef<Path>,
+{
+    let mut reader = File::open(src)
+        .map(BufReader::new)
+        .map_err(NormalizeError::Io)?;
+
+    counts::read(&mut reader).map_err(NormalizeError::ReadCounts)
 }

@@ -6,7 +6,6 @@ use std::{
 
 use thiserror::Error;
 
-const DELIMITER: char = '\t';
 static HTSEQ_COUNT_META_PREFIX: &str = "__";
 
 #[derive(Debug, Error)]
@@ -19,40 +18,30 @@ pub enum ReadCountsError {
     Io(#[from] io::Error),
 }
 
-pub struct Reader<R> {
-    inner: R,
-}
-
-impl<R> Reader<R>
+pub fn read<R>(reader: &mut R) -> Result<HashMap<String, u64>, ReadCountsError>
 where
     R: BufRead,
 {
-    pub fn new(inner: R) -> Self {
-        Self { inner }
-    }
+    let mut line = String::new();
+    let mut counts = HashMap::new();
 
-    pub fn read_counts(&mut self) -> Result<HashMap<String, u64>, ReadCountsError> {
-        let mut counts = HashMap::default();
-        let mut buf = String::new();
+    loop {
+        line.clear();
 
-        loop {
-            buf.clear();
-
-            if read_line(&mut self.inner, &mut buf)? == 0 {
-                break;
-            }
-
-            let (id, count) = parse_line(&buf)?;
-
-            if id.starts_with(HTSEQ_COUNT_META_PREFIX) {
-                break;
-            }
-
-            counts.insert(id, count);
+        if read_line(reader, &mut line)? == 0 {
+            break;
         }
 
-        Ok(counts)
+        let (name, count) = parse_line(&line)?;
+
+        if name.starts_with(HTSEQ_COUNT_META_PREFIX) {
+            break;
+        }
+
+        counts.insert(name.into(), count);
     }
+
+    Ok(counts)
 }
 
 fn read_line<R>(reader: &mut R, buf: &mut String) -> io::Result<usize>
@@ -62,27 +51,32 @@ where
     const LINE_FEED: char = '\n';
     const CARRIAGE_RETURN: char = '\r';
 
-    reader.read_line(buf).map(|n| {
-        if n > 0 && buf.ends_with(LINE_FEED) {
-            buf.pop();
-
-            if buf.ends_with(CARRIAGE_RETURN) {
+    match reader.read_line(buf)? {
+        0 => Ok(0),
+        n => {
+            if buf.ends_with(LINE_FEED) {
                 buf.pop();
-            }
-        }
 
-        n
-    })
+                if buf.ends_with(CARRIAGE_RETURN) {
+                    buf.pop();
+                }
+            }
+
+            Ok(n)
+        }
+    }
 }
 
-fn parse_line(s: &str) -> Result<(String, u64), ReadCountsError> {
-    let (raw_id, raw_count) = s
+fn parse_line(s: &str) -> Result<(&str, u64), ReadCountsError> {
+    const DELIMITER: char = '\t';
+
+    let (name, raw_count) = s
         .split_once(DELIMITER)
         .ok_or(ReadCountsError::InvalidRecord)?;
 
     let count = raw_count.parse().map_err(ReadCountsError::InvalidCount)?;
 
-    Ok((raw_id.into(), count))
+    Ok((name, count))
 }
 
 #[cfg(test)]
@@ -120,8 +114,8 @@ __not_aligned\t0
 __alignment_not_unique\t0
 ";
 
-        let mut reader = Reader::new(&data[..]);
-        let counts = reader.read_counts()?;
+        let mut reader = &data[..];
+        let counts = read(&mut reader)?;
 
         assert_eq!(counts.len(), 3);
         assert_eq!(counts["AADAT"], 302);
