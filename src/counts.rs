@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     io::{self, BufRead},
     num,
 };
@@ -18,12 +17,12 @@ pub enum ReadCountsError {
     Io(#[from] io::Error),
 }
 
-pub fn read<R>(reader: &mut R) -> Result<HashMap<String, u64>, ReadCountsError>
+pub fn read<R>(reader: &mut R) -> Result<Vec<(String, u64)>, ReadCountsError>
 where
     R: BufRead,
 {
     let mut line = String::new();
-    let mut counts = HashMap::new();
+    let mut counts = Vec::new();
 
     loop {
         line.clear();
@@ -32,13 +31,12 @@ where
             break;
         }
 
-        let (name, count) = parse_line(&line)?;
-
-        if name.starts_with(HTSEQ_COUNT_META_PREFIX) {
+        if line.starts_with(HTSEQ_COUNT_META_PREFIX) {
             break;
         }
 
-        counts.insert(name.into(), count);
+        let (name, count) = parse_line(&line)?;
+        counts.push((name.into(), count));
     }
 
     Ok(counts)
@@ -115,12 +113,15 @@ __alignment_not_unique\t0
 ";
 
         let mut reader = &data[..];
-        let counts = read(&mut reader)?;
+        let actual = read(&mut reader)?;
 
-        assert_eq!(counts.len(), 3);
-        assert_eq!(counts["AADAT"], 302);
-        assert_eq!(counts["CLN3"], 37);
-        assert_eq!(counts["PAK4"], 145);
+        let expected = [
+            (String::from("AADAT"), 302),
+            (String::from("CLN3"), 37),
+            (String::from("PAK4"), 145),
+        ];
+
+        assert_eq!(actual, expected);
 
         Ok(())
     }

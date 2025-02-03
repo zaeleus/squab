@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::File,
     io::{self, BufReader},
     path::{Path, PathBuf},
@@ -42,7 +41,7 @@ where
     let src = src.as_ref();
     let annotations_src = annotations_src.as_ref();
 
-    let counts = read_counts(src)?;
+    let counts = read_counts(src)?.into_iter().collect();
 
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
@@ -77,7 +76,7 @@ where
     Ok(())
 }
 
-fn read_counts<P>(src: P) -> Result<HashMap<String, u64>, NormalizeError>
+fn read_counts<P>(src: P) -> Result<Vec<(String, u64)>, NormalizeError>
 where
     P: AsRef<Path>,
 {
