@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::File,
     io::{self, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
@@ -51,28 +50,25 @@ where
 
     info!(feature_count = features.len(), "read features");
 
-    let counts = read_counts(src)?.into_iter().collect();
+    let counts = read_counts(src)?;
+
+    let names: Vec<_> = counts.iter().map(|(name, _)| name.clone()).collect();
+    let counts: Vec<_> = counts.into_iter().map(|(_, count)| count).collect();
 
     info!(normalization_method = ?method, "normalizing counts");
 
-    let lengths = calculate_feature_lengths(&features);
+    let lengths =
+        calculate_feature_lengths(&features, &names).map_err(NormalizeError::Normalization)?;
 
-    let values = match method {
-        normalization::Method::Fpkm => {
-            calculate_fpkms(&lengths, &counts).map_err(NormalizeError::Normalization)?
-        }
-        normalization::Method::Tpm => {
-            calculate_tpms(&lengths, &counts).map_err(NormalizeError::Normalization)?
-        }
+    let normalized_counts = match method {
+        normalization::Method::Fpkm => calculate_fpkms(&lengths, &counts),
+        normalization::Method::Tpm => calculate_tpms(&lengths, &counts),
     };
-
-    let mut feature_names: Vec<_> = features.keys().collect();
-    feature_names.sort();
 
     let stdout = io::stdout().lock();
     let mut writer = BufWriter::new(stdout);
 
-    write_normalized_counts(&mut writer, &feature_names, &values).map_err(NormalizeError::Io)?;
+    write_normalized_counts(&mut writer, &names, &normalized_counts).map_err(NormalizeError::Io)?;
 
     Ok(())
 }
@@ -88,18 +84,13 @@ where
     counts::read(&mut reader).map_err(NormalizeError::ReadCounts)
 }
 
-fn write_normalized_counts<W>(
-    writer: &mut W,
-    names: &[&String],
-    values: &HashMap<&str, f64>,
-) -> io::Result<()>
+fn write_normalized_counts<W>(writer: &mut W, names: &[String], values: &[f64]) -> io::Result<()>
 where
     W: Write,
 {
     const SEPARATOR: char = '\t';
 
-    for name in names {
-        let value = values.get(name.as_str()).unwrap_or(&0.0);
+    for (name, value) in names.iter().zip(values) {
         writeln!(writer, "{name}{SEPARATOR}{value}")?;
     }
 
@@ -113,25 +104,18 @@ mod tests {
     #[test]
     fn test_write_normalized_counts() -> io::Result<()> {
         let names = [
-            &String::from("AADAT"),
-            &String::from("CLN3"),
-            &String::from("NEO1"),
-            &String::from("PAK4"),
+            String::from("AADAT"),
+            String::from("CLN3"),
+            String::from("NEO1"),
+            String::from("PAK4"),
         ];
 
-        let values = [("AADAT", 30.2), ("CLN3", 3.7), ("PAK4", 14.5)]
-            .into_iter()
-            .collect();
+        let values = [30.2, 3.7, 0.0, 14.5];
 
         let mut buf = Vec::new();
         write_normalized_counts(&mut buf, &names, &values)?;
 
-        let expected = b"AADAT\t30.2
-CLN3\t3.7
-NEO1\t0
-PAK4\t14.5
-";
-
+        let expected = b"AADAT\t30.2\nCLN3\t3.7\nNEO1\t0\nPAK4\t14.5\n";
         assert_eq!(buf, expected);
 
         Ok(())

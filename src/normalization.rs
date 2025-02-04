@@ -10,8 +10,6 @@ use thiserror::Error;
 
 use crate::Feature;
 
-type Counts = HashMap<String, u64>;
-
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("missing feature: {0}")]
@@ -20,10 +18,16 @@ pub enum Error {
 
 pub fn calculate_feature_lengths(
     features: &HashMap<String, Vec<Feature>>,
-) -> HashMap<String, usize> {
-    features
+    names: &[String],
+) -> Result<Vec<usize>, Error> {
+    names
         .iter()
-        .map(|(name, segments)| (name.clone(), sum_nonoverlapping_feature_lengths(segments)))
+        .map(|name| {
+            features
+                .get(name)
+                .map(|segments| sum_nonoverlapping_feature_lengths(segments))
+                .ok_or_else(|| Error::MissingFeature(name.into()))
+        })
         .collect()
 }
 

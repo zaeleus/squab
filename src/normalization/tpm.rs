@@ -1,91 +1,48 @@
-use std::collections::HashMap;
-
-use super::{Counts, Error};
-
-pub fn calculate_tpms<'f>(
-    lengths: &'f HashMap<String, usize>,
-    counts: &Counts,
-) -> Result<HashMap<&'f str, f64>, Error> {
-    let cpbs: HashMap<_, _> = counts
+pub fn calculate_tpms(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
+    let length_normalized_counts: Vec<_> = lengths
         .iter()
-        .map(|(key, &count)| {
-            lengths
-                .get_key_value(key)
-                .map(|(name, len)| {
-                    let cpb = (count as f64) / (*len as f64);
-                    (name.as_str(), cpb)
-                })
-                .ok_or_else(|| Error::MissingFeature(key.into()))
+        .zip(counts)
+        .map(|(length, count)| {
+            assert!(*length > 0);
+            (*count as f64) / (*length as f64)
         })
-        .collect::<Result<_, _>>()?;
-
-    let cpbs_sum = cpbs.values().sum();
-
-    let tpms = cpbs
-        .into_iter()
-        .map(|(name, cpb)| (name, calculate_tpm(cpb, cpbs_sum)))
         .collect();
 
-    Ok(tpms)
+    let sum = length_normalized_counts.iter().sum();
+
+    length_normalized_counts
+        .into_iter()
+        .map(|n| calculate_tpm(n, sum))
+        .collect()
 }
 
-fn calculate_tpm(cpb: f64, cpbs_sum: f64) -> f64 {
-    cpb * 1e6 / cpbs_sum
+fn calculate_tpm(n: f64, sum: f64) -> f64 {
+    n * 1e6 / sum
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn build_counts() -> Counts {
-        [
-            (String::from("AAAS"), 645),
-            (String::from("AC009952.3"), 1),
-            (String::from("RPL37AP1"), 5714),
-        ]
-        .into_iter()
-        .collect()
-    }
-
-    fn build_lengths() -> HashMap<String, usize> {
-        [
-            (String::from("AAAS"), 17409),
-            (String::from("AC009952.3"), 14983),
-            (String::from("RPL37AP1"), 279),
-        ]
-        .into_iter()
-        .collect()
-    }
-
     #[test]
-    fn test_calculate_tpms() -> Result<(), Box<dyn std::error::Error>> {
-        let lengths = build_lengths();
-        let counts = build_counts();
-        let tpms = calculate_tpms(&lengths, &counts)?;
+    fn test_calculate_tpms() {
+        let counts = [645, 1, 5714];
+        let lengths = [17409, 14983, 279];
+
+        let tpms = calculate_tpms(&lengths, &counts);
 
         assert_eq!(tpms.len(), 3);
 
-        let a = tpms["AAAS"];
+        let a = tpms[0];
         let b = 1805.7744109493626;
         assert!((a - b).abs() < f64::EPSILON);
 
-        let a = tpms["AC009952.3"];
+        let a = tpms[1];
         let b = 3.252960768479983;
         assert!((a - b).abs() < f64::EPSILON);
 
-        let a = tpms["RPL37AP1"];
+        let a = tpms[2];
         let b = 998190.972628282;
         assert!((a - b).abs() < f64::EPSILON);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_calculate_tpms_with_missing_feature(
-    ) -> Result<(), noodles::core::position::TryFromIntError> {
-        let lengths = HashMap::new();
-        let counts = build_counts();
-        assert!(calculate_tpms(&lengths, &counts).is_err());
-        Ok(())
     }
 }
