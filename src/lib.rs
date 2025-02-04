@@ -32,7 +32,6 @@ use noodles::{
     sam,
 };
 use thiserror::Error;
-use tracing::info;
 
 pub type ReferenceSequenceNames = IndexSet<String>;
 pub type Features = HashMap<String, Vec<Feature>>;
@@ -124,8 +123,6 @@ where
         let segments = features.entry(id.into()).or_default();
         segments.push(feature);
     }
-
-    info!("read {} unique features", features.len());
 
     Ok((reference_sequence_names, features))
 }
