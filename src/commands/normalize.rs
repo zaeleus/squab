@@ -1,6 +1,7 @@
 use std::{
+    collections::HashMap,
     fs::File,
-    io::{self, BufReader},
+    io::{self, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
 };
 
@@ -65,15 +66,13 @@ where
         }
     };
 
-    let stdout = io::stdout().lock();
-    let mut writer = normalization::Writer::new(stdout);
-
     let mut feature_names: Vec<_> = features.keys().collect();
     feature_names.sort();
 
-    writer
-        .write_values(&feature_names, &values)
-        .map_err(NormalizeError::Io)?;
+    let stdout = io::stdout().lock();
+    let mut writer = BufWriter::new(stdout);
+
+    write_normalized_counts(&mut writer, &feature_names, &values).map_err(NormalizeError::Io)?;
 
     Ok(())
 }
@@ -87,4 +86,54 @@ where
         .map_err(NormalizeError::Io)?;
 
     counts::read(&mut reader).map_err(NormalizeError::ReadCounts)
+}
+
+fn write_normalized_counts<W>(
+    writer: &mut W,
+    names: &[&String],
+    values: &HashMap<&str, f64>,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    const SEPARATOR: char = '\t';
+
+    for name in names {
+        let value = values.get(name.as_str()).unwrap_or(&0.0);
+        writeln!(writer, "{name}{SEPARATOR}{value}")?;
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_write_normalized_counts() -> io::Result<()> {
+        let names = [
+            &String::from("AADAT"),
+            &String::from("CLN3"),
+            &String::from("NEO1"),
+            &String::from("PAK4"),
+        ];
+
+        let values = [("AADAT", 30.2), ("CLN3", 3.7), ("PAK4", 14.5)]
+            .into_iter()
+            .collect();
+
+        let mut buf = Vec::new();
+        write_normalized_counts(&mut buf, &names, &values)?;
+
+        let expected = b"AADAT\t30.2
+CLN3\t3.7
+NEO1\t0
+PAK4\t14.5
+";
+
+        assert_eq!(buf, expected);
+
+        Ok(())
+    }
 }
