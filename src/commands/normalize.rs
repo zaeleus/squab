@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{self, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
@@ -9,8 +10,8 @@ use tracing::info;
 
 use crate::{
     counts,
-    normalization::{self, calculate_feature_lengths, fpkm, tpm},
-    read_features,
+    normalization::{self, fpkm, tpm},
+    read_features, Feature,
 };
 
 #[derive(Debug, Error)]
@@ -57,8 +58,7 @@ where
 
     info!(normalization_method = ?method, "normalizing counts");
 
-    let lengths =
-        calculate_feature_lengths(&features, &names).map_err(NormalizeError::Normalization)?;
+    let lengths = calculate_feature_lengths(&features, &names).map_err(NormalizeError::Io)?;
 
     let normalized_counts = match method {
         normalization::Method::Fpkm => fpkm::normalize(&lengths, &counts),
@@ -82,6 +82,17 @@ where
         .map_err(NormalizeError::Io)?;
 
     counts::read(&mut reader).map_err(NormalizeError::ReadCounts)
+}
+
+fn calculate_feature_lengths(
+    features: &HashMap<String, Vec<Feature>>,
+    names: &[String],
+) -> io::Result<Vec<u32>> {
+    normalization::calculate_feature_lengths(features, names)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
+        .into_iter()
+        .map(|n| u32::try_from(n).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e)))
+        .collect()
 }
 
 fn write_normalized_counts<W>(writer: &mut W, names: &[String], values: &[f64]) -> io::Result<()>
