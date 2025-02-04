@@ -39,20 +39,20 @@ where
     P: AsRef<Path>,
     Q: AsRef<Path>,
 {
-    let src = src.as_ref();
     let annotations_src = annotations_src.as_ref();
 
-    let counts = read_counts(src)?.into_iter().collect();
+    info!(src = ?annotations_src, feature_type, feature_id = id, "reading features");
 
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
-
-    info!(src = ?annotations_src, feature_type, feature_id = id, "reading features");
 
     let (_, features) = read_features(&mut gff_reader, feature_type, id)
         .map_err(NormalizeError::ReadAnnotations)?;
 
     info!(feature_count = features.len(), "read features");
+
+    let counts = read_counts(src)?.into_iter().collect();
+
     info!(normalization_method = ?method, "normalizing counts");
 
     let lengths = calculate_feature_lengths(&features);
