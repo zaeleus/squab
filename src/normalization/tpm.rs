@@ -1,4 +1,4 @@
-pub fn calculate_tpms(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
+pub fn normalize(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
     let length_normalized_counts: Vec<_> = lengths
         .iter()
         .zip(counts)
@@ -25,11 +25,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_calculate_tpms() {
+    fn test_normalize() {
         let counts = [645, 1, 5714];
         let lengths = [17409, 14983, 279];
 
-        let tpms = calculate_tpms(&lengths, &counts);
+        let tpms = normalize(&lengths, &counts);
 
         assert_eq!(tpms.len(), 3);
 

@@ -1,4 +1,4 @@
-pub fn calculate_fpkms(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
+pub fn normalize(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
     let sum = counts.iter().copied().map(|count| count as f64).sum();
 
     lengths
@@ -18,11 +18,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_calculate_fpkms() {
+    fn test_normalize() {
         let counts = [645, 1, 5714];
         let lengths = [17409, 14983, 279];
 
-        let fpkms = calculate_fpkms(&lengths, &counts);
+        let fpkms = normalize(&lengths, &counts);
 
         assert_eq!(fpkms.len(), 3);
 

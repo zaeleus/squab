@@ -1,8 +1,8 @@
-mod fpkm;
+pub mod fpkm;
 mod method;
-mod tpm;
+pub mod tpm;
 
-pub use self::{fpkm::calculate_fpkms, method::Method, tpm::calculate_tpms};
+pub use self::method::Method;
 
 use std::collections::HashMap;
 
