@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug, Error)]
 pub enum NormalizeError {
     #[error("I/O error")]
-    Io(#[source] io::Error),
+    Io(#[from] io::Error),
     #[error("could not open file: {1}")]
     OpenFile(#[source] io::Error, PathBuf),
     #[error("invalid counts")]
@@ -58,7 +58,7 @@ where
 
     info!(normalization_method = ?method, "normalizing counts");
 
-    let lengths = calculate_feature_lengths(&features, &names).map_err(NormalizeError::Io)?;
+    let lengths = calculate_feature_lengths(&features, &names)?;
 
     let normalized_counts = match method {
         normalization::Method::Fpkm => fpkm::normalize(&lengths, &counts),
@@ -68,7 +68,7 @@ where
     let stdout = io::stdout().lock();
     let mut writer = BufWriter::new(stdout);
 
-    write_normalized_counts(&mut writer, &names, &normalized_counts).map_err(NormalizeError::Io)?;
+    write_normalized_counts(&mut writer, &names, &normalized_counts)?;
 
     Ok(())
 }
