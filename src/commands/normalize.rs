@@ -9,7 +9,7 @@ use tracing::info;
 
 use crate::{
     counts,
-    normalization::{self, calculate_fpkms, calculate_tpms},
+    normalization::{self, calculate_feature_lengths, calculate_fpkms, calculate_tpms},
     read_features,
 };
 
@@ -54,12 +54,14 @@ where
     info!(feature_count = features.len(), "read features");
     info!(normalization_method = ?method, "normalizing counts");
 
+    let lengths = calculate_feature_lengths(&features);
+
     let values = match method {
         normalization::Method::Fpkm => {
-            calculate_fpkms(&counts, &features).map_err(NormalizeError::Normalization)?
+            calculate_fpkms(&lengths, &counts).map_err(NormalizeError::Normalization)?
         }
         normalization::Method::Tpm => {
-            calculate_tpms(&counts, &features).map_err(NormalizeError::Normalization)?
+            calculate_tpms(&lengths, &counts).map_err(NormalizeError::Normalization)?
         }
     };
 

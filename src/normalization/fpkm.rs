@@ -1,22 +1,20 @@
 use std::collections::HashMap;
 
-use super::{sum_nonoverlapping_feature_lengths, Counts, Error};
-use crate::Features;
+use super::{Counts, Error};
 
 pub fn calculate_fpkms<'f>(
+    lengths: &'f HashMap<String, usize>,
     counts: &Counts,
-    features: &'f Features,
 ) -> Result<HashMap<&'f str, f64>, Error> {
     let counts_sum = sum_counts(counts);
 
     counts
         .iter()
         .map(|(key, &count)| {
-            features
+            lengths
                 .get_key_value(key)
-                .map(|(name, features)| {
-                    let len = sum_nonoverlapping_feature_lengths(features);
-                    let fpkm = calculate_fpkm(count, len, counts_sum);
+                .map(|(name, len)| {
+                    let fpkm = calculate_fpkm(count, *len, counts_sum);
                     (name.as_str(), fpkm)
                 })
                 .ok_or_else(|| Error::MissingFeature(key.into()))
@@ -34,10 +32,6 @@ fn calculate_fpkm(count: u64, len: usize, counts_sum: u64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::Feature;
-
-    use noodles::{core::Position, gff};
-
     use super::*;
 
     fn build_counts() -> Counts {
@@ -50,50 +44,21 @@ mod tests {
         .collect()
     }
 
-    fn build_features() -> Result<Features, noodles::core::position::TryFromIntError> {
-        let strand = gff::record::Strand::Forward;
-
-        let features = [
-            (
-                String::from("AAAS"),
-                vec![Feature::new(
-                    0,
-                    Position::try_from(53307456)?,
-                    Position::try_from(53324864)?,
-                    strand,
-                )],
-            ),
-            (
-                String::from("AC009952.3"),
-                vec![Feature::new(
-                    0,
-                    Position::try_from(9189629)?,
-                    Position::try_from(9204611)?,
-                    strand,
-                )],
-            ),
-            (
-                String::from("RPL37AP1"),
-                vec![Feature::new(
-                    0,
-                    Position::try_from(44466564)?,
-                    Position::try_from(44466842)?,
-                    strand,
-                )],
-            ),
+    fn build_lengths() -> HashMap<String, usize> {
+        [
+            (String::from("AAAS"), 17409),
+            (String::from("AC009952.3"), 14983),
+            (String::from("RPL37AP1"), 279),
         ]
         .into_iter()
-        .collect();
-
-        Ok(features)
+        .collect()
     }
 
     #[test]
-    fn test_calculate_fpkms() -> Result<(), Box<dyn std::error::Error>> {
+    fn test_calculate_fpkms() -> Result<(), Error> {
+        let lengths = build_lengths();
         let counts = build_counts();
-
-        let features = build_features()?;
-        let fpkms = calculate_fpkms(&counts, &features)?;
+        let fpkms = calculate_fpkms(&lengths, &counts)?;
 
         assert_eq!(fpkms.len(), 3);
 
@@ -113,15 +78,9 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_fpkms_with_missing_feature(
-    ) -> Result<(), noodles::core::position::TryFromIntError> {
+    fn test_calculate_fpkms_with_missing_feature() {
+        let lengths = HashMap::new();
         let counts = build_counts();
-
-        let mut features = build_features()?;
-        features.remove("AC009952.3");
-
-        assert!(calculate_fpkms(&counts, &features).is_err());
-
-        Ok(())
+        assert!(calculate_fpkms(&lengths, &counts).is_err());
     }
 }

@@ -19,6 +19,15 @@ pub enum Error {
     MissingFeature(String),
 }
 
+pub fn calculate_feature_lengths(
+    features: &HashMap<String, Vec<Feature>>,
+) -> HashMap<String, usize> {
+    features
+        .iter()
+        .map(|(name, segments)| (name.clone(), sum_nonoverlapping_feature_lengths(segments)))
+        .collect()
+}
+
 fn sum_nonoverlapping_feature_lengths(features: &[Feature]) -> usize {
     merge_features(features).iter().map(|f| f.len()).sum()
 }
