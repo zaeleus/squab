@@ -1,10 +1,10 @@
-pub fn normalize(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
+pub fn normalize(lengths: &[usize], counts: &[u32]) -> Vec<f64> {
     let length_normalized_counts: Vec<_> = lengths
         .iter()
         .zip(counts)
         .map(|(length, count)| {
             assert!(*length > 0);
-            (*count as f64) / (*length as f64)
+            f64::from(*count) / (*length as f64)
         })
         .collect();
 

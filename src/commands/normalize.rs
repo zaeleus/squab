@@ -73,7 +73,7 @@ where
     Ok(())
 }
 
-fn read_counts<P>(src: P) -> Result<Vec<(String, u64)>, NormalizeError>
+fn read_counts<P>(src: P) -> Result<Vec<(String, u32)>, NormalizeError>
 where
     P: AsRef<Path>,
 {

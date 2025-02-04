@@ -17,7 +17,7 @@ pub enum ReadCountsError {
     Io(#[from] io::Error),
 }
 
-pub fn read<R>(reader: &mut R) -> Result<Vec<(String, u64)>, ReadCountsError>
+pub fn read<R>(reader: &mut R) -> Result<Vec<(String, u32)>, ReadCountsError>
 where
     R: BufRead,
 {
@@ -65,7 +65,7 @@ where
     }
 }
 
-fn parse_line(s: &str) -> Result<(&str, u64), ReadCountsError> {
+fn parse_line(s: &str) -> Result<(&str, u32), ReadCountsError> {
     const DELIMITER: char = '\t';
 
     let (name, raw_count) = s

@@ -1,5 +1,5 @@
-pub fn normalize(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
-    let sum = counts.iter().copied().map(|count| count as f64).sum();
+pub fn normalize(lengths: &[usize], counts: &[u32]) -> Vec<f64> {
+    let sum = counts.iter().copied().map(f64::from).sum();
 
     lengths
         .iter()
@@ -8,9 +8,9 @@ pub fn normalize(lengths: &[usize], counts: &[u64]) -> Vec<f64> {
         .collect()
 }
 
-fn calculate_fpkm(count: u64, length: usize, sum: f64) -> f64 {
+fn calculate_fpkm(count: u32, length: usize, sum: f64) -> f64 {
     assert!(length > 0);
-    ((count as f64) * 1e9) / (length as f64 * sum)
+    (f64::from(count) * 1e9) / (length as f64 * sum)
 }
 
 #[cfg(test)]
