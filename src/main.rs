@@ -18,8 +18,6 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
     let bam_src = options.src;
     let annotations_src = options.annotations;
 
-    let results_dst = options.output;
-
     let threads = match options.threads {
         Some(n) => n,
         None => thread::available_parallelism()?,
@@ -44,7 +42,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
         filter,
         strand_specification_option,
         threads,
-        results_dst,
+        options.output,
     )
 }
 

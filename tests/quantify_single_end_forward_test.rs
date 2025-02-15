@@ -24,7 +24,7 @@ fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
         filter,
         strand_specification_option,
         worker_count,
-        &results_dst,
+        Some(&results_dst),
     )?;
 
     let actual = fs::read_to_string(results_dst)?;

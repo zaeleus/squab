@@ -80,9 +80,11 @@ pub struct Quantify {
     #[arg(long, value_parser = parse_mapping_quality, default_value = "10")]
     pub min_mapping_quality: MappingQuality,
 
-    /// Output destination for feature counts.
+    /// Output destination.
+    ///
+    /// If not set, output is written to stdout.
     #[arg(short = 'o', long)]
-    pub output: PathBuf,
+    pub output: Option<PathBuf>,
 
     /// Input annotations file (GFF3).
     #[arg(short = 'a', long)]

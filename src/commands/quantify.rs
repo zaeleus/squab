@@ -1,4 +1,9 @@
-use std::{fs::File, io::BufWriter, num::NonZeroUsize, path::Path};
+use std::{
+    fs::File,
+    io::{self, BufWriter, Write},
+    num::NonZeroUsize,
+    path::Path,
+};
 
 use anyhow::Context as AnyhowContext;
 use noodles::{bam, bgzf};
@@ -20,7 +25,7 @@ pub fn quantify<P, Q, R>(
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
     worker_count: NonZeroUsize,
-    results_dst: R,
+    dst: Option<R>,
 ) -> anyhow::Result<()>
 where
     P: AsRef<Path>,
@@ -97,9 +102,15 @@ where
         )?,
     };
 
-    let writer = File::create(results_dst.as_ref())
-        .map(BufWriter::new)
-        .with_context(|| format!("Could not open {}", results_dst.as_ref().display()))?;
+    let writer: Box<dyn Write> = if let Some(dst) = dst {
+        File::create(dst.as_ref())
+            .map(BufWriter::new)
+            .map(Box::new)
+            .with_context(|| format!("Could not open {}", dst.as_ref().display()))?
+    } else {
+        let stdout = io::stdout().lock();
+        Box::new(BufWriter::new(stdout))
+    };
 
     info!("writing counts");
 
