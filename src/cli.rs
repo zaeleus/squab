@@ -41,6 +41,12 @@ pub struct Normalize {
     #[arg(long, value_enum, default_value_t = Method::Tpm)]
     pub method: Method,
 
+    /// Output destination.
+    ///
+    /// If not set, output is written to stdout.
+    #[arg(short = 'o', long)]
+    pub output: Option<PathBuf>,
+
     /// Input counts file.
     pub src: PathBuf,
 }

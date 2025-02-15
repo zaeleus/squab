@@ -28,16 +28,18 @@ pub enum NormalizeError {
     Normalization(#[source] normalization::Error),
 }
 
-pub fn normalize<P, Q>(
+pub fn normalize<P, Q, R>(
     src: P,
     annotations_src: Q,
     feature_type: &str,
     id: &str,
     method: normalization::Method,
+    dst: Option<R>,
 ) -> Result<(), NormalizeError>
 where
     P: AsRef<Path>,
     Q: AsRef<Path>,
+    R: AsRef<Path>,
 {
     let annotations_src = annotations_src.as_ref();
 
@@ -65,8 +67,12 @@ where
         normalization::Method::Tpm => tpm::normalize(&lengths, &counts),
     };
 
-    let stdout = io::stdout().lock();
-    let mut writer = BufWriter::new(stdout);
+    let mut writer: Box<dyn Write> = if let Some(dst) = dst {
+        File::create(dst).map(BufWriter::new).map(Box::new)?
+    } else {
+        let stdout = io::stdout().lock();
+        Box::new(BufWriter::new(stdout))
+    };
 
     write_normalized_counts(&mut writer, &names, &normalized_counts)?;
 
