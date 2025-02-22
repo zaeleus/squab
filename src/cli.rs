@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use git_testament::{git_testament, render_testament};
 use noodles::sam::alignment::record::MappingQuality;
 
-use crate::{normalization::Method, StrandSpecificationOption};
+use crate::{StrandSpecificationOption, normalization::Method};
 
 git_testament!(TESTAMENT);
 

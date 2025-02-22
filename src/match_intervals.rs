@@ -2,7 +2,7 @@ use std::{io, ops::RangeInclusive};
 
 use noodles::{
     core::Position,
-    sam::alignment::record::cigar::{op::Kind, Op},
+    sam::alignment::record::cigar::{Op, op::Kind},
 };
 
 pub struct MatchIntervals<'r> {

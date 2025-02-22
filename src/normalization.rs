@@ -85,8 +85,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sum_nonoverlapping_feature_lengths(
-    ) -> Result<(), noodles::core::position::TryFromIntError> {
+    fn test_sum_nonoverlapping_feature_lengths()
+    -> Result<(), noodles::core::position::TryFromIntError> {
         let strand = gff::record::Strand::Forward;
 
         let features = [

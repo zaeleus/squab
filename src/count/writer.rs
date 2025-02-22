@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use super::{context::Counts, Context};
+use super::{Context, context::Counts};
 
 pub struct Writer<W> {
     inner: W,

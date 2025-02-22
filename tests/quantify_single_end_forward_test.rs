@@ -1,7 +1,7 @@
 use std::{env, fs, num::NonZeroUsize};
 
 use noodles::sam::alignment::record::MappingQuality;
-use squab::{commands::quantify, count::Filter, StrandSpecificationOption};
+use squab::{StrandSpecificationOption, commands::quantify, count::Filter};
 
 #[test]
 fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {

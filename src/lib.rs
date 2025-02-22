@@ -1,6 +1,6 @@
 pub use self::{
     commands::StrandSpecificationOption,
-    count::{count_paired_end_records, count_single_end_records, Context},
+    count::{Context, count_paired_end_records, count_single_end_records},
     feature::Feature,
     match_intervals::MatchIntervals,
     record_pairs::{RecordPairs, SegmentPosition},
@@ -76,7 +76,7 @@ pub fn read_features<R>(
 where
     R: BufRead,
 {
-    use noodles::gff::{record::attributes::field::Value, Line};
+    use noodles::gff::{Line, record::attributes::field::Value};
 
     let mut reference_sequence_names = ReferenceSequenceNames::new();
     let mut features = Features::new();

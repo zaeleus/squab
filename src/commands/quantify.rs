@@ -10,10 +10,10 @@ use noodles::{bam, bgzf};
 use tracing::{info, warn};
 
 use crate::{
-    build_interval_trees,
-    count::{self, count_paired_end_records, count_single_end_records, Filter},
-    detect::{detect_specification, LibraryLayout},
-    read_features, StrandSpecification, StrandSpecificationOption,
+    StrandSpecification, StrandSpecificationOption, build_interval_trees,
+    count::{self, Filter, count_paired_end_records, count_single_end_records},
+    detect::{LibraryLayout, detect_specification},
+    read_features,
 };
 
 #[allow(clippy::too_many_arguments)]
@@ -67,7 +67,9 @@ where
         detect_specification(&bam_src, &interval_trees)?;
 
     info!("detected library layout: {library_layout}");
-    info!("strand specification: {detected_strand_specification} (confidence: {strandedness_confidence:.2})");
+    info!(
+        "strand specification: {detected_strand_specification} (confidence: {strandedness_confidence:.2})"
+    );
 
     let strand_specification = match strand_specification_option {
         StrandSpecificationOption::None => StrandSpecification::None,

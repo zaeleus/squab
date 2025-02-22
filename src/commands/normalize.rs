@@ -9,9 +9,9 @@ use thiserror::Error;
 use tracing::info;
 
 use crate::{
-    counts,
+    Feature, counts,
     normalization::{self, fpkm, tpm},
-    read_features, Feature,
+    read_features,
 };
 
 #[derive(Debug, Error)]

@@ -7,10 +7,10 @@ use std::{io, thread};
 
 use clap::Parser;
 use squab::{
+    Cli,
     cli::{self, Command},
     commands,
     count::Filter,
-    Cli,
 };
 use tracing::info;
 

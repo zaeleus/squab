@@ -3,7 +3,7 @@ pub mod segment_position;
 pub use self::segment_position::SegmentPosition;
 
 use std::{
-    collections::{hash_map::Drain, HashMap},
+    collections::{HashMap, hash_map::Drain},
     io::{self, Read},
 };
 
@@ -123,7 +123,7 @@ mod tests {
     use noodles::sam::{
         self,
         alignment::{io::Write, record::Flags},
-        header::record::value::{map::ReferenceSequence, Map},
+        header::record::value::{Map, map::ReferenceSequence},
     };
 
     use super::*;
