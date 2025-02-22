@@ -37,12 +37,10 @@ where
             let mut records = reader.records();
 
             loop {
-                let mut chunk = Vec::with_capacity(CHUNK_SIZE);
-
-                for result in records.by_ref().take(CHUNK_SIZE) {
-                    let record = result?;
-                    chunk.push(record);
-                }
+                let chunk: Vec<_> = records
+                    .by_ref()
+                    .take(CHUNK_SIZE)
+                    .collect::<io::Result<_>>()?;
 
                 if chunk.is_empty() {
                     drop(tx);
@@ -139,14 +137,10 @@ where
 
         let reader_handle = scope.spawn(move || {
             loop {
-                let mut chunk = Vec::with_capacity(CHUNK_SIZE);
-
-                for _ in 0..CHUNK_SIZE {
-                    match record_pairs.next().transpose()? {
-                        Some(pair) => chunk.push(pair),
-                        None => break,
-                    }
-                }
+                let chunk: Vec<_> = record_pairs
+                    .by_ref()
+                    .take(CHUNK_SIZE)
+                    .collect::<io::Result<_>>()?;
 
                 if chunk.is_empty() {
                     drop(tx);
