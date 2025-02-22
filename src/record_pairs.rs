@@ -3,7 +3,7 @@ pub mod segment_position;
 pub use self::segment_position::SegmentPosition;
 
 use std::{
-    collections::{HashMap, hash_map::Drain},
+    collections::HashMap,
     io::{self, Read},
 };
 
@@ -101,18 +101,6 @@ fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
         record.alignment_start().transpose()?,
         -record.template_length(),
     ))
-}
-
-pub struct Singletons<'a> {
-    drain: Drain<'a, RecordKey, bam::Record>,
-}
-
-impl Iterator for Singletons<'_> {
-    type Item = bam::Record;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.drain.next().map(|(_, r)| r)
-    }
 }
 
 #[cfg(test)]
