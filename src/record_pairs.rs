@@ -71,6 +71,21 @@ where
     }
 }
 
+impl<R> Iterator for RecordPairs<R>
+where
+    R: Read,
+{
+    type Item = io::Result<(bam::Record, bam::Record)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.next_pair() {
+            Ok(Some(segments)) => Some(Ok(segments)),
+            Ok(None) => None,
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
 fn is_not_primary(record: &bam::Record) -> io::Result<bool> {
     let flags = record.flags();
     Ok(flags.is_secondary() || flags.is_supplementary())
