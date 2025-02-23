@@ -36,10 +36,10 @@ times aligned records intersect known gene annotations.
 ```
 Gene expression quantification
 
-Usage: squab quantify [OPTIONS] --output <OUTPUT> --annotations <ANNOTATIONS> <BAM>
+Usage: squab quantify [OPTIONS] --annotations <ANNOTATIONS> <SRC>
 
 Arguments:
-  <BAM>  Input alignment file
+  <SRC>  Input alignment file
 
 Options:
       --with-secondary-records
@@ -57,13 +57,13 @@ Options:
       --min-mapping-quality <MIN_MAPPING_QUALITY>
           [default: 10]
   -o, --output <OUTPUT>
-          Output destination for feature counts
+          Output destination
   -a, --annotations <ANNOTATIONS>
           Input annotations file (GFF3)
       --threads <THREADS>
           Force a specific number of threads
   -h, --help
-          Print help information
+          Print help (see more with '--help')
 ```
 
 The default output is a tab-delimited text file with two columns: the feature
@@ -84,37 +84,18 @@ using `squab quantify` or `htseq-count`.
 ```
 Normalize features counts
 
-Usage: squab normalize [OPTIONS] --annotations <ANNOTATIONS> <COUNTS>
+Usage: squab normalize [OPTIONS] --annotations <ANNOTATIONS> <SRC>
 
 Arguments:
-  <COUNTS>
-          Input counts file
+  <SRC>  Input counts file
 
 Options:
-  -t, --feature-type <FEATURE_TYPE>
-          Feature type to count
-
-          [default: exon]
-
-  -i, --id <ID>
-          Feature attribute to use as the feature identity
-
-          [default: gene_id]
-
-  -a, --annotations <ANNOTATIONS>
-          Input annotations file (GFF3)
-
-      --method <METHOD>
-          Quantification normalization method
-
-          [default: tpm]
-
-          Possible values:
-          - fpkm: fragments per kilobase per million mapped reads
-          - tpm:  transcripts per million
-
-  -h, --help
-          Print help information (use `-h` for a summary)
+  -t, --feature-type <FEATURE_TYPE>  Feature type to count [default: exon]
+  -i, --id <ID>                      Feature attribute to use as the feature identity [default: gene_id]
+  -a, --annotations <ANNOTATIONS>    Input annotations file (GFF3)
+      --method <METHOD>              Quantification normalization method [default: tpm] [possible values: fpkm, tpm]
+  -o, --output <OUTPUT>              Output destination
+  -h, --help                         Print help (see more with '--help')
 ```
 
 The output is a tab-delimited text file with two columns: the feature
