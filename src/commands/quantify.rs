@@ -80,8 +80,9 @@ where
 
     if strand_specification != detected_strand_specification {
         warn!(
-            "input strand specification ({:?}) does not match detected strandedness ({:?})",
-            strand_specification, detected_strand_specification,
+            expected = ?strand_specification,
+            actual = ?detected_strand_specification,
+            "strand specification mismatch",
         );
     }
 
