@@ -71,12 +71,10 @@ where
         "strand specification: {detected_strand_specification} (confidence: {strandedness_confidence:.2})"
     );
 
-    let strand_specification = match strand_specification_option {
-        StrandSpecificationOption::None => StrandSpecification::None,
-        StrandSpecificationOption::Forward => StrandSpecification::Forward,
-        StrandSpecificationOption::Reverse => StrandSpecification::Reverse,
-        StrandSpecificationOption::Auto => detected_strand_specification,
-    };
+    let strand_specification = strand_specification_from_option_or(
+        strand_specification_option,
+        detected_strand_specification,
+    );
 
     if strand_specification != detected_strand_specification {
         warn!(
@@ -126,4 +124,56 @@ where
     count_writer.write_stats(&ctx)?;
 
     Ok(())
+}
+
+fn strand_specification_from_option_or(
+    strand_specification_option: StrandSpecificationOption,
+    detected_strand_specification: StrandSpecification,
+) -> StrandSpecification {
+    match strand_specification_option {
+        StrandSpecificationOption::None => StrandSpecification::None,
+        StrandSpecificationOption::Forward => StrandSpecification::Forward,
+        StrandSpecificationOption::Reverse => StrandSpecification::Reverse,
+        StrandSpecificationOption::Auto => detected_strand_specification,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_strand_specification_from_option_or() {
+        assert_eq!(
+            strand_specification_from_option_or(
+                StrandSpecificationOption::None,
+                StrandSpecification::Forward
+            ),
+            StrandSpecification::None
+        );
+
+        assert_eq!(
+            strand_specification_from_option_or(
+                StrandSpecificationOption::Forward,
+                StrandSpecification::Reverse
+            ),
+            StrandSpecification::Forward
+        );
+
+        assert_eq!(
+            strand_specification_from_option_or(
+                StrandSpecificationOption::Reverse,
+                StrandSpecification::None
+            ),
+            StrandSpecification::Reverse
+        );
+
+        assert_eq!(
+            strand_specification_from_option_or(
+                StrandSpecificationOption::Auto,
+                StrandSpecification::None
+            ),
+            StrandSpecification::None
+        );
+    }
 }
