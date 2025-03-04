@@ -3,7 +3,7 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use std::{io, thread};
+use std::{io, num::NonZero, thread};
 
 use clap::Parser;
 use squab::{
@@ -18,10 +18,9 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
     let bam_src = options.src;
     let annotations_src = options.annotations;
 
-    let threads = match options.threads {
-        Some(n) => n,
-        None => thread::available_parallelism()?,
-    };
+    let worker_count = options
+        .threads
+        .unwrap_or_else(|| thread::available_parallelism().unwrap_or(NonZero::<usize>::MIN));
 
     let strand_specification_option = options.strand_specification;
 
@@ -32,7 +31,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
         options.with_nonunique_records,
     );
 
-    info!("using {} thread(s)", threads);
+    info!("using {} thread(s)", worker_count);
 
     commands::quantify(
         bam_src,
@@ -41,7 +40,7 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
         &options.id,
         filter,
         strand_specification_option,
-        threads,
+        worker_count,
         options.output,
     )
 }
