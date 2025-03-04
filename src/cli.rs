@@ -1,4 +1,4 @@
-use std::{num::NonZeroUsize, path::PathBuf};
+use std::{num::NonZero, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use git_testament::{git_testament, render_testament};
@@ -92,7 +92,13 @@ pub struct Quantify {
 
     /// Force a specific number of threads.
     #[arg(long)]
-    pub threads: Option<NonZeroUsize>,
+    pub threads: Option<NonZero<usize>>,
+
+    /// The number of workers to spawn.
+    ///
+    /// By default, this (usually) uses the number of available CPUs.
+    #[arg(long)]
+    pub worker_count: Option<NonZero<usize>>,
 
     /// Input alignment file.
     pub src: PathBuf,

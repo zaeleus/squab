@@ -12,14 +12,19 @@ use squab::{
     commands,
     count::Filter,
 };
-use tracing::info;
+use tracing::{info, warn};
 
-fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
+fn quantify(mut options: cli::Quantify) -> anyhow::Result<()> {
     let bam_src = options.src;
     let annotations_src = options.annotations;
 
+    if let Some(threads) = options.threads {
+        warn!("The --threads option is deprecated. Use `--worker-count` instead.");
+        options.worker_count = Some(threads);
+    }
+
     let worker_count = options
-        .threads
+        .worker_count
         .unwrap_or_else(|| thread::available_parallelism().unwrap_or(NonZero::<usize>::MIN));
 
     let strand_specification_option = options.strand_specification;
