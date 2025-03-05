@@ -1,15 +1,17 @@
-use std::{env, fs, num::NonZeroUsize};
+use std::{env, fs, num::NonZero};
 
 use noodles::sam::alignment::record::MappingQuality;
 use squab::{StrandSpecificationOption, commands::quantify, count::Filter};
+
+const MIN_MAPPING_QUALITY: MappingQuality = MappingQuality::new(10).unwrap();
 
 #[test]
 fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let feature_type = "exon";
     let id = "gene_id";
-    let filter = Filter::new(MappingQuality::try_from(10)?, false, false, false);
+    let filter = Filter::new(MIN_MAPPING_QUALITY, false, false, false);
     let strand_specification_option = StrandSpecificationOption::Auto;
-    let worker_count = NonZeroUsize::try_from(1)?;
+    let worker_count = NonZero::<usize>::MIN;
 
     let working_prefix = env::temp_dir();
     fs::create_dir_all(&working_prefix)?;
