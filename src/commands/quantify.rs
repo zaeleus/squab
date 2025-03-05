@@ -5,13 +5,13 @@ use std::{
     path::Path,
 };
 
-use anyhow::Context as AnyhowContext;
+use anyhow::Context as _;
 use noodles::{bam, bgzf};
 use tracing::{info, warn};
 
 use crate::{
-    StrandSpecification, StrandSpecificationOption, build_interval_trees,
-    count::{self, Filter, count_paired_end_records, count_single_end_records},
+    Context, StrandSpecification, StrandSpecificationOption, build_interval_trees,
+    count::{Filter, context::Counts, count_paired_end_records, count_single_end_records},
     detect::{LibraryLayout, detect_specification},
     read_features,
 };
@@ -103,7 +103,7 @@ where
         )?,
     };
 
-    let writer: Box<dyn Write> = if let Some(dst) = dst {
+    let mut writer: Box<dyn Write> = if let Some(dst) = dst {
         File::create(dst.as_ref())
             .map(BufWriter::new)
             .map(Box::new)
@@ -113,15 +113,13 @@ where
         Box::new(BufWriter::new(stdout))
     };
 
-    info!("writing counts");
-
-    let mut count_writer = count::Writer::new(writer);
-
     let mut feature_names: Vec<_> = features.keys().collect();
     feature_names.sort();
 
-    count_writer.write_counts(&feature_names, &ctx.counts)?;
-    count_writer.write_stats(&ctx)?;
+    info!("writing counts");
+
+    write_counts(&mut writer, &feature_names, &ctx.counts)?;
+    write_metadata(&mut writer, &ctx)?;
 
     Ok(())
 }
@@ -136,6 +134,35 @@ fn strand_specification_from_option_or(
         StrandSpecificationOption::Reverse => StrandSpecification::Reverse,
         StrandSpecificationOption::Auto => detected_strand_specification,
     }
+}
+
+const DELIMITER: char = '\t';
+
+fn write_counts<W>(writer: &mut W, feature_names: &[&String], counts: &Counts) -> io::Result<()>
+where
+    W: Write,
+{
+    const MISSING: u64 = 0;
+
+    for name in feature_names {
+        let count = counts.get(name.as_str()).copied().unwrap_or(MISSING);
+        writeln!(writer, "{name}{DELIMITER}{count}")?;
+    }
+
+    Ok(())
+}
+
+fn write_metadata<W>(writer: &mut W, ctx: &Context) -> io::Result<()>
+where
+    W: Write,
+{
+    writeln!(writer, "__no_feature{DELIMITER}{}", ctx.miss)?;
+    writeln!(writer, "__ambiguous{DELIMITER}{}", ctx.ambiguous)?;
+    writeln!(writer, "__too_low_aQual{DELIMITER}{}", ctx.low_quality)?;
+    writeln!(writer, "__not_aligned{DELIMITER}{}", ctx.unmapped)?;
+    writeln!(writer, "__alignment_not_unique{DELIMITER}{}", ctx.nonunique)?;
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -175,5 +202,53 @@ mod tests {
             ),
             StrandSpecification::None
         );
+    }
+
+    #[test]
+    fn test_write_counts() -> io::Result<()> {
+        let counts = [("AADAT", 302), ("CLN3", 37), ("PAK4", 145)]
+            .into_iter()
+            .collect();
+
+        let names = [
+            &String::from("AADAT"),
+            &String::from("CLN3"),
+            &String::from("NEO1"),
+            &String::from("PAK4"),
+        ];
+
+        let mut buf = Vec::new();
+        write_counts(&mut buf, &names, &counts)?;
+
+        let expected = b"AADAT\t302\nCLN3\t37\nNEO1\t0\nPAK4\t145\n";
+        assert_eq!(buf, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_write_metadata() -> io::Result<()> {
+        let ctx = Context {
+            miss: 735,
+            ambiguous: 5,
+            low_quality: 60,
+            unmapped: 8,
+            nonunique: 13,
+            ..Default::default()
+        };
+
+        let mut buf = Vec::new();
+        write_metadata(&mut buf, &ctx)?;
+
+        let expected = b"__no_feature\t735
+__ambiguous\t5
+__too_low_aQual\t60
+__not_aligned\t8
+__alignment_not_unique\t13
+";
+
+        assert_eq!(buf, expected);
+
+        Ok(())
     }
 }
