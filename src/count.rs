@@ -6,7 +6,7 @@ pub use self::{context::Context, filter::Filter};
 use std::{
     collections::HashSet,
     io::{self, Read},
-    num::NonZeroUsize,
+    num::NonZero,
     thread,
 };
 
@@ -24,7 +24,7 @@ pub fn count_single_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
-    worker_count: NonZeroUsize,
+    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,
@@ -123,7 +123,7 @@ pub fn count_paired_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
-    worker_count: NonZeroUsize,
+    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,

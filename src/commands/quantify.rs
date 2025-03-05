@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{self, BufWriter, Write},
-    num::NonZeroUsize,
+    num::NonZero,
     path::Path,
 };
 
@@ -24,7 +24,7 @@ pub fn quantify<P, Q, R>(
     id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
-    worker_count: NonZeroUsize,
+    worker_count: NonZero<usize>,
     dst: Option<R>,
 ) -> anyhow::Result<()>
 where

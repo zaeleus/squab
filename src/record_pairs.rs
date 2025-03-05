@@ -120,7 +120,7 @@ fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
 
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroUsize;
+    use std::num::NonZero;
 
     use bstr::BString;
     use noodles::sam::{
@@ -159,8 +159,8 @@ mod tests {
             .build();
 
         let header = sam::Header::builder()
-            .add_reference_sequence("sq0", Map::<ReferenceSequence>::new(NonZeroUsize::MIN))
-            .add_reference_sequence("sq1", Map::<ReferenceSequence>::new(NonZeroUsize::MIN))
+            .add_reference_sequence("sq0", Map::<ReferenceSequence>::new(NonZero::<usize>::MIN))
+            .add_reference_sequence("sq1", Map::<ReferenceSequence>::new(NonZero::<usize>::MIN))
             .build();
 
         let mut writer = bam::io::Writer::from(Vec::new());
