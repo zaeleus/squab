@@ -21,7 +21,7 @@ pub fn quantify<P, Q, R>(
     bam_src: P,
     annotations_src: Q,
     feature_type: &str,
-    id: &str,
+    feature_id: &str,
     filter: Filter,
     strand_specification_option: StrandSpecificationOption,
     worker_count: NonZero<usize>,
@@ -38,9 +38,10 @@ where
     let mut reader = bam::io::reader::Builder.build_from_path(bam_src.as_ref())?;
     let header = reader.read_header()?;
 
-    info!(src = ?annotations_src.as_ref(), feature_type, feature_id = id, "reading features");
+    info!(src = ?annotations_src.as_ref(), feature_type, feature_id, "reading features");
 
-    let (reference_sequence_names, features) = read_features(&mut gff_reader, feature_type, id)?;
+    let (reference_sequence_names, features) =
+        read_features(&mut gff_reader, feature_type, feature_id)?;
 
     info!(feature_count = features.len(), "read features");
 

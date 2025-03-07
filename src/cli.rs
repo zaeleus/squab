@@ -30,8 +30,14 @@ pub struct Normalize {
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    #[arg(short = 'i', long, default_value = "gene_id")]
+    ///
+    /// Deprecated. Use `feature-id` instead.
+    #[arg(long, default_value = "gene_id")]
     pub id: String,
+
+    /// Feature attribute to use as the feature identity.
+    #[arg(short = 'i', long, default_value = "gene_id")]
+    pub feature_id: String,
 
     /// Input annotations file (GFF3).
     #[arg(short = 'a', long)]
@@ -74,8 +80,14 @@ pub struct Quantify {
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    #[arg(short = 'i', long, default_value = "gene_id")]
+    ///
+    /// Deprecated. Use `feature-id` instead.
+    #[arg(long, default_value = "gene_id")]
     pub id: String,
+
+    /// Feature attribute to use as the feature identity.
+    #[arg(short = 'i', long, default_value = "gene_id")]
+    pub feature_id: String,
 
     #[arg(long, value_parser = parse_mapping_quality, default_value = "10")]
     pub min_mapping_quality: MappingQuality,

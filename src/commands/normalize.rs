@@ -32,7 +32,7 @@ pub fn normalize<P, Q, R>(
     src: P,
     annotations_src: Q,
     feature_type: &str,
-    id: &str,
+    feature_id: &str,
     method: normalization::Method,
     dst: Option<R>,
 ) -> Result<(), NormalizeError>
@@ -43,12 +43,12 @@ where
 {
     let annotations_src = annotations_src.as_ref();
 
-    info!(src = ?annotations_src, feature_type, feature_id = id, "reading features");
+    info!(src = ?annotations_src, feature_type, feature_id, "reading features");
 
     let mut gff_reader = crate::gff::open(annotations_src)
         .map_err(|e| NormalizeError::OpenFile(e, annotations_src.into()))?;
 
-    let (_, features) = read_features(&mut gff_reader, feature_type, id)
+    let (_, features) = read_features(&mut gff_reader, feature_type, feature_id)
         .map_err(NormalizeError::ReadAnnotations)?;
 
     info!(feature_count = features.len(), "read features");

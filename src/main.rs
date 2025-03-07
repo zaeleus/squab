@@ -14,9 +14,16 @@ use squab::{
 };
 use tracing::{info, warn};
 
+const DEFAULT_FEATURE_ID: &str = "gene_id";
+
 fn quantify(mut options: cli::Quantify) -> anyhow::Result<()> {
     let bam_src = options.src;
     let annotations_src = options.annotations;
+
+    if options.id != DEFAULT_FEATURE_ID {
+        warn!("The --id option is deprecated. Use `--feature-id` instead.");
+        options.feature_id = options.id.clone();
+    }
 
     if let Some(threads) = options.threads {
         warn!("The --threads option is deprecated. Use `--worker-count` instead.");
@@ -42,7 +49,7 @@ fn quantify(mut options: cli::Quantify) -> anyhow::Result<()> {
         bam_src,
         annotations_src,
         &options.feature_type,
-        &options.id,
+        &options.feature_id,
         filter,
         strand_specification_option,
         worker_count,
@@ -50,15 +57,20 @@ fn quantify(mut options: cli::Quantify) -> anyhow::Result<()> {
     )
 }
 
-fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
+fn normalize(mut options: cli::Normalize) -> anyhow::Result<()> {
     let counts_src = options.src;
     let annotations_src = options.annotations;
+
+    if options.id != DEFAULT_FEATURE_ID {
+        warn!("The --id option is deprecated. Use `--feature-id` instead.");
+        options.feature_id = options.id.clone();
+    }
 
     commands::normalize(
         counts_src,
         annotations_src,
         &options.feature_type,
-        &options.id,
+        &options.feature_id,
         options.method,
         options.output,
     )?;
