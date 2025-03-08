@@ -32,7 +32,7 @@ pub fn calculate_feature_lengths(
 }
 
 fn sum_nonoverlapping_feature_lengths(features: &[Feature]) -> usize {
-    merge_features(features).iter().map(|f| f.len()).sum()
+    merge_features(features).iter().map(|f| f.length()).sum()
 }
 
 /// Merges a list of overlapping features into a list of non-overlapping intervals.

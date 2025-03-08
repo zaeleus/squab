@@ -43,12 +43,8 @@ impl Feature {
         self.strand
     }
 
-    pub fn len(&self) -> usize {
+    pub fn length(&self) -> usize {
         usize::from(self.end) - usize::from(self.start) + 1
-    }
-
-    pub fn is_empty(&self) -> bool {
-        false
     }
 }
 
@@ -94,25 +90,9 @@ mod tests {
     }
 
     #[test]
-    fn test_len() -> Result<(), noodles::core::position::TryFromIntError> {
+    fn test_length() -> Result<(), noodles::core::position::TryFromIntError> {
         let feature = build_feature()?;
-        assert_eq!(feature.len(), 6);
-        Ok(())
-    }
-
-    #[test]
-    fn test_is_empty() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = Feature::new(
-            0,
-            Position::MIN,
-            Position::MIN,
-            gff::record::Strand::Forward,
-        );
-        assert!(!feature.is_empty());
-
-        let feature = build_feature()?;
-        assert!(!feature.is_empty());
-
+        assert_eq!(feature.length(), 6);
         Ok(())
     }
 }
