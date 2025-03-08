@@ -103,6 +103,8 @@ pub struct Quantify {
     pub annotations: PathBuf,
 
     /// Force a specific number of threads.
+    ///
+    /// Deprecated. Use `worker-count` instead.
     #[arg(long)]
     pub threads: Option<NonZero<usize>>,
 
