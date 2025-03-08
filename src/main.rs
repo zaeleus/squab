@@ -54,7 +54,9 @@ fn quantify(mut options: cli::Quantify) -> anyhow::Result<()> {
         strand_specification_option,
         worker_count,
         options.output,
-    )
+    )?;
+
+    Ok(())
 }
 
 fn normalize(mut options: cli::Normalize) -> anyhow::Result<()> {

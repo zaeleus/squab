@@ -2,15 +2,16 @@ use std::{
     fs::File,
     io::{self, BufWriter, Write},
     num::NonZero,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-use anyhow::Context as _;
 use noodles::{bam, bgzf};
+use thiserror::Error;
 use tracing::{info, warn};
 
 use crate::{
-    Context, StrandSpecification, StrandSpecificationOption, build_interval_trees,
+    Context, ReadFeaturesError, StrandSpecification, StrandSpecificationOption,
+    build_interval_trees,
     count::{Filter, context::Counts, count_paired_end_records, count_single_end_records},
     detect::{LibraryLayout, detect_specification},
     read_features,
@@ -18,7 +19,7 @@ use crate::{
 
 #[allow(clippy::too_many_arguments)]
 pub fn quantify<P, Q, R>(
-    bam_src: P,
+    src: P,
     annotations_src: Q,
     feature_type: &str,
     feature_id: &str,
@@ -26,19 +27,25 @@ pub fn quantify<P, Q, R>(
     strand_specification_option: StrandSpecificationOption,
     worker_count: NonZero<usize>,
     dst: Option<R>,
-) -> anyhow::Result<()>
+) -> Result<(), QuantifyError>
 where
     P: AsRef<Path>,
     Q: AsRef<Path>,
     R: AsRef<Path>,
 {
-    let mut gff_reader = crate::gff::open(annotations_src.as_ref())
-        .with_context(|| format!("Could not open {}", annotations_src.as_ref().display()))?;
+    let src = src.as_ref();
+    let annotations_src = annotations_src.as_ref();
 
-    let mut reader = bam::io::reader::Builder.build_from_path(bam_src.as_ref())?;
+    let mut gff_reader = crate::gff::open(annotations_src)
+        .map_err(|e| QuantifyError::OpenFile(e, annotations_src.into()))?;
+
+    let mut reader = bam::io::reader::Builder
+        .build_from_path(src)
+        .map_err(|e| QuantifyError::OpenFile(e, src.into()))?;
+
     let header = reader.read_header()?;
 
-    info!(src = ?annotations_src.as_ref(), feature_type, feature_id, "reading features");
+    info!(src = ?annotations_src, feature_type, feature_id, "reading features");
 
     let (reference_sequence_names, features) =
         read_features(&mut gff_reader, feature_type, feature_id)?;
@@ -48,15 +55,15 @@ where
     let interval_trees = build_interval_trees(&header, &reference_sequence_names, &features);
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
-        File::open(bam_src.as_ref())
+        File::open(src)
             .map(|f| bgzf::MultithreadedReader::with_worker_count(worker_count, f))
             .map(Box::new)
-            .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?
+            .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
     } else {
         bgzf::reader::Builder
-            .build_from_path(bam_src.as_ref())
+            .build_from_path(src)
             .map(Box::new)
-            .with_context(|| format!("Could not open {}", bam_src.as_ref().display()))?
+            .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
     };
 
     let mut reader = bam::io::Reader::from(decoder);
@@ -65,7 +72,7 @@ where
     info!("detecting library type");
 
     let (library_layout, detected_strand_specification, strandedness_confidence) =
-        detect_specification(&bam_src, &interval_trees)?;
+        detect_specification(src, &interval_trees)?;
 
     info!("detected library layout: {library_layout}");
     info!(
@@ -105,10 +112,12 @@ where
     };
 
     let mut writer: Box<dyn Write> = if let Some(dst) = dst {
-        File::create(dst.as_ref())
+        let dst = dst.as_ref();
+
+        File::create(dst)
             .map(BufWriter::new)
             .map(Box::new)
-            .with_context(|| format!("Could not open {}", dst.as_ref().display()))?
+            .map_err(|e| QuantifyError::CreateFile(e, dst.into()))?
     } else {
         let stdout = io::stdout().lock();
         Box::new(BufWriter::new(stdout))
@@ -123,6 +132,18 @@ where
     write_metadata(&mut writer, &ctx)?;
 
     Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum QuantifyError {
+    #[error("I/O error")]
+    Io(#[from] io::Error),
+    #[error("could not open file: {1}")]
+    OpenFile(#[source] io::Error, PathBuf),
+    #[error("could not create file: {1}")]
+    CreateFile(#[source] io::Error, PathBuf),
+    #[error("invalid annotations")]
+    ReadAnnotations(#[from] ReadFeaturesError),
 }
 
 fn strand_specification_from_option_or(
