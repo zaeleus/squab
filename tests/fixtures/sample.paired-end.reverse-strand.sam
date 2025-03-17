@@ -1,0 +1,20 @@
+@HD	VN:1.6	SO:coordinate
+@SQ	SN:sq0	LN:32
+@SQ	SN:sq1	LN:32
+@SQ	SN:sq2	LN:32
+@CO	paired end, reverse strand example
+r00	99	sq0	1	255	5M	sq1	6	0	*	*	CO:Z:Event::Miss
+r00	147	sq0	6	255	5M	sq1	1	0	*	*	CO:Z:Event::Hit("sq0g0")
+r01	99	sq1	1	255	5M	sq1	6	0	*	*	CO:Z:Event::Hit("sq1g0") ┐
+r01	147	sq1	6	255	5M	sq1	1	0	*	*	CO:Z:Event::Hit("sq1g0") ┘
+r02	99	sq1	11	255	5M	sq1	16	0	*	*	CO:Z:Event::Miss ┐
+r02	147	sq1	16	255	5M	sq1	11	0	*	*	CO:Z:Event::Miss ┘
+r03	83	sq2	6	255	5M	sq2	11	0	*	*	CO:Z:Event::Ambiguous ┐
+r03	163	sq2	11	255	5M	sq2	6	0	*	*	CO:Z:Event::Ambiguous ┘
+r04	99	sq2	12	0	5M	sq2	13	0	*	*	CO:Z:Event::LowQuality ┐
+r04	147	sq2	13	0	5M	sq2	12	0	*	*	CO:Z:Event::LowQuality ┘
+r05	99	sq2	14	255	1M	sq2	16	0	*	*	CO:Z:Event::Nonunique ┐	NH:i:2
+r05	147	sq2	16	255	1M	sq2	14	0	*	*	CO:Z:Event::Nonunique ┘	NH:i:2
+r06	147	sq2	11	255	1M	sq2	13	0	*	*	CO:Z:Event::Hit("sq2g1"); missing mate
+r07	109	*	0	255	*	*	0	0	*	*	CO:Z:Event::Unmapped ┐
+r07	157	*	0	255	*	*	0	0	*	*	CO:Z:Event::Unmapped ┘
