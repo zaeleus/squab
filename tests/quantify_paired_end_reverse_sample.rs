@@ -1,19 +1,11 @@
-use std::{
-    env,
-    fs::{self, File},
-    io::{self, BufReader},
-    num::NonZero,
-    path::Path,
-};
+mod common;
 
-use noodles::{
-    bam,
-    sam::{
-        self,
-        alignment::{io::Write, record::MappingQuality},
-    },
-};
+use std::{env, fs, num::NonZero};
+
+use noodles::sam::alignment::record::MappingQuality;
 use squab::{StrandSpecificationOption, commands::quantify, count::Filter};
+
+use self::common::convert_sam_to_bam;
 
 const MIN_MAPPING_QUALITY: MappingQuality = MappingQuality::new(10).unwrap();
 
@@ -59,28 +51,6 @@ __alignment_not_unique\t1
 ";
 
     assert_eq!(actual, expected);
-
-    Ok(())
-}
-
-fn convert_sam_to_bam<P, Q>(src: P, dst: Q) -> io::Result<()>
-where
-    P: AsRef<Path>,
-    Q: AsRef<Path>,
-{
-    let mut reader = File::open(src)
-        .map(BufReader::new)
-        .map(sam::io::Reader::new)?;
-
-    let header = reader.read_header()?;
-
-    let mut writer = File::create(dst).map(bam::io::Writer::new)?;
-    writer.write_header(&header)?;
-
-    for result in reader.records() {
-        let record = result?;
-        writer.write_alignment_record(&header, &record)?;
-    }
 
     Ok(())
 }

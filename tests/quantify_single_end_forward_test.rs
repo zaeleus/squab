@@ -1,7 +1,11 @@
+mod common;
+
 use std::{env, fs, num::NonZero};
 
 use noodles::sam::alignment::record::MappingQuality;
 use squab::{StrandSpecificationOption, commands::quantify, count::Filter};
+
+use self::common::convert_sam_to_bam;
 
 const MIN_MAPPING_QUALITY: MappingQuality = MappingQuality::new(10).unwrap();
 
@@ -16,20 +20,23 @@ fn test_quantify_with_single_end_forward_sample() -> anyhow::Result<()> {
     let working_prefix = env::temp_dir();
     fs::create_dir_all(&working_prefix)?;
 
-    let results_dst = working_prefix.join("out.txt");
+    let src = working_prefix.join("in.bam");
+    convert_sam_to_bam("tests/fixtures/sample.single-end.forward-strand.sam", &src)?;
+
+    let dst = working_prefix.join("out.txt");
 
     quantify(
-        "tests/fixtures/sample.single-end.forward-strand.bam",
+        src,
         "tests/fixtures/annotations.gff3",
         feature_type,
         id,
         filter,
         strand_specification_option,
         worker_count,
-        Some(&results_dst),
+        Some(&dst),
     )?;
 
-    let actual = fs::read_to_string(results_dst)?;
+    let actual = fs::read_to_string(dst)?;
 
     let expected = "\
 sq0g0\t4
