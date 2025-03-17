@@ -36,8 +36,6 @@ impl TryFrom<sam::alignment::record::Flags> for SegmentPosition {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
-
     use super::*;
 
     #[test]
