@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_sum_nonoverlapping_feature_lengths()
     -> Result<(), noodles::core::position::TryFromIntError> {
-        let strand = gff::record::Strand::Forward;
+        let strand = gff::feature::record::Strand::Forward;
 
         let features = [
             Feature::new(0, Position::try_from(2)?, Position::try_from(5)?, strand),
@@ -106,7 +106,7 @@ mod tests {
 
     #[test]
     fn test_merge_features() -> Result<(), noodles::core::position::TryFromIntError> {
-        let strand = gff::record::Strand::Forward;
+        let strand = gff::feature::record::Strand::Forward;
 
         let features = [
             Feature::new(0, Position::try_from(2)?, Position::try_from(5)?, strand),

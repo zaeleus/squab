@@ -36,7 +36,7 @@ use thiserror::Error;
 pub type ReferenceSequenceNames = IndexSet<String>;
 pub type Features = HashMap<String, Vec<Feature>>;
 
-pub type Entry<'f> = (&'f str, noodles::gff::record::Strand);
+pub type Entry<'f> = (&'f str, noodles::gff::feature::record::Strand);
 pub type IntervalTrees<'f> = Vec<IntervalTree<Position, Entry<'f>>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_read_features() -> anyhow::Result<()> {
-        use noodles::gff::record::Strand;
+        use noodles::gff::feature::record::Strand;
 
         let data = b"##gff-version 3
 sq0\t.\texon\t1\t10\t.\t+\t.\tID=exon0;gene_id=gene0;gene_name=NDLS_gene0

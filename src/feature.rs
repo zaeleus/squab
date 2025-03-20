@@ -5,7 +5,7 @@ pub struct Feature {
     reference_sequence_id: usize,
     start: Position,
     end: Position,
-    strand: gff::record::Strand,
+    strand: gff::feature::record::Strand,
 }
 
 impl Feature {
@@ -13,7 +13,7 @@ impl Feature {
         reference_sequence_id: usize,
         start: Position,
         end: Position,
-        strand: gff::record::Strand,
+        strand: gff::feature::record::Strand,
     ) -> Self {
         Self {
             reference_sequence_id,
@@ -39,7 +39,7 @@ impl Feature {
         &mut self.end
     }
 
-    pub fn strand(&self) -> gff::record::Strand {
+    pub fn strand(&self) -> gff::feature::record::Strand {
         self.strand
     }
 
@@ -57,7 +57,7 @@ mod tests {
             0,
             Position::try_from(8)?,
             Position::try_from(13)?,
-            gff::record::Strand::Forward,
+            gff::feature::record::Strand::Forward,
         ))
     }
 
@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test_strand() -> Result<(), noodles::core::position::TryFromIntError> {
         let feature = build_feature()?;
-        assert_eq!(feature.strand(), gff::record::Strand::Forward);
+        assert_eq!(feature.strand(), gff::feature::record::Strand::Forward);
         Ok(())
     }
 
