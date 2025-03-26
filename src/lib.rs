@@ -1,12 +1,5 @@
-pub use self::{
-    commands::StrandSpecificationOption,
-    count::{Context, count_paired_end_records, count_single_end_records},
-    feature::Feature,
-    match_intervals::MatchIntervals,
-    record_pairs::{RecordPairs, SegmentPosition},
-};
-
 pub mod cli;
+pub mod collections;
 pub mod commands;
 pub mod count;
 pub mod counts;
@@ -17,8 +10,6 @@ mod match_intervals;
 pub mod normalization;
 pub mod record_pairs;
 
-pub use self::cli::Cli;
-
 use std::{
     collections::HashMap,
     fmt,
@@ -26,12 +17,21 @@ use std::{
 };
 
 use indexmap::IndexSet;
-use interval_tree::IntervalTree;
 use noodles::{
     core::{self as core, Position},
     sam,
 };
 use thiserror::Error;
+
+use self::collections::IntervalTree;
+pub use self::{
+    cli::Cli,
+    commands::StrandSpecificationOption,
+    count::{Context, count_paired_end_records, count_single_end_records},
+    feature::Feature,
+    match_intervals::MatchIntervals,
+    record_pairs::{RecordPairs, SegmentPosition},
+};
 
 pub type ReferenceSequenceNames = IndexSet<String>;
 pub type Features = HashMap<String, Vec<Feature>>;
@@ -134,8 +134,7 @@ pub fn build_interval_trees<'f>(
 ) -> IntervalTrees<'f> {
     let reference_sequences = header.reference_sequences();
 
-    let mut interval_trees = Vec::new();
-    interval_trees.resize_with(reference_sequences.len(), IntervalTree::new);
+    let mut raw_entries = vec![Vec::new(); reference_sequences.len()];
 
     for (name, segments) in features {
         for feature in segments {
@@ -154,13 +153,15 @@ pub fn build_interval_trees<'f>(
             };
 
             // SAFETY: `intervals_trees.len() == reference_sequences.len()`
-            let tree = &mut interval_trees[i];
-
-            tree.insert(start..=end, (name.as_str(), strand));
+            let entries = &mut raw_entries[i];
+            entries.push((start..=end, (name.as_str(), strand)));
         }
     }
 
-    interval_trees
+    raw_entries
+        .into_iter()
+        .map(|entries| entries.into_iter().collect())
+        .collect()
 }
 
 #[cfg(test)]

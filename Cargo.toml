@@ -19,7 +19,6 @@ crossbeam-channel = "0.5.6"
 flate2 = "1.0.14"
 git-testament = "0.2.0"
 indexmap = "2.7.1"
-interval-tree = { git = "https://github.com/zaeleus/interval-tree.git", rev = "e303d7254d53de5c418d6079d4b66c30c10958d4" }
 mimalloc = "0.1.43"
 noodles = { version = "0.95.0", features = ["bam", "bgzf", "core", "gff", "sam"] }
 noodles-bgzf = { version = "0.37.0", features = ["libdeflate"] }

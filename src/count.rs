@@ -1,8 +1,6 @@
 pub mod context;
 mod filter;
 
-pub use self::{context::Context, filter::Filter};
-
 use std::{
     collections::HashSet,
     io::{self, Read},
@@ -10,12 +8,15 @@ use std::{
     thread,
 };
 
-use crate::{Entry, IntervalTrees, MatchIntervals, RecordPairs, StrandSpecification};
-use interval_tree::IntervalTree;
 use noodles::{bam, core::Position};
 use tracing::warn;
 
 use self::context::Event;
+pub use self::{context::Context, filter::Filter};
+use crate::{
+    Entry, IntervalTrees, MatchIntervals, RecordPairs, StrandSpecification,
+    collections::IntervalTree,
+};
 
 const CHUNK_SIZE: usize = 8192;
 
@@ -300,9 +301,7 @@ fn intersect<'f>(
     for result in intervals {
         let interval = result?;
 
-        for entry in interval_tree.find(interval.clone()) {
-            let (name, strand) = entry.get();
-
+        for (_, (name, strand)) in interval_tree.find(interval.clone()) {
             if strand_specification == StrandSpecification::None
                 || (*strand == Strand::Reverse && is_reverse_complemented)
                 || (*strand == Strand::Forward && !is_reverse_complemented)

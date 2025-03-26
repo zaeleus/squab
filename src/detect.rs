@@ -1,6 +1,5 @@
 use std::{fmt, fs::File, io, path::Path};
 
-use interval_tree::IntervalTree;
 use noodles::{
     bam,
     core::Position,
@@ -8,7 +7,9 @@ use noodles::{
     sam::{self, alignment::Record},
 };
 
-use crate::{Entry, IntervalTrees, SegmentPosition, StrandSpecification};
+use crate::{
+    Entry, IntervalTrees, SegmentPosition, StrandSpecification, collections::IntervalTree,
+};
 
 const MAX_RECORDS: usize = 524_288;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
@@ -66,7 +67,7 @@ impl TryFrom<gff::feature::record::Strand> for Strand {
 
 fn count_paired_end_record(
     counts: &mut Counts,
-    tree: &IntervalTree<Position, Entry>,
+    interval_tree: &IntervalTree<Position, Entry>,
     flags: sam::alignment::record::Flags,
     start: Position,
     end: Position,
@@ -75,10 +76,8 @@ fn count_paired_end_record(
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     let record_strand = Strand::from(flags);
 
-    for entry in tree.find(start..=end) {
-        let strand = entry.get().1;
-
-        let feature_strand = match Strand::try_from(strand) {
+    for (_, (_, strand)) in interval_tree.find(start..=end) {
+        let feature_strand = match Strand::try_from(*strand) {
             Ok(s) => s,
             Err(_) => continue,
         };
@@ -106,17 +105,15 @@ fn count_paired_end_record(
 
 fn count_single_end_record(
     counts: &mut Counts,
-    tree: &IntervalTree<Position, Entry>,
+    interval_tree: &IntervalTree<Position, Entry>,
     flags: sam::alignment::record::Flags,
     start: Position,
     end: Position,
 ) {
     let record_strand = Strand::from(flags);
 
-    for entry in tree.find(start..=end) {
-        let strand = entry.get().1;
-
-        let feature_strand = match Strand::try_from(strand) {
+    for (_, (_, strand)) in interval_tree.find(start..=end) {
+        let feature_strand = match Strand::try_from(*strand) {
             Ok(s) => s,
             Err(_) => continue,
         };
