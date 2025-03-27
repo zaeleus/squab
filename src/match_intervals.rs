@@ -34,11 +34,16 @@ impl Iterator for MatchIntervals<'_> {
 
             let len = op.len();
 
+            if len == 0 {
+                continue;
+            }
+
             match op.kind() {
                 Kind::Match | Kind::SequenceMatch | Kind::SequenceMismatch => {
                     let start = self.prev_alignment_start;
 
                     let end = start
+                        // SAFETY: `len` > 0.
                         .checked_add(len - 1)
                         .expect("attempt to add with overflow");
 
