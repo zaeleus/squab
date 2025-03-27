@@ -11,18 +11,35 @@ where
     P: AsRef<Path>,
 {
     let path = src.as_ref();
-    let extension = path.extension();
     let file = File::open(path)?;
 
-    match extension.and_then(|ext| ext.to_str()) {
-        Some("gz") => {
-            let decoder = MultiGzDecoder::new(file);
-            let reader = BufReader::new(decoder);
-            Ok(noodles::gff::Reader::new(Box::new(reader)))
-        }
-        _ => {
-            let reader = BufReader::new(file);
-            Ok(noodles::gff::Reader::new(Box::new(reader)))
-        }
+    let inner: Box<dyn BufRead> = if is_gzip(path) {
+        let decoder = MultiGzDecoder::new(file);
+        Box::new(BufReader::new(decoder))
+    } else {
+        Box::new(BufReader::new(file))
+    };
+
+    Ok(noodles::gff::Reader::new(Box::new(inner)))
+}
+
+fn is_gzip<P>(src: P) -> bool
+where
+    P: AsRef<Path>,
+{
+    src.as_ref()
+        .extension()
+        .map(|ext| ext == "gz")
+        .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_gzip() {
+        assert!(is_gzip("in.txt.gz"));
+        assert!(!is_gzip("in.txt"));
     }
 }
