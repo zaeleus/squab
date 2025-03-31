@@ -17,19 +17,22 @@ impl SegmentPosition {
 }
 
 #[derive(Clone, Debug, Error, Eq, PartialEq)]
-#[error("neither read 1 nor read 2 flag is set")]
-pub struct TryFromFlagsError;
+pub enum TryFromFlagsError {
+    #[error("ambiguous segment position")]
+    Ambiguous,
+    #[error("missing segment position")]
+    Missing,
+}
 
 impl TryFrom<sam::alignment::record::Flags> for SegmentPosition {
     type Error = TryFromFlagsError;
 
     fn try_from(flags: sam::alignment::record::Flags) -> Result<Self, Self::Error> {
-        if flags.is_first_segment() {
-            Ok(SegmentPosition::First)
-        } else if flags.is_last_segment() {
-            Ok(SegmentPosition::Last)
-        } else {
-            Err(TryFromFlagsError)
+        match (flags.is_first_segment(), flags.is_last_segment()) {
+            (true, true) => Err(TryFromFlagsError::Ambiguous),
+            (true, false) => Ok(SegmentPosition::First),
+            (false, true) => Ok(SegmentPosition::Last),
+            (false, false) => Err(TryFromFlagsError::Missing),
         }
     }
 }
@@ -48,13 +51,26 @@ mod tests {
     fn test_try_from_flag() {
         use sam::alignment::record::Flags;
 
-        let flags = Flags::SEGMENTED | Flags::FIRST_SEGMENT;
-        assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::First));
+        assert_eq!(
+            SegmentPosition::try_from(Flags::SEGMENTED | Flags::FIRST_SEGMENT),
+            Ok(SegmentPosition::First)
+        );
 
-        let flags = Flags::SEGMENTED | Flags::LAST_SEGMENT;
-        assert_eq!(SegmentPosition::try_from(flags), Ok(SegmentPosition::Last));
+        assert_eq!(
+            SegmentPosition::try_from(Flags::SEGMENTED | Flags::LAST_SEGMENT),
+            Ok(SegmentPosition::Last)
+        );
 
-        let flags = Flags::SEGMENTED;
-        assert_eq!(SegmentPosition::try_from(flags), Err(TryFromFlagsError));
+        assert_eq!(
+            SegmentPosition::try_from(
+                Flags::SEGMENTED | Flags::FIRST_SEGMENT | Flags::LAST_SEGMENT
+            ),
+            Err(TryFromFlagsError::Ambiguous)
+        );
+
+        assert_eq!(
+            SegmentPosition::try_from(Flags::SEGMENTED),
+            Err(TryFromFlagsError::Missing)
+        );
     }
 }
