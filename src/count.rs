@@ -9,7 +9,6 @@ use std::{
 };
 
 use noodles::{bam, core::Position};
-use tracing::warn;
 
 use self::context::Event;
 pub use self::{context::Context, filter::Filter};
@@ -191,18 +190,9 @@ where
         Ok::<_, io::Error>((ctx, record_pairs))
     })?;
 
-    let unmatched_records = record_pairs.unmatched_records();
-    let unmatched_record_count = unmatched_records.len();
-
-    if unmatched_record_count > 0 {
-        warn!(unmatched_record_count, "found unmatched record");
-
-        for record in unmatched_records {
-            let event =
-                count_single_end_record(interval_trees, filter, strand_specification, &record)?;
-
-            ctx.add_event(event);
-        }
+    for record in record_pairs.unmatched_records() {
+        let event = count_single_end_record(interval_trees, filter, strand_specification, &record)?;
+        ctx.add_event(event);
     }
 
     Ok(ctx)

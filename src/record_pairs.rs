@@ -7,23 +7,14 @@ use std::{
     io::{self, Read},
 };
 
-use noodles::{bam, core::Position};
-type RecordKey = (
-    Option<Vec<u8>>,
-    SegmentPosition,
-    Option<usize>,
-    Option<Position>,
-    Option<usize>,
-    Option<Position>,
-    i32,
-);
+use noodles::bam;
 
 pub struct RecordPairs<R>
 where
     R: Read,
 {
     reader: bam::io::Reader<R>,
-    cache: HashMap<RecordKey, bam::Record>,
+    cache: HashMap<Vec<u8>, Vec<bam::Record>>,
     primary_only: bool,
 }
 
@@ -40,6 +31,8 @@ where
     }
 
     pub fn next_pair(&mut self) -> io::Result<Option<(bam::Record, bam::Record)>> {
+        use std::collections::hash_map::Entry;
+
         loop {
             let mut record = bam::Record::default();
 
@@ -51,23 +44,40 @@ where
                 continue;
             }
 
-            let mate_key = mate_key(&record)?;
+            let name = record.name().unwrap();
 
-            if let Some(mate) = self.cache.remove(&mate_key) {
-                return match mate_key.1 {
-                    SegmentPosition::First => Ok(Some((mate, record))),
-                    SegmentPosition::Last => Ok(Some((record, mate))),
-                };
+            match self.cache.entry(name.to_vec()) {
+                Entry::Occupied(mut entry) => {
+                    let records = entry.get_mut();
+
+                    let Some(i) = find_mate(records, &record)? else {
+                        records.push(record);
+                        continue;
+                    };
+
+                    let mate = records.swap_remove(i);
+
+                    if records.is_empty() {
+                        entry.remove();
+                    }
+
+                    let segment_position = SegmentPosition::try_from(record.flags())
+                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+                    return match segment_position {
+                        SegmentPosition::First => Ok(Some((record, mate))),
+                        SegmentPosition::Last => Ok(Some((mate, record))),
+                    };
+                }
+                Entry::Vacant(entry) => {
+                    entry.insert(vec![record]);
+                }
             }
-
-            let key = key(&record)?;
-
-            self.cache.insert(key, record);
         }
     }
 
-    pub fn unmatched_records(self) -> impl ExactSizeIterator<Item = bam::Record> {
-        self.cache.into_values()
+    pub fn unmatched_records(self) -> impl Iterator<Item = bam::Record> {
+        self.cache.into_values().flatten()
     }
 }
 
@@ -91,31 +101,39 @@ fn is_not_primary(record: &bam::Record) -> io::Result<bool> {
     Ok(flags.is_secondary() || flags.is_supplementary())
 }
 
-fn key(record: &bam::Record) -> io::Result<RecordKey> {
-    Ok((
-        record.name().map(|name| name.to_vec()),
-        SegmentPosition::try_from(record.flags())
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        record.reference_sequence_id().transpose()?,
-        record.alignment_start().transpose()?,
-        record.mate_reference_sequence_id().transpose()?,
-        record.mate_alignment_start().transpose()?,
-        record.template_length(),
-    ))
+fn find_mate(records: &[bam::Record], record: &bam::Record) -> io::Result<Option<usize>> {
+    for (i, mate) in records.iter().enumerate() {
+        if is_mate(record, mate)? {
+            return Ok(Some(i));
+        }
+    }
+
+    Ok(None)
 }
 
-fn mate_key(record: &bam::Record) -> io::Result<RecordKey> {
-    Ok((
-        record.name().map(|name| name.to_vec()),
-        SegmentPosition::try_from(record.flags())
+fn is_mate(a: &bam::Record, b: &bam::Record) -> io::Result<bool> {
+    let a_fields = (
+        SegmentPosition::try_from(a.flags())
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
+        a.reference_sequence_id().transpose()?,
+        a.alignment_start().transpose()?,
+        a.mate_reference_sequence_id().transpose()?,
+        a.mate_alignment_start().transpose()?,
+        a.template_length(),
+    );
+
+    let b_fields = (
+        SegmentPosition::try_from(b.flags())
             .map(|p| p.mate())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?,
-        record.mate_reference_sequence_id().transpose()?,
-        record.mate_alignment_start().transpose()?,
-        record.reference_sequence_id().transpose()?,
-        record.alignment_start().transpose()?,
-        -record.template_length(),
-    ))
+        b.mate_reference_sequence_id().transpose()?,
+        b.mate_alignment_start().transpose()?,
+        b.reference_sequence_id().transpose()?,
+        b.alignment_start().transpose()?,
+        -b.template_length(),
+    );
+
+    Ok(a_fields == b_fields)
 }
 
 #[cfg(test)]
@@ -123,10 +141,13 @@ mod tests {
     use std::num::NonZero;
 
     use bstr::BString;
-    use noodles::sam::{
-        self,
-        alignment::{io::Write, record::Flags},
-        header::record::value::{Map, map::ReferenceSequence},
+    use noodles::{
+        core::Position,
+        sam::{
+            self,
+            alignment::{io::Write, record::Flags},
+            header::record::value::{Map, map::ReferenceSequence},
+        },
     };
 
     use super::*;
@@ -179,42 +200,9 @@ mod tests {
     }
 
     #[test]
-    fn test_key() -> Result<(), Box<dyn std::error::Error>> {
-        let (r1, _) = build_record_pair()?;
-
-        let actual = key(&r1)?;
-        let expected = (
-            r1.name().map(|name| name.to_vec()),
-            SegmentPosition::First,
-            r1.reference_sequence_id().transpose()?,
-            r1.alignment_start().transpose()?,
-            r1.mate_reference_sequence_id().transpose()?,
-            r1.mate_alignment_start().transpose()?,
-            r1.template_length(),
-        );
-
-        assert_eq!(actual, expected);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_mate_key() -> Result<(), Box<dyn std::error::Error>> {
-        let (r1, _) = build_record_pair()?;
-
-        let actual = mate_key(&r1)?;
-        let expected = (
-            r1.name().map(|name| name.to_vec()),
-            SegmentPosition::Last,
-            r1.mate_reference_sequence_id().transpose()?,
-            r1.mate_alignment_start().transpose()?,
-            r1.reference_sequence_id().transpose()?,
-            r1.alignment_start().transpose()?,
-            -r1.template_length(),
-        );
-
-        assert_eq!(actual, expected);
-
+    fn test_is_mate() -> Result<(), Box<dyn std::error::Error>> {
+        let (r1, r2) = build_record_pair()?;
+        assert!(is_mate(&r1, &r2)?);
         Ok(())
     }
 }
