@@ -1,4 +1,4 @@
-use std::{io, ops::RangeInclusive};
+use std::{io, num::NonZero, ops::RangeInclusive};
 
 use noodles::{
     core::Position,
@@ -21,10 +21,10 @@ impl<'r> MatchIntervals<'r> {
         }
     }
 
-    fn consume_reference(&mut self, len: usize) {
+    fn consume_reference(&mut self, len: NonZero<usize>) {
         self.reference_position = self
             .reference_position
-            .checked_add(len)
+            .checked_add(len.get())
             .expect("attempt to add with overflow");
     }
 }
@@ -39,23 +39,15 @@ impl Iterator for MatchIntervals<'_> {
                 Err(e) => return Some(Err(e)),
             };
 
-            let len = op.len();
-
-            if len == 0 {
+            let Some(len) = NonZero::new(op.len()) else {
                 continue;
-            }
+            };
 
             match op.kind() {
                 Kind::Match | Kind::SequenceMatch | Kind::SequenceMismatch => {
-                    let start = self.reference_position;
-
-                    let end = start
-                        .checked_add(len - 1)
-                        .expect("attempt to add with overflow");
-
+                    let interval = build_interval(self.reference_position, len);
                     self.consume_reference(len);
-
-                    return Some(Ok(start..=end));
+                    return Some(Ok(interval));
                 }
                 Kind::Deletion | Kind::Skip => self.consume_reference(len),
                 _ => continue,
@@ -64,8 +56,18 @@ impl Iterator for MatchIntervals<'_> {
     }
 }
 
+fn build_interval(start: Position, len: NonZero<usize>) -> RangeInclusive<Position> {
+    let end = start
+        .checked_add(len.get() - 1)
+        .expect("attempt to add with overflow");
+
+    start..=end
+}
+
 #[cfg(test)]
 mod tests {
+    use std::num;
+
     use super::*;
 
     #[test]
@@ -93,6 +95,26 @@ mod tests {
         ];
 
         assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_build_interval() -> Result<(), num::TryFromIntError> {
+        assert_eq!(
+            build_interval(Position::MIN, NonZero::<usize>::MIN),
+            Position::MIN..=Position::MIN
+        );
+
+        assert_eq!(
+            build_interval(Position::MIN, NonZero::try_from(4)?),
+            Position::MIN..=Position::try_from(4)?
+        );
+
+        assert_eq!(
+            build_interval(Position::try_from(3)?, NonZero::try_from(5)?),
+            Position::try_from(3)?..=Position::try_from(7)?
+        );
 
         Ok(())
     }
