@@ -2,19 +2,17 @@ pub mod segment_position;
 
 pub use self::segment_position::SegmentPosition;
 
-use std::{
-    collections::HashMap,
-    io::{self, Read},
-};
+use std::io::{self, Read};
 
 use noodles::bam;
+use rustc_hash::FxHashMap;
 
 pub struct RecordPairs<R>
 where
     R: Read,
 {
     reader: bam::io::Reader<R>,
-    cache: HashMap<Vec<u8>, Vec<bam::Record>>,
+    cache: FxHashMap<Vec<u8>, Vec<bam::Record>>,
     primary_only: bool,
 }
 
@@ -25,7 +23,7 @@ where
     pub fn new(reader: bam::io::Reader<R>, primary_only: bool) -> Self {
         Self {
             reader,
-            cache: HashMap::new(),
+            cache: FxHashMap::default(),
             primary_only,
         }
     }
