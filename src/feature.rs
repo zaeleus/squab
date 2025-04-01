@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reference_sequence_name() -> Result<(), noodles::core::position::TryFromIntError> {
+    fn test_reference_sequence_id() -> Result<(), noodles::core::position::TryFromIntError> {
         let feature = build_feature()?;
         assert_eq!(feature.reference_sequence_id(), 0);
         Ok(())
