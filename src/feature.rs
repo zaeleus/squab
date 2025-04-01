@@ -52,47 +52,40 @@ impl Feature {
 mod tests {
     use super::*;
 
-    fn build_feature() -> Result<Feature, noodles::core::position::TryFromIntError> {
-        Ok(Feature::new(
-            0,
-            Position::try_from(8)?,
-            Position::try_from(13)?,
-            gff::feature::record::Strand::Forward,
-        ))
+    const START: Position = Position::new(8).unwrap();
+    const END: Position = Position::new(13).unwrap();
+
+    fn build_feature() -> Feature {
+        Feature::new(0, START, END, gff::feature::record::Strand::Forward)
     }
 
     #[test]
-    fn test_reference_sequence_id() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = build_feature()?;
+    fn test_reference_sequence_id() {
+        let feature = build_feature();
         assert_eq!(feature.reference_sequence_id(), 0);
-        Ok(())
     }
 
     #[test]
-    fn test_start() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = build_feature()?;
-        assert_eq!(feature.start(), Position::try_from(8)?);
-        Ok(())
+    fn test_start() {
+        let feature = build_feature();
+        assert_eq!(feature.start(), START);
     }
 
     #[test]
-    fn test_end() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = build_feature()?;
-        assert_eq!(feature.end(), Position::try_from(13)?);
-        Ok(())
+    fn test_end() {
+        let feature = build_feature();
+        assert_eq!(feature.end(), END);
     }
 
     #[test]
-    fn test_strand() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = build_feature()?;
+    fn test_strand() {
+        let feature = build_feature();
         assert_eq!(feature.strand(), gff::feature::record::Strand::Forward);
-        Ok(())
     }
 
     #[test]
-    fn test_length() -> Result<(), noodles::core::position::TryFromIntError> {
-        let feature = build_feature()?;
+    fn test_length() {
+        let feature = build_feature();
         assert_eq!(feature.length(), 6);
-        Ok(())
     }
 }
