@@ -3,6 +3,7 @@ use std::{
     num,
 };
 
+use bstr::BString;
 use thiserror::Error;
 
 static HTSEQ_COUNT_META_PREFIX: &str = "__";
@@ -17,7 +18,7 @@ pub enum ReadCountsError {
     Io(#[from] io::Error),
 }
 
-pub fn read<R>(reader: &mut R) -> Result<Vec<(String, u32)>, ReadCountsError>
+pub fn read<R>(reader: &mut R) -> Result<Vec<(BString, u32)>, ReadCountsError>
 where
     R: BufRead,
 {
@@ -116,9 +117,9 @@ __alignment_not_unique\t0
         let actual = read(&mut reader)?;
 
         let expected = [
-            (String::from("AADAT"), 302),
-            (String::from("CLN3"), 37),
-            (String::from("PAK4"), 145),
+            (BString::from("AADAT"), 302),
+            (BString::from("CLN3"), 37),
+            (BString::from("PAK4"), 145),
         ];
 
         assert_eq!(actual, expected);

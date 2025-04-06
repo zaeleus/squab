@@ -1,6 +1,8 @@
+use bstr::BStr;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Event<'f> {
-    Hit(&'f str),
+    Hit(&'f BStr),
     Miss,
     Ambiguous,
     LowQuality,

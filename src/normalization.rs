@@ -6,6 +6,7 @@ pub use self::method::Method;
 
 use std::collections::HashMap;
 
+use bstr::{BString, ByteSlice};
 use thiserror::Error;
 
 use crate::Feature;
@@ -13,12 +14,12 @@ use crate::Feature;
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("missing feature: {0}")]
-    MissingFeature(String),
+    MissingFeature(BString),
 }
 
 pub fn calculate_feature_lengths(
-    features: &HashMap<String, Vec<Feature>>,
-    names: &[String],
+    features: &HashMap<BString, Vec<Feature>>,
+    names: &[BString],
 ) -> Result<Vec<usize>, Error> {
     names
         .iter()
@@ -26,7 +27,7 @@ pub fn calculate_feature_lengths(
             features
                 .get(name)
                 .map(|segments| sum_nonoverlapping_feature_lengths(segments))
-                .ok_or_else(|| Error::MissingFeature(name.into()))
+                .ok_or_else(|| Error::MissingFeature(name.as_bstr().into()))
         })
         .collect()
 }

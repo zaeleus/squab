@@ -1,10 +1,12 @@
 mod event;
 
-pub use self::event::Event;
+use bstr::BStr;
 
 use std::collections::HashMap;
 
-pub type Counts<'f> = HashMap<&'f str, u64>;
+pub use self::event::Event;
+
+pub type Counts<'f> = HashMap<&'f BStr, u64>;
 
 #[derive(Default)]
 pub struct Context<'f> {
@@ -54,7 +56,7 @@ mod tests {
     fn test_add() {
         let mut ctx_a = Context::default();
 
-        ctx_a.counts.insert("AADAT", 2);
+        ctx_a.counts.insert(BStr::new("AADAT"), 2);
         ctx_a.miss = 3;
         ctx_a.ambiguous = 5;
         ctx_a.low_quality = 8;
@@ -63,8 +65,8 @@ mod tests {
 
         let mut ctx_b = Context::default();
 
-        ctx_b.counts.insert("AADAT", 2);
-        ctx_b.counts.insert("CLN3", 3);
+        ctx_b.counts.insert(BStr::new("AADAT"), 2);
+        ctx_b.counts.insert(BStr::new("CLN3"), 3);
         ctx_b.miss = 5;
         ctx_b.ambiguous = 8;
         ctx_b.low_quality = 13;
@@ -74,8 +76,8 @@ mod tests {
         ctx_a.add(&ctx_b);
 
         assert_eq!(ctx_a.counts.len(), 2);
-        assert_eq!(ctx_a.counts["AADAT"], 4);
-        assert_eq!(ctx_a.counts["CLN3"], 3);
+        assert_eq!(ctx_a.counts[BStr::new("AADAT")], 4);
+        assert_eq!(ctx_a.counts[BStr::new("CLN3")], 3);
 
         assert_eq!(ctx_a.miss, 8);
         assert_eq!(ctx_a.ambiguous, 13);
@@ -87,7 +89,7 @@ mod tests {
     #[test]
     fn test_add_event() {
         let mut ctx = Context::default();
-        ctx.add_event(Event::Hit("AADAT"));
+        ctx.add_event(Event::Hit(BStr::new("AADAT")));
         ctx.add_event(Event::Miss);
         ctx.add_event(Event::Ambiguous);
         ctx.add_event(Event::LowQuality);
@@ -95,7 +97,7 @@ mod tests {
         ctx.add_event(Event::Nonunique);
 
         assert_eq!(ctx.counts.len(), 1);
-        assert_eq!(ctx.counts["AADAT"], 1);
+        assert_eq!(ctx.counts[BStr::new("AADAT")], 1);
 
         assert_eq!(ctx.miss, 1);
         assert_eq!(ctx.ambiguous, 1);

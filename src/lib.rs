@@ -16,6 +16,7 @@ use std::{
     io::{self, BufRead},
 };
 
+use bstr::{BStr, BString};
 use indexmap::IndexSet;
 use noodles::{
     core::{self as core, Position},
@@ -33,10 +34,10 @@ pub use self::{
     record_pairs::{RecordPairs, SegmentPosition},
 };
 
-pub type ReferenceSequenceNames = IndexSet<String>;
-pub type Features = HashMap<String, Vec<Feature>>;
+pub type ReferenceSequenceNames = IndexSet<BString>;
+pub type Features = HashMap<BString, Vec<Feature>>;
 
-pub type Entry<'f> = (&'f str, noodles::gff::feature::record::Strand);
+pub type Entry<'f> = (&'f BStr, noodles::gff::feature::record::Strand);
 pub type IntervalTrees<'f> = Vec<IntervalTree<Position, Entry<'f>>>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -61,9 +62,9 @@ pub enum ReadFeaturesError {
     #[error("invalid position")]
     InvalidPosition(#[from] core::position::ParseError),
     #[error("missing attribute: {0}")]
-    MissingAttribute(String),
+    MissingAttribute(BString),
     #[error("invalid attribute: {0}")]
-    InvalidAttribute(String),
+    InvalidAttribute(BString),
     #[error("I/O error")]
     Io(#[from] io::Error),
 }
@@ -112,7 +113,7 @@ where
 
         let attributes = record.attributes();
         let id = attributes
-            .get(feature_id)
+            .get(feature_id.as_ref())
             .ok_or_else(|| ReadFeaturesError::MissingAttribute(feature_id.into()))?
             .map_err(|_| ReadFeaturesError::InvalidAttribute(feature_id.into()))
             .and_then(|value| match value {
@@ -120,7 +121,7 @@ where
                 Value::Array(_) => Err(ReadFeaturesError::InvalidAttribute(feature_id.into())),
             })?;
 
-        let segments = features.entry(id.into()).or_default();
+        let segments = features.entry(id.into_owned()).or_default();
         segments.push(feature);
     }
 
@@ -147,14 +148,13 @@ pub fn build_interval_trees<'f>(
                 .get_index(reference_sequence_id)
                 .unwrap();
 
-            let Some(i) = reference_sequences.get_index_of(reference_sequence_name.as_bytes())
-            else {
+            let Some(i) = reference_sequences.get_index_of(reference_sequence_name) else {
                 continue;
             };
 
             // SAFETY: `intervals_trees.len() == reference_sequences.len()`
             let entries = &mut raw_entries[i];
-            entries.push((start..=end, (name.as_str(), strand)));
+            entries.push((start..=end, (name.as_ref(), strand)));
         }
     }
 
@@ -183,14 +183,14 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 
         assert_eq!(
             reference_sequence_names,
-            [String::from("sq0"), String::from("sq1")]
+            [BString::from("sq0"), BString::from("sq1")]
                 .into_iter()
                 .collect::<IndexSet<_>>()
         );
 
         assert_eq!(features.len(), 2);
         assert_eq!(
-            features["gene0"],
+            features[BStr::new("gene0")],
             [
                 Feature::new(
                     0,
@@ -207,7 +207,7 @@ sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
             ]
         );
         assert_eq!(
-            features["gene1"],
+            features[BStr::new("gene1")],
             [Feature::new(
                 1,
                 Position::try_from(41)?,

@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bstr::BString;
 use thiserror::Error;
 use tracing::info;
 
@@ -79,7 +80,7 @@ where
     Ok(())
 }
 
-fn read_counts<P>(src: P) -> Result<Vec<(String, u32)>, NormalizeError>
+fn read_counts<P>(src: P) -> Result<Vec<(BString, u32)>, NormalizeError>
 where
     P: AsRef<Path>,
 {
@@ -91,8 +92,8 @@ where
 }
 
 fn calculate_feature_lengths(
-    features: &HashMap<String, Vec<Feature>>,
-    names: &[String],
+    features: &HashMap<BString, Vec<Feature>>,
+    names: &[BString],
 ) -> io::Result<Vec<u32>> {
     normalization::calculate_feature_lengths(features, names)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
@@ -101,7 +102,7 @@ fn calculate_feature_lengths(
         .collect()
 }
 
-fn write_normalized_counts<W>(writer: &mut W, names: &[String], values: &[f64]) -> io::Result<()>
+fn write_normalized_counts<W>(writer: &mut W, names: &[BString], values: &[f64]) -> io::Result<()>
 where
     W: Write,
 {
@@ -121,10 +122,10 @@ mod tests {
     #[test]
     fn test_write_normalized_counts() -> io::Result<()> {
         let names = [
-            String::from("AADAT"),
-            String::from("CLN3"),
-            String::from("NEO1"),
-            String::from("PAK4"),
+            BString::from("AADAT"),
+            BString::from("CLN3"),
+            BString::from("NEO1"),
+            BString::from("PAK4"),
         ];
 
         let values = [30.2, 3.7, 0.0, 14.5];

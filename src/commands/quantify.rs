@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use bstr::{BString, ByteSlice};
 use noodles::{bam, bgzf};
 use thiserror::Error;
 use tracing::{info, warn};
@@ -60,7 +61,7 @@ where
             .map(Box::new)
             .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
     } else {
-        bgzf::reader::Builder
+        bgzf::io::reader::Builder
             .build_from_path(src)
             .map(Box::new)
             .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
@@ -160,14 +161,14 @@ fn strand_specification_from_option_or(
 
 const DELIMITER: char = '\t';
 
-fn write_counts<W>(writer: &mut W, feature_names: &[&String], counts: &Counts) -> io::Result<()>
+fn write_counts<W>(writer: &mut W, feature_names: &[&BString], counts: &Counts) -> io::Result<()>
 where
     W: Write,
 {
     const MISSING: u64 = 0;
 
     for name in feature_names {
-        let count = counts.get(name.as_str()).copied().unwrap_or(MISSING);
+        let count = counts.get(name.as_bstr()).copied().unwrap_or(MISSING);
         writeln!(writer, "{name}{DELIMITER}{count}")?;
     }
 
@@ -189,6 +190,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use bstr::BStr;
+
     use super::*;
 
     #[test]
@@ -228,15 +231,19 @@ mod tests {
 
     #[test]
     fn test_write_counts() -> io::Result<()> {
-        let counts = [("AADAT", 302), ("CLN3", 37), ("PAK4", 145)]
-            .into_iter()
-            .collect();
+        let counts = [
+            (BStr::new("AADAT"), 302),
+            (BStr::new("CLN3"), 37),
+            (BStr::new("PAK4"), 145),
+        ]
+        .into_iter()
+        .collect();
 
         let names = [
-            &String::from("AADAT"),
-            &String::from("CLN3"),
-            &String::from("NEO1"),
-            &String::from("PAK4"),
+            &BString::from("AADAT"),
+            &BString::from("CLN3"),
+            &BString::from("NEO1"),
+            &BString::from("PAK4"),
         ];
 
         let mut buf = Vec::new();

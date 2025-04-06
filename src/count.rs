@@ -8,6 +8,7 @@ use std::{
     thread,
 };
 
+use bstr::BStr;
 use noodles::{bam, core::Position};
 
 use self::context::Event;
@@ -247,7 +248,7 @@ fn count_record<'f>(
     strand_specification: StrandSpecification,
     is_reverse_complemented: bool,
     record: &bam::Record,
-    intersections: &mut HashSet<&'f str>,
+    intersections: &mut HashSet<&'f BStr>,
 ) -> io::Result<Option<Event<'f>>> {
     let reference_sequence_id = record
         .reference_sequence_id()
@@ -280,7 +281,7 @@ fn count_record<'f>(
 }
 
 fn intersect<'f>(
-    intersections: &mut HashSet<&'f str>,
+    intersections: &mut HashSet<&'f BStr>,
     interval_tree: &IntervalTree<Position, Entry<'f>>,
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
@@ -304,7 +305,7 @@ fn intersect<'f>(
     Ok(())
 }
 
-fn resolve_intersections<'f>(intersections: &HashSet<&'f str>) -> Event<'f> {
+fn resolve_intersections<'f>(intersections: &HashSet<&'f BStr>) -> Event<'f> {
     if intersections.is_empty() {
         Event::Miss
     } else if intersections.len() == 1 {
