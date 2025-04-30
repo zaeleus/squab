@@ -154,20 +154,11 @@ where
             continue;
         }
 
-        let reference_sequence_id = record
-            .reference_sequence_id()
-            .transpose()?
-            .expect("missing reference sequence ID");
+        let (id, start, end) =
+            record_alignment_context(&record)?.expect("missing alignment context");
 
-        let Some(interval_tree) = interval_trees.get(reference_sequence_id) else {
+        let Some(interval_tree) = interval_trees.get(id) else {
             continue;
-        };
-
-        let alignment_start = record.alignment_start().transpose()?;
-        let alignment_end = record.alignment_end().transpose()?;
-
-        let (Some(start), Some(end)) = (alignment_start, alignment_end) else {
-            panic!("missing alignment context");
         };
 
         if flags.is_segmented() {
@@ -207,4 +198,17 @@ where
         strand_specification,
         strandedness_confidence,
     ))
+}
+
+fn record_alignment_context(
+    record: &bam::Record,
+) -> io::Result<Option<(usize, Position, Position)>> {
+    match (
+        record.reference_sequence_id().transpose()?,
+        record.alignment_start().transpose()?,
+        record.alignment_end().transpose()?,
+    ) {
+        (Some(id), Some(start), Some(end)) => Ok(Some((id, start, end))),
+        _ => Ok(None),
+    }
 }
