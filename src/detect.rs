@@ -145,36 +145,7 @@ where
 {
     let mut reader = File::open(src).map(bam::io::Reader::new)?;
     let counts = count(&mut reader, interval_trees)?;
-
-    let library_layout = if counts.paired > 0 {
-        LibraryLayout::PairedEnd
-    } else {
-        LibraryLayout::SingleEnd
-    };
-
-    if counts.matches == 0 {
-        return Ok((library_layout, StrandSpecification::None, 0.0));
-    }
-
-    let matches = f64::from(counts.matches);
-
-    let forward_pct = f64::from(counts.forward) / matches;
-    let reverse_pct = f64::from(counts.reverse) / matches;
-
-    let (strand_specification, strandedness_confidence) = if forward_pct > STRANDEDNESS_THRESHOLD {
-        (StrandSpecification::Forward, forward_pct)
-    } else if reverse_pct > STRANDEDNESS_THRESHOLD {
-        (StrandSpecification::Reverse, reverse_pct)
-    } else {
-        let confidence = (0.5 - (forward_pct - reverse_pct).abs()) / 0.5;
-        (StrandSpecification::None, confidence)
-    };
-
-    Ok((
-        library_layout,
-        strand_specification,
-        strandedness_confidence,
-    ))
+    detect(&counts)
 }
 
 fn count<R>(reader: &mut bam::io::Reader<R>, interval_trees: &IntervalTrees) -> io::Result<Counts>
@@ -226,4 +197,36 @@ fn record_alignment_context(
         (Some(id), Some(start), Some(end)) => Ok(Some((id, start, end))),
         _ => Ok(None),
     }
+}
+
+fn detect(counts: &Counts) -> io::Result<(LibraryLayout, StrandSpecification, f64)> {
+    let library_layout = if counts.paired > 0 {
+        LibraryLayout::PairedEnd
+    } else {
+        LibraryLayout::SingleEnd
+    };
+
+    if counts.matches == 0 {
+        return Ok((library_layout, StrandSpecification::None, 0.0));
+    }
+
+    let matches = f64::from(counts.matches);
+
+    let forward_pct = f64::from(counts.forward) / matches;
+    let reverse_pct = f64::from(counts.reverse) / matches;
+
+    let (strand_specification, strandedness_confidence) = if forward_pct > STRANDEDNESS_THRESHOLD {
+        (StrandSpecification::Forward, forward_pct)
+    } else if reverse_pct > STRANDEDNESS_THRESHOLD {
+        (StrandSpecification::Reverse, reverse_pct)
+    } else {
+        let confidence = (0.5 - (forward_pct - reverse_pct).abs()) / 0.5;
+        (StrandSpecification::None, confidence)
+    };
+
+    Ok((
+        library_layout,
+        strand_specification,
+        strandedness_confidence,
+    ))
 }
