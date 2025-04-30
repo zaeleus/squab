@@ -22,7 +22,6 @@ const STRANDEDNESS_THRESHOLD: f64 = 0.75;
 #[derive(Debug, Default)]
 struct Counts {
     paired: u32,
-    matches: u32,
     forward: u32,
     reverse: u32,
 }
@@ -101,8 +100,6 @@ fn count_paired_end_record(
                 counts.reverse += 1;
             }
         }
-
-        counts.matches += 1;
     }
 
     Ok(())
@@ -131,8 +128,6 @@ fn count_single_end_record(
                 counts.reverse += 1;
             }
         }
-
-        counts.matches += 1;
     }
 }
 
@@ -206,14 +201,14 @@ fn detect(counts: &Counts) -> io::Result<(LibraryLayout, StrandSpecification, f6
         LibraryLayout::SingleEnd
     };
 
-    if counts.matches == 0 {
+    let matches = counts.forward + counts.reverse;
+
+    if matches == 0 {
         return Ok((library_layout, StrandSpecification::None, 0.0));
     }
 
-    let matches = f64::from(counts.matches);
-
-    let forward_pct = f64::from(counts.forward) / matches;
-    let reverse_pct = f64::from(counts.reverse) / matches;
+    let forward_pct = f64::from(counts.forward) / f64::from(matches);
+    let reverse_pct = f64::from(counts.reverse) / f64::from(matches);
 
     let (strand_specification, strandedness_confidence) = if forward_pct > STRANDEDNESS_THRESHOLD {
         (StrandSpecification::Forward, forward_pct)
