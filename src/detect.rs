@@ -141,10 +141,12 @@ where
     let mut reader = File::open(src).map(bam::io::Reader::new)?;
     reader.read_header()?;
 
+    let mut record = bam::Record::default();
+    let mut n = 0;
     let mut counts = Counts::default();
 
-    for result in reader.records().take(MAX_RECORDS) {
-        let record = result?;
+    while n < MAX_RECORDS && reader.read_record(&mut record)? != 0 {
+        n += 1;
 
         let flags = record.flags();
 
