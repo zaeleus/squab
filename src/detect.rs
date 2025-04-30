@@ -1,4 +1,9 @@
-use std::{fmt, fs::File, io, path::Path};
+use std::{
+    fmt,
+    fs::File,
+    io::{self, Read},
+    path::Path,
+};
 
 use noodles::{
     bam,
@@ -139,35 +144,7 @@ where
     P: AsRef<Path>,
 {
     let mut reader = File::open(src).map(bam::io::Reader::new)?;
-    reader.read_header()?;
-
-    let mut record = bam::Record::default();
-    let mut n = 0;
-    let mut counts = Counts::default();
-
-    while n < MAX_RECORDS && reader.read_record(&mut record)? != 0 {
-        n += 1;
-
-        let flags = record.flags();
-
-        if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
-            continue;
-        }
-
-        let (id, start, end) =
-            record_alignment_context(&record)?.expect("missing alignment context");
-
-        let Some(interval_tree) = interval_trees.get(id) else {
-            continue;
-        };
-
-        if flags.is_segmented() {
-            counts.paired += 1;
-            count_paired_end_record(&mut counts, interval_tree, flags, start, end)?;
-        } else {
-            count_single_end_record(&mut counts, interval_tree, flags, start, end);
-        }
-    }
+    let counts = count(&mut reader, interval_trees)?;
 
     let library_layout = if counts.paired > 0 {
         LibraryLayout::PairedEnd
@@ -198,6 +175,44 @@ where
         strand_specification,
         strandedness_confidence,
     ))
+}
+
+fn count<R>(reader: &mut bam::io::Reader<R>, interval_trees: &IntervalTrees) -> io::Result<Counts>
+where
+    R: Read,
+{
+    reader.read_header()?;
+
+    let mut n = 0;
+    let mut record = bam::Record::default();
+
+    let mut counts = Counts::default();
+
+    while n < MAX_RECORDS && reader.read_record(&mut record)? != 0 {
+        n += 1;
+
+        let flags = record.flags();
+
+        if flags.is_unmapped() || flags.is_secondary() || flags.is_supplementary() {
+            continue;
+        }
+
+        let (id, start, end) =
+            record_alignment_context(&record)?.expect("missing alignment context");
+
+        let Some(interval_tree) = interval_trees.get(id) else {
+            continue;
+        };
+
+        if flags.is_segmented() {
+            counts.paired += 1;
+            count_paired_end_record(&mut counts, interval_tree, flags, start, end)?;
+        } else {
+            count_single_end_record(&mut counts, interval_tree, flags, start, end);
+        }
+    }
+
+    Ok(counts)
 }
 
 fn record_alignment_context(
