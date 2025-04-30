@@ -11,15 +11,15 @@ use crate::{
     Entry, IntervalTrees, SegmentPosition, StrandSpecification, collections::IntervalTree,
 };
 
-const MAX_RECORDS: usize = 524_288;
+const MAX_RECORDS: u32 = 1 << 19;
 const STRANDEDNESS_THRESHOLD: f64 = 0.75;
 
 #[derive(Debug, Default)]
 struct Counts {
-    paired: u64,
-    matches: u64,
-    forward: u64,
-    reverse: u64,
+    paired: u32,
+    matches: u32,
+    forward: u32,
+    reverse: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -179,10 +179,10 @@ where
         return Ok((library_layout, StrandSpecification::None, 0.0));
     }
 
-    let matches = counts.matches as f64;
+    let matches = f64::from(counts.matches);
 
-    let forward_pct = counts.forward as f64 / matches;
-    let reverse_pct = counts.reverse as f64 / matches;
+    let forward_pct = f64::from(counts.forward) / matches;
+    let reverse_pct = f64::from(counts.reverse) / matches;
 
     let (strand_specification, strandedness_confidence) = if forward_pct > STRANDEDNESS_THRESHOLD {
         (StrandSpecification::Forward, forward_pct)
