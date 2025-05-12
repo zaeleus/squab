@@ -152,7 +152,7 @@ pub fn build_interval_trees<'f>(
                 continue;
             };
 
-            // SAFETY: `intervals_trees.len() == reference_sequences.len()`
+            // SAFETY: `raw_entries.len() == reference_sequences.len()`.
             let entries = &mut raw_entries[i];
             entries.push((start..=end, (name.as_ref(), strand)));
         }
