@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs::File,
     io::{self, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
@@ -10,7 +9,7 @@ use thiserror::Error;
 use tracing::info;
 
 use crate::{
-    Feature, counts,
+    Features, counts,
     normalization::{self, fpkm, tpm},
     read_features,
 };
@@ -91,10 +90,7 @@ where
     counts::read(&mut reader).map_err(NormalizeError::ReadCounts)
 }
 
-fn calculate_feature_lengths(
-    features: &HashMap<BString, Vec<Feature>>,
-    names: &[BString],
-) -> io::Result<Vec<u32>> {
+fn calculate_feature_lengths(features: &Features, names: &[BString]) -> io::Result<Vec<u32>> {
     normalization::calculate_feature_lengths(features, names)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
         .into_iter()

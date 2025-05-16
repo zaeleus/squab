@@ -4,12 +4,10 @@ pub mod tpm;
 
 pub use self::method::Method;
 
-use std::collections::HashMap;
-
 use bstr::{BString, ByteSlice};
 use thiserror::Error;
 
-use crate::Feature;
+use crate::{Feature, Features};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -18,7 +16,7 @@ pub enum Error {
 }
 
 pub fn calculate_feature_lengths(
-    features: &HashMap<BString, Vec<Feature>>,
+    features: &Features,
     names: &[BString],
 ) -> Result<Vec<usize>, Error> {
     names
