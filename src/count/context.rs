@@ -1,12 +1,11 @@
 mod event;
 
-use std::collections::HashMap;
-
 use bstr::BStr;
+use rustc_hash::FxHashMap;
 
 pub use self::event::Event;
 
-pub type Counts<'f> = HashMap<&'f BStr, u64>;
+pub type Counts<'f> = FxHashMap<&'f BStr, u64>;
 
 #[derive(Default)]
 pub struct Context<'f> {
