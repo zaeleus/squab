@@ -114,9 +114,8 @@ fn is_nonunique_record(record: &bam::Record) -> io::Result<bool> {
 
     let data = record.data();
 
-    let value = match data.get(&Tag::ALIGNMENT_HIT_COUNT) {
-        Some(result) => result?,
-        None => return Ok(false),
+    let Some(value) = data.get(&Tag::ALIGNMENT_HIT_COUNT).transpose()? else {
+        return Ok(false);
     };
 
     match value.as_int() {
