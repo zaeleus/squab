@@ -1,8 +1,8 @@
 mod event;
 
-use bstr::BStr;
-
 use std::collections::HashMap;
+
+use bstr::BStr;
 
 pub use self::event::Event;
 
