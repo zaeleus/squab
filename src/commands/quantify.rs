@@ -57,12 +57,11 @@ where
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
         File::open(src)
-            .map(|f| bgzf::MultithreadedReader::with_worker_count(worker_count, f))
+            .map(|f| bgzf::io::MultithreadedReader::with_worker_count(worker_count, f))
             .map(Box::new)
             .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
     } else {
-        bgzf::io::reader::Builder
-            .build_from_path(src)
+        bgzf::fs::open(src)
             .map(Box::new)
             .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
     };

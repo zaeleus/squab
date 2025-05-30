@@ -70,7 +70,7 @@ pub enum ReadFeaturesError {
 }
 
 pub fn read_features<R>(
-    reader: &mut noodles::gff::Reader<R>,
+    reader: &mut noodles::gff::io::Reader<R>,
     feature_type: &str,
     feature_id: &str,
 ) -> Result<(ReferenceSequenceNames, Features), ReadFeaturesError>
@@ -177,7 +177,7 @@ sq0\t.\texon\t1\t10\t.\t+\t.\tID=exon0;gene_id=gene0;gene_name=NDLS_gene0
 sq0\t.\texon\t21\t30\t.\t+\t.\tID=exon1;gene_id=gene0;gene_name=NDLS_gene0
 sq1\t.\texon\t41\t50\t.\t-\t.\tID=exon3;gene_id=gene1;gene_name=NDLS_gene1
 ";
-        let mut reader = noodles::gff::Reader::new(&data[..]);
+        let mut reader = noodles::gff::io::Reader::new(&data[..]);
 
         let (reference_sequence_names, features) = read_features(&mut reader, "exon", "gene_id")?;
 

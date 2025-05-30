@@ -6,7 +6,7 @@ use std::{
 
 use flate2::read::MultiGzDecoder;
 
-pub fn open<P>(src: P) -> io::Result<noodles::gff::Reader<Box<dyn BufRead>>>
+pub fn open<P>(src: P) -> io::Result<noodles::gff::io::Reader<Box<dyn BufRead>>>
 where
     P: AsRef<Path>,
 {
@@ -20,7 +20,7 @@ where
         Box::new(BufReader::new(file))
     };
 
-    Ok(noodles::gff::Reader::new(Box::new(inner)))
+    Ok(noodles::gff::io::Reader::new(Box::new(inner)))
 }
 
 fn is_gzip<P>(src: P) -> bool
