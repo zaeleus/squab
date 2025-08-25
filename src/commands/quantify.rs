@@ -55,15 +55,15 @@ where
 
     let interval_trees = build_interval_trees(&header, &reference_sequence_names, &features);
 
+    let file = File::open(src).map_err(|e| QuantifyError::OpenFile(e, src.into()))?;
+
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
-        File::open(src)
-            .map(|f| bgzf::io::MultithreadedReader::with_worker_count(worker_count, f))
-            .map(Box::new)
-            .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
+        Box::new(bgzf::io::MultithreadedReader::with_worker_count(
+            worker_count,
+            file,
+        ))
     } else {
-        bgzf::fs::open(src)
-            .map(Box::new)
-            .map_err(|e| QuantifyError::OpenFile(e, src.into()))?
+        Box::new(bgzf::io::Reader::new(file))
     };
 
     let mut reader = bam::io::Reader::from(decoder);
