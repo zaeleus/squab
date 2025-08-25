@@ -48,7 +48,7 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, record: &bam::Record) -> io::Result<Option<Event>> {
+    pub fn filter(&self, record: &bam::Record) -> io::Result<Option<Event<'_>>> {
         let flags = record.flags();
 
         if flags.is_unmapped() {
@@ -74,7 +74,7 @@ impl Filter {
         Ok(None)
     }
 
-    pub fn filter_pair(&self, r1: &bam::Record, r2: &bam::Record) -> io::Result<Option<Event>> {
+    pub fn filter_pair(&self, r1: &bam::Record, r2: &bam::Record) -> io::Result<Option<Event<'_>>> {
         let f1 = r1.flags();
         let f2 = r2.flags();
 
