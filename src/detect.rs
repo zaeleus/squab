@@ -225,3 +225,70 @@ fn detect(counts: &Counts) -> io::Result<(LibraryLayout, StrandSpecification, f6
         strandedness_confidence,
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use bstr::BStr;
+
+    use super::*;
+
+    #[test]
+    fn test_count_single_end_record() {
+        use noodles::{gff::feature::record::Strand, sam::alignment::record::Flags};
+
+        fn t(
+            interval_tree: &IntervalTree<Position, Entry>,
+            flags: Flags,
+            alignment_start: Position,
+            alignment_end: Position,
+            expected: &Counts,
+        ) {
+            let mut actual = Counts::default();
+
+            count_single_end_record(
+                &mut actual,
+                interval_tree,
+                flags,
+                alignment_start,
+                alignment_end,
+            );
+
+            assert_eq!(actual.paired, expected.paired);
+            assert_eq!(actual.forward, expected.forward);
+            assert_eq!(actual.reverse, expected.reverse);
+        }
+
+        let start = const { Position::new(5).unwrap() };
+        let end = const { Position::new(8).unwrap() };
+
+        let interval_tree = [(start..=end, (BStr::new("f0"), Strand::Forward))]
+            .into_iter()
+            .collect();
+
+        let expected = Counts {
+            paired: 0,
+            forward: 0,
+            reverse: 1,
+        };
+        t(
+            &interval_tree,
+            Flags::REVERSE_COMPLEMENTED,
+            start,
+            end,
+            &expected,
+        );
+
+        let expected = Counts {
+            paired: 0,
+            forward: 0,
+            reverse: 1,
+        };
+        t(
+            &interval_tree,
+            Flags::REVERSE_COMPLEMENTED,
+            start,
+            end,
+            &expected,
+        );
+    }
+}
