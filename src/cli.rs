@@ -30,12 +30,6 @@ pub struct Normalize {
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    ///
-    /// Deprecated. Use `feature-id` instead.
-    #[arg(long, default_value = "gene_id")]
-    pub id: String,
-
-    /// Feature attribute to use as the feature identity.
     #[arg(short = 'i', long, default_value = "gene_id")]
     pub feature_id: String,
 
@@ -80,12 +74,6 @@ pub struct Quantify {
     pub feature_type: String,
 
     /// Feature attribute to use as the feature identity.
-    ///
-    /// Deprecated. Use `feature-id` instead.
-    #[arg(long, default_value = "gene_id")]
-    pub id: String,
-
-    /// Feature attribute to use as the feature identity.
     #[arg(short = 'i', long, default_value = "gene_id")]
     pub feature_id: String,
 
@@ -101,12 +89,6 @@ pub struct Quantify {
     /// Input annotations file (GFF3).
     #[arg(short = 'a', long)]
     pub annotations: PathBuf,
-
-    /// Force a specific number of threads.
-    ///
-    /// Deprecated. Use `worker-count` instead.
-    #[arg(long)]
-    pub threads: Option<NonZero<usize>>,
 
     /// The number of workers to spawn.
     ///
