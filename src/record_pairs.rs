@@ -5,14 +5,14 @@ pub use self::segment_position::SegmentPosition;
 use std::io::{self, Read};
 
 use noodles::bam;
-use rustc_hash::FxHashMap;
+use rapidhash::RapidHashMap;
 
 pub struct RecordPairs<R>
 where
     R: Read,
 {
     reader: bam::io::Reader<R>,
-    cache: FxHashMap<Vec<u8>, Vec<bam::Record>>,
+    cache: RapidHashMap<Vec<u8>, Vec<bam::Record>>,
     primary_only: bool,
 }
 
@@ -23,7 +23,7 @@ where
     pub fn new(reader: bam::io::Reader<R>, primary_only: bool) -> Self {
         Self {
             reader,
-            cache: FxHashMap::default(),
+            cache: RapidHashMap::default(),
             primary_only,
         }
     }

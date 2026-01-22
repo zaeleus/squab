@@ -1,11 +1,11 @@
 mod event;
 
 use bstr::BStr;
-use rustc_hash::FxHashMap;
+use rapidhash::RapidHashMap;
 
 pub use self::event::Event;
 
-pub type Counts<'f> = FxHashMap<&'f BStr, u64>;
+pub type Counts<'f> = RapidHashMap<&'f BStr, u64>;
 
 #[derive(Default)]
 pub struct Context<'f> {
