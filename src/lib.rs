@@ -2,12 +2,10 @@ pub mod cli;
 pub mod collections;
 pub mod commands;
 pub mod count;
-pub mod counts;
 pub mod detect;
 pub mod feature;
 mod gff;
 mod match_intervals;
-pub mod normalization;
 pub mod record_pairs;
 
 use std::{

@@ -1,7 +1,6 @@
-mod normalize;
 mod quantify;
 
-pub use self::{normalize::normalize, quantify::quantify};
+pub use self::quantify::quantify;
 
 use std::str::FromStr;
 

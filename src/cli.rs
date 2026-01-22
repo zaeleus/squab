@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use git_testament::{git_testament, render_testament};
 use noodles::sam::alignment::record::MappingQuality;
 
-use crate::{StrandSpecificationOption, normalization::Method};
+use crate::StrandSpecificationOption;
 
 git_testament!(TESTAMENT);
 
@@ -17,38 +17,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
-    /// Normalize features counts.
-    Normalize(Normalize),
     /// Gene expression quantification.
     Quantify(Quantify),
-}
-
-#[derive(Parser)]
-pub struct Normalize {
-    /// Feature type to count.
-    #[arg(short = 't', long, default_value = "exon")]
-    pub feature_type: String,
-
-    /// Feature attribute to use as the feature identity.
-    #[arg(short = 'i', long, default_value = "gene_id")]
-    pub feature_id: String,
-
-    /// Input annotations file (GFF3).
-    #[arg(short = 'a', long)]
-    pub annotations: PathBuf,
-
-    /// Quantification normalization method.
-    #[arg(long, value_enum, default_value_t = Method::Tpm)]
-    pub method: Method,
-
-    /// Output destination.
-    ///
-    /// If not set, output is written to stdout.
-    #[arg(short = 'o', long)]
-    pub output: Option<PathBuf>,
-
-    /// Input counts file.
-    pub src: PathBuf,
 }
 
 #[derive(Parser)]

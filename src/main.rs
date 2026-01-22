@@ -47,22 +47,6 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn normalize(options: cli::Normalize) -> anyhow::Result<()> {
-    let counts_src = options.src;
-    let annotations_src = options.annotations;
-
-    commands::normalize(
-        counts_src,
-        annotations_src,
-        &options.feature_type,
-        &options.feature_id,
-        options.method,
-        options.output,
-    )?;
-
-    Ok(())
-}
-
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().with_writer(io::stderr).init();
 
@@ -70,6 +54,5 @@ fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Quantify(options) => quantify(options),
-        Command::Normalize(options) => normalize(options),
     }
 }
