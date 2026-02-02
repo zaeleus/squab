@@ -15,7 +15,7 @@ table.
 
 Install [Rust] and use `cargo` to install `squab`.
 
-```
+```console
 $ cargo install --locked --git https://github.com/zaeleus/squab.git
 ```
 
@@ -68,7 +68,7 @@ includes statistics in the trailer.
 
 ### Count features (exons by gene ID)
 
-```
+```console
 $ squab \
     --annotations annotations.gff3.gz \
     --output sample.counts.tsv \
@@ -77,7 +77,7 @@ $ squab \
 
 ### Count featues (genes by gene name)
 
-```
+```console
 $ squab \
     --annotations annotations.gff3.gz \
     --feature-type gene \
