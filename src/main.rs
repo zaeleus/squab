@@ -6,15 +6,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 use std::{io, num::NonZero, thread};
 
 use clap::Parser;
-use squab::{
-    Cli,
-    cli::{self, Command},
-    commands,
-    count::Filter,
-};
+use squab::{Cli, commands, count::Filter};
 use tracing::info;
 
-fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
+fn quantify(options: Cli) -> anyhow::Result<()> {
     let bam_src = options.src;
     let annotations_src = options.annotations;
 
@@ -50,9 +45,6 @@ fn quantify(options: cli::Quantify) -> anyhow::Result<()> {
 fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().with_writer(io::stderr).init();
 
-    let cli = Cli::parse();
-
-    match cli.command {
-        Command::Quantify(options) => quantify(options),
-    }
+    let options = Cli::parse();
+    quantify(options)
 }

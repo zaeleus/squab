@@ -23,17 +23,11 @@ $ cargo install --locked --git https://github.com/zaeleus/squab.git
 
 ## Usage
 
-squab has one subcommand: `quantify`.
-
-### `quantify`
-
-`quantify` performs gene expression quantification by counting the number of
-times aligned records intersect known gene annotations.
+`squab` performs gene expression quantification by counting the number of times
+aligned records intersect known gene annotations.
 
 ```
-Gene expression quantification
-
-Usage: squab quantify [OPTIONS] --annotations <ANNOTATIONS> <SRC>
+Usage: squab [OPTIONS] --annotations <ANNOTATIONS> <SRC>
 
 Arguments:
   <SRC>  Input alignment file
@@ -49,7 +43,7 @@ Options:
           Strand specification [default: auto] [possible values: none, forward, reverse, auto]
   -t, --feature-type <FEATURE_TYPE>
           Feature type to count [default: exon]
-  -i, --id <ID>
+  -i, --feature-id <FEATURE_ID>
           Feature attribute to use as the feature identity [default: gene_id]
       --min-mapping-quality <MIN_MAPPING_QUALITY>
           [default: 10]
@@ -57,10 +51,12 @@ Options:
           Output destination
   -a, --annotations <ANNOTATIONS>
           Input annotations file (GFF3)
-      --threads <THREADS>
-          Force a specific number of threads
+      --worker-count <WORKER_COUNT>
+          The number of workers to spawn
   -h, --help
           Print help (see more with '--help')
+  -V, --version
+          Print version
 ```
 
 The default output is a tab-delimited text file with two columns: the feature
@@ -74,7 +70,6 @@ includes statistics in the trailer.
 
 ```
 $ squab \
-    quantify \
     --annotations annotations.gff3.gz \
     --output sample.counts.tsv \
     sample.bam
@@ -84,7 +79,6 @@ $ squab \
 
 ```
 $ squab \
-    quantify \
     --annotations annotations.gff3.gz \
     --feature-type gene \
     --id gene_name \

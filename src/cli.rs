@@ -1,6 +1,6 @@
 use std::{num::NonZero, path::PathBuf};
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use git_testament::{git_testament, render_testament};
 use noodles::sam::alignment::record::MappingQuality;
 
@@ -11,18 +11,6 @@ git_testament!(TESTAMENT);
 #[derive(Parser)]
 #[command(version = render_testament!(TESTAMENT))]
 pub struct Cli {
-    #[command(subcommand)]
-    pub command: Command,
-}
-
-#[derive(Subcommand)]
-pub enum Command {
-    /// Gene expression quantification.
-    Quantify(Quantify),
-}
-
-#[derive(Parser)]
-pub struct Quantify {
     /// Count secondary records (BAM flag 0x100).
     #[arg(long)]
     pub with_secondary_records: bool,
