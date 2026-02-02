@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Michael Macias <zaeleus@gmail.com>"]
 license = "MIT"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 publish = false
 
 [profile.release]

@@ -65,10 +65,10 @@ impl Filter {
             return Ok(Some(Event::Nonunique));
         }
 
-        if let Some(mapping_quality) = record.mapping_quality() {
-            if mapping_quality < self.min_mapping_quality {
-                return Ok(Some(Event::LowQuality));
-            }
+        if let Some(mapping_quality) = record.mapping_quality()
+            && mapping_quality < self.min_mapping_quality
+        {
+            return Ok(Some(Event::LowQuality));
         }
 
         Ok(None)
@@ -93,16 +93,16 @@ impl Filter {
             return Ok(Some(Event::Nonunique));
         }
 
-        if let Some(mapping_quality) = r1.mapping_quality() {
-            if mapping_quality < self.min_mapping_quality() {
-                return Ok(Some(Event::LowQuality));
-            }
+        if let Some(mapping_quality) = r1.mapping_quality()
+            && mapping_quality < self.min_mapping_quality()
+        {
+            return Ok(Some(Event::LowQuality));
         }
 
-        if let Some(mapping_quality) = r2.mapping_quality() {
-            if mapping_quality < self.min_mapping_quality() {
-                return Ok(Some(Event::LowQuality));
-            }
+        if let Some(mapping_quality) = r2.mapping_quality()
+            && mapping_quality < self.min_mapping_quality()
+        {
+            return Ok(Some(Event::LowQuality));
         }
 
         Ok(None)

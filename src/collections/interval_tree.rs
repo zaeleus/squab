@@ -31,7 +31,12 @@ where
 
         nodes.sort_unstable_by_key(|i| i.start());
 
-        let mut last_id = if len % 2 == 0 { len - 2 } else { len - 1 };
+        let mut last_id = if len.is_multiple_of(2) {
+            len - 2
+        } else {
+            len - 1
+        };
+
         let mut last_max = nodes[last_id].max;
 
         let mut level = 1;
@@ -161,14 +166,14 @@ where
                             self.stack.push((i, level - 1));
                         }
 
-                        if let Some(node) = self.nodes.get(id) {
-                            if node.start() <= *self.key.end() {
-                                let i = right_child_id(id, level);
-                                self.stack.push((i, level - 1));
+                        if let Some(node) = self.nodes.get(id)
+                            && node.start() <= *self.key.end()
+                        {
+                            let i = right_child_id(id, level);
+                            self.stack.push((i, level - 1));
 
-                                if *self.key.start() <= node.end() {
-                                    return Some((&node.key, &node.value));
-                                }
+                            if *self.key.start() <= node.end() {
+                                return Some((&node.key, &node.value));
                             }
                         }
                     }
@@ -201,7 +206,7 @@ fn first_id_of_level(level: usize) -> usize {
 }
 
 fn parent_id(id: usize, level: usize) -> usize {
-    if (id >> (level + 1)) % 2 == 0 {
+    if (id >> (level + 1)).is_multiple_of(2) {
         id + (1 << level)
     } else {
         id - (1 << level)
