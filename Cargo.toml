@@ -16,7 +16,7 @@ anyhow = "1.0.32"
 bstr = { version = "1.9.0", default-features = false, features = ["std"] }
 clap = { version = "4.0.10", features = ["derive", "string"] }
 crossbeam-channel = "0.5.6"
-flate2 = "1.0.14"
+flate2 = { version = "1.1.8", default-features = false, features = ["zlib-rs"] }
 git-testament = "0.2.0"
 indexmap = "2.7.1"
 mimalloc = "0.1.43"
