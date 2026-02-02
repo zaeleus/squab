@@ -54,7 +54,7 @@ pub struct Cli {
     #[arg(long)]
     pub worker_count: Option<NonZero<usize>>,
 
-    /// Input alignment file.
+    /// Input alignment file (BAM).
     pub src: PathBuf,
 }
 
