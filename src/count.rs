@@ -20,6 +20,8 @@ use crate::{
 
 const CHUNK_SIZE: usize = 8192;
 
+type Intersections<'f> = HashSet<&'f BStr>;
+
 pub fn count_single_end_records<'f, R>(
     mut reader: bam::io::Reader<R>,
     interval_trees: &IntervalTrees<'f>,
@@ -99,7 +101,7 @@ pub fn count_single_end_record<'f>(
         return Ok(event);
     }
 
-    let mut intersections = HashSet::new();
+    let mut intersections = Intersections::default();
 
     let is_reverse_complemented = resolve_is_reverse_complemented(
         record.flags().is_reverse_complemented(),
@@ -210,7 +212,7 @@ pub fn count_paired_end_record_pair<'f>(
         return Ok(event);
     }
 
-    let mut intersections = HashSet::new();
+    let mut intersections = Intersections::default();
 
     let r1_is_reverse_complemented =
         resolve_is_reverse_complemented(r1.flags().is_reverse_complemented(), strand_specification);
@@ -248,7 +250,7 @@ fn count_record<'f>(
     strand_specification: StrandSpecification,
     is_reverse_complemented: bool,
     record: &bam::Record,
-    intersections: &mut HashSet<&'f BStr>,
+    intersections: &mut Intersections<'f>,
 ) -> io::Result<Option<Event<'f>>> {
     let reference_sequence_id = record
         .reference_sequence_id()
@@ -281,7 +283,7 @@ fn count_record<'f>(
 }
 
 fn intersect<'f>(
-    intersections: &mut HashSet<&'f BStr>,
+    intersections: &mut Intersections<'f>,
     interval_tree: &IntervalTree<Position, Entry<'f>>,
     intervals: MatchIntervals,
     strand_specification: StrandSpecification,
@@ -305,7 +307,7 @@ fn intersect<'f>(
     Ok(())
 }
 
-fn resolve_intersections<'f>(intersections: &HashSet<&'f BStr>) -> Event<'f> {
+fn resolve_intersections<'f>(intersections: &Intersections<'f>) -> Event<'f> {
     if intersections.is_empty() {
         Event::Miss
     } else if intersections.len() == 1 {
