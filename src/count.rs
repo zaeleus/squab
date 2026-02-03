@@ -2,7 +2,6 @@ pub mod context;
 mod filter;
 
 use std::{
-    collections::HashSet,
     io::{self, Read},
     num::NonZero,
     thread,
@@ -10,6 +9,7 @@ use std::{
 
 use bstr::BStr;
 use noodles::{bam, core::Position};
+use rapidhash::RapidHashSet;
 
 use self::context::Event;
 pub use self::{context::Context, filter::Filter};
@@ -20,7 +20,7 @@ use crate::{
 
 const CHUNK_SIZE: usize = 8192;
 
-type Intersections<'f> = HashSet<&'f BStr>;
+type Intersections<'f> = RapidHashSet<&'f BStr>;
 
 pub fn count_single_end_records<'f, R>(
     mut reader: bam::io::Reader<R>,
