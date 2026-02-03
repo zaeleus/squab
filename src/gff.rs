@@ -20,7 +20,7 @@ where
         Box::new(BufReader::new(file))
     };
 
-    Ok(noodles::gff::io::Reader::new(Box::new(inner)))
+    Ok(noodles::gff::io::Reader::new(inner))
 }
 
 fn is_gzip<P>(src: P) -> bool
