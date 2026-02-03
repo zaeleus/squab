@@ -315,6 +315,10 @@ fn intersect<'f>(
                 || (*strand == Strand::Forward && !is_reverse_complemented)
             {
                 intersections.insert(name);
+
+                if matches!(intersections, Intersections::Many) {
+                    return Ok(());
+                }
             }
         }
     }
