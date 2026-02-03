@@ -9,7 +9,6 @@ use std::{
 
 use bstr::BStr;
 use noodles::{bam, core::Position};
-use rapidhash::RapidHashSet;
 
 use self::context::Event;
 pub use self::{context::Context, filter::Filter};
@@ -20,7 +19,23 @@ use crate::{
 
 const CHUNK_SIZE: usize = 8192;
 
-type Intersections<'f> = RapidHashSet<&'f BStr>;
+#[derive(Default)]
+enum Intersections<'f> {
+    #[default]
+    Empty,
+    One(&'f BStr),
+    Many,
+}
+
+impl<'f> Intersections<'f> {
+    fn insert(&mut self, name: &'f BStr) {
+        match self {
+            Self::Empty => *self = Self::One(name),
+            Self::One(other) if name != *other => *self = Self::Many,
+            _ => {}
+        }
+    }
+}
 
 pub fn count_single_end_records<'f, R>(
     mut reader: bam::io::Reader<R>,
@@ -308,14 +323,10 @@ fn intersect<'f>(
 }
 
 fn resolve_intersections<'f>(intersections: &Intersections<'f>) -> Event<'f> {
-    if intersections.is_empty() {
-        Event::Miss
-    } else if intersections.len() == 1 {
-        // SAFETY: `intersections` is nonempty.
-        let name = intersections.iter().next().unwrap();
-        Event::Hit(name)
-    } else {
-        Event::Ambiguous
+    match intersections {
+        Intersections::Empty => Event::Miss,
+        Intersections::One(name) => Event::Hit(name),
+        Intersections::Many => Event::Ambiguous,
     }
 }
 
