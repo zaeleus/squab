@@ -26,7 +26,7 @@ fn quantify(options: Cli) -> anyhow::Result<()> {
         options.with_nonunique_records,
     );
 
-    info!("using {} thread(s)", worker_count);
+    info!(worker_count);
 
     commands::quantify(
         bam_src,
