@@ -1,5 +1,6 @@
 pub mod context;
 mod filter;
+mod intersections;
 
 use std::{
     io::{self, Read},
@@ -7,35 +8,16 @@ use std::{
     thread,
 };
 
-use bstr::BStr;
 use noodles::{bam, core::Position};
 
-use self::context::Event;
 pub use self::{context::Context, filter::Filter};
+use self::{context::Event, intersections::Intersections};
 use crate::{
     Entry, IntervalTrees, MatchIntervals, RecordPairs, StrandSpecification,
     collections::IntervalTree,
 };
 
 const CHUNK_SIZE: usize = 8192;
-
-#[derive(Default)]
-enum Intersections<'f> {
-    #[default]
-    Empty,
-    One(&'f BStr),
-    Many,
-}
-
-impl<'f> Intersections<'f> {
-    fn insert(&mut self, name: &'f BStr) {
-        match self {
-            Self::Empty => *self = Self::One(name),
-            Self::One(other) if name != *other => *self = Self::Many,
-            _ => {}
-        }
-    }
-}
 
 pub fn count_single_end_records<'f, R>(
     mut reader: bam::io::Reader<R>,
