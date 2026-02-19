@@ -17,3 +17,32 @@ impl<'f> Intersections<'f> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use bstr::ByteSlice;
+
+    use super::*;
+
+    #[test]
+    fn test_default() {
+        assert!(matches!(Intersections::default(), Intersections::Empty));
+    }
+
+    #[test]
+    fn test_insert() {
+        let name_0 = b"f0".as_bstr();
+        let name_1 = b"f1".as_bstr();
+
+        let mut intersections = Intersections::default();
+
+        intersections.insert(name_0);
+        assert!(matches!(intersections, Intersections::One(s) if s == name_0));
+
+        intersections.insert(name_0);
+        assert!(matches!(intersections, Intersections::One(s) if s == name_0));
+
+        intersections.insert(name_1);
+        assert!(matches!(intersections, Intersections::Many));
+    }
+}
