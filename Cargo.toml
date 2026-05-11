@@ -20,8 +20,8 @@ flate2 = { version = "1.1.8", default-features = false, features = ["zlib-rs"] }
 git-testament = "0.2.0"
 indexmap = "2.7.1"
 mimalloc = "0.1.43"
-noodles = { version = "0.105.0", features = ["bam", "bgzf", "core", "gff", "sam"] }
-noodles-bgzf = { version = "0.46.0", features = ["libdeflate"] }
+noodles = { version = "0.110.0", features = ["bam", "bgzf", "core", "gff", "sam"] }
+noodles-bgzf = { version = "0.47.0", features = ["libdeflate"] }
 rapidhash = "4.2.1"
 thiserror = "2.0.11"
 tracing = "0.1.25"
