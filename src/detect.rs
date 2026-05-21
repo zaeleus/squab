@@ -267,16 +267,10 @@ mod tests {
 
         let expected = Counts {
             paired: 0,
-            forward: 0,
-            reverse: 1,
+            forward: 1,
+            reverse: 0,
         };
-        t(
-            &interval_tree,
-            Flags::REVERSE_COMPLEMENTED,
-            start,
-            end,
-            &expected,
-        );
+        t(&interval_tree, Flags::default(), start, end, &expected);
 
         let expected = Counts {
             paired: 0,
