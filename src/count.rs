@@ -1,6 +1,7 @@
 pub mod context;
 mod filter;
 mod intersections;
+mod try_buffered_chunks;
 
 use std::{
     io::{self, Read},
@@ -11,7 +12,7 @@ use std::{
 use noodles::{bam, core::Position};
 
 pub use self::{context::Context, filter::Filter};
-use self::{context::Event, intersections::Intersections};
+use self::{context::Event, intersections::Intersections, try_buffered_chunks::TryBufferedChunks};
 use crate::{
     Entry, IntervalTrees, MatchIntervals, RecordPairs, StrandSpecification,
     collections::IntervalTree,
@@ -33,13 +34,10 @@ where
         let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
         scope.spawn(move || {
-            let mut records = reader.records();
+            let chunks = TryBufferedChunks::new(reader.records(), CHUNK_SIZE);
 
-            loop {
-                let chunk: Vec<_> = records
-                    .by_ref()
-                    .take(CHUNK_SIZE)
-                    .collect::<io::Result<_>>()?;
+            for result in chunks {
+                let chunk = result?;
 
                 if chunk.is_empty() {
                     drop(tx);
@@ -135,11 +133,10 @@ where
         let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
 
         let reader_handle = scope.spawn(move || {
-            loop {
-                let chunk: Vec<_> = record_pairs
-                    .by_ref()
-                    .take(CHUNK_SIZE)
-                    .collect::<io::Result<_>>()?;
+            let chunks = TryBufferedChunks::new(&mut record_pairs, CHUNK_SIZE);
+
+            for result in chunks {
+                let chunk = result?;
 
                 if chunk.is_empty() {
                     drop(tx);
