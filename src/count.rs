@@ -3,11 +3,7 @@ mod filter;
 mod intersections;
 mod try_buffered_chunks;
 
-use std::{
-    io::{self, Read},
-    num::NonZero,
-    thread,
-};
+use std::io::{self, Read};
 
 use noodles::{bam, core::Position};
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -85,7 +81,6 @@ pub fn count_paired_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
-    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,
@@ -93,63 +88,29 @@ where
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut record_pairs = RecordPairs::new(reader, primary_only);
 
-    let (mut ctx, record_pairs) = thread::scope(move |scope| {
-        let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
+    let mut ctx = TryBufferedChunks::new(&mut record_pairs, CHUNK_SIZE)
+        .par_bridge()
+        .try_fold(Context::default, |mut ctx, result| {
+            let chunk = result?;
 
-        let reader_handle = scope.spawn(move || {
-            let chunks = TryBufferedChunks::new(&mut record_pairs, CHUNK_SIZE);
+            for (r1, r2) in chunk {
+                let event = count_paired_end_record_pair(
+                    interval_trees,
+                    filter,
+                    strand_specification,
+                    &r1,
+                    &r2,
+                )?;
 
-            for result in chunks {
-                let chunk = result?;
-
-                if chunk.is_empty() {
-                    drop(tx);
-                    break;
-                } else {
-                    tx.send(chunk).expect("reader channel unexpectedly closed");
-                }
+                ctx.add_event(event);
             }
 
-            Ok::<_, io::Error>(record_pairs)
-        });
-
-        let handles: Vec<_> = (0..worker_count.get())
-            .map(|_| {
-                let rx = rx.clone();
-
-                scope.spawn(move || {
-                    let mut ctx = Context::default();
-
-                    while let Ok(chunk) = rx.recv() {
-                        for (r1, r2) in chunk {
-                            let event = count_paired_end_record_pair(
-                                interval_trees,
-                                filter,
-                                strand_specification,
-                                &r1,
-                                &r2,
-                            )?;
-
-                            ctx.add_event(event);
-                        }
-                    }
-
-                    Ok::<_, io::Error>(ctx)
-                })
-            })
-            .collect();
-
-        let record_pairs = reader_handle.join().unwrap()?;
-
-        let mut ctx = Context::default();
-
-        for handle in handles {
-            let c = handle.join().unwrap()?;
+            Ok::<_, io::Error>(ctx)
+        })
+        .try_reduce(Context::default, |mut ctx, c| {
             ctx.add(&c);
-        }
-
-        Ok::<_, io::Error>((ctx, record_pairs))
-    })?;
+            Ok(ctx)
+        })?;
 
     for record in record_pairs.unmatched_records() {
         let event = count_single_end_record(interval_trees, filter, strand_specification, &record)?;

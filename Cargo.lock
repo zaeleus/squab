@@ -660,7 +660,6 @@ dependencies = [
  "anyhow",
  "bstr",
  "clap",
- "crossbeam-channel",
  "flate2",
  "git-testament",
  "indexmap",
