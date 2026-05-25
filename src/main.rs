@@ -28,6 +28,10 @@ fn quantify(options: Cli) -> anyhow::Result<()> {
 
     info!(worker_count);
 
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build_global()?;
+
     commands::quantify(
         bam_src,
         annotations_src,

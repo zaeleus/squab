@@ -10,6 +10,7 @@ use std::{
 };
 
 use noodles::{bam, core::Position};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 
 pub use self::{context::Context, filter::Filter};
 use self::{context::Event, intersections::Intersections, try_buffered_chunks::TryBufferedChunks};
@@ -25,65 +26,28 @@ pub fn count_single_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
-    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,
 {
-    thread::scope(move |scope| {
-        let (tx, rx) = crossbeam_channel::bounded(worker_count.get());
+    TryBufferedChunks::new(reader.records(), CHUNK_SIZE)
+        .par_bridge()
+        .try_fold(Context::default, |mut ctx, result| {
+            let chunk = result?;
 
-        scope.spawn(move || {
-            let chunks = TryBufferedChunks::new(reader.records(), CHUNK_SIZE);
+            for record in chunk {
+                let event =
+                    count_single_end_record(interval_trees, filter, strand_specification, &record)?;
 
-            for result in chunks {
-                let chunk = result?;
-
-                if chunk.is_empty() {
-                    drop(tx);
-                    break;
-                } else {
-                    tx.send(chunk).expect("reader channel unexpectedly closed");
-                }
+                ctx.add_event(event);
             }
 
-            Ok::<_, io::Error>(())
-        });
-
-        let handles: Vec<_> = (0..worker_count.get())
-            .map(|_| {
-                let rx = rx.clone();
-
-                scope.spawn(move || {
-                    let mut ctx = Context::default();
-
-                    while let Ok(chunk) = rx.recv() {
-                        for record in chunk {
-                            let event = count_single_end_record(
-                                interval_trees,
-                                filter,
-                                strand_specification,
-                                &record,
-                            )?;
-
-                            ctx.add_event(event);
-                        }
-                    }
-
-                    Ok::<_, io::Error>(ctx)
-                })
-            })
-            .collect();
-
-        let mut ctx = Context::default();
-
-        for handle in handles {
-            let c = handle.join().unwrap()?;
+            Ok(ctx)
+        })
+        .try_reduce(Context::default, |mut ctx, c| {
             ctx.add(&c);
-        }
-
-        Ok(ctx)
-    })
+            Ok(ctx)
+        })
 }
 
 pub fn count_single_end_record<'f>(
