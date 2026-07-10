@@ -58,10 +58,7 @@ where
     let file = File::open(src).map_err(|e| QuantifyError::OpenFile(e, src.into()))?;
 
     let decoder: Box<dyn bgzf::io::Read + Send> = if worker_count.get() > 1 {
-        Box::new(bgzf::io::MultithreadedReader::with_worker_count(
-            worker_count,
-            file,
-        ))
+        Box::new(bgzf::io::MultithreadedReader::new(file))
     } else {
         Box::new(bgzf::io::Reader::new(file))
     };
@@ -95,12 +92,20 @@ where
     info!("counting features");
 
     let ctx = match library_layout {
-        LibraryLayout::SingleEnd => {
-            count_single_end_records(reader, &interval_trees, &filter, strand_specification)?
-        }
-        LibraryLayout::PairedEnd => {
-            count_paired_end_records(reader, &interval_trees, &filter, strand_specification)?
-        }
+        LibraryLayout::SingleEnd => count_single_end_records(
+            reader,
+            &interval_trees,
+            &filter,
+            strand_specification,
+            worker_count,
+        )?,
+        LibraryLayout::PairedEnd => count_paired_end_records(
+            reader,
+            &interval_trees,
+            &filter,
+            strand_specification,
+            worker_count,
+        )?,
     };
 
     let mut writer: Box<dyn Write> = if let Some(dst) = dst {

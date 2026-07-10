@@ -398,9 +398,9 @@ dependencies = [
 
 [[package]]
 name = "noodles"
-version = "0.110.0"
+version = "0.112.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34e7ed524a472dbd0dc69cc7b63408f37552e48460028af44a3024f2eb77f036"
+checksum = "87594797cd9d328464328804fa8fc8921000b7b7c496a8225aeb86920d591258"
 dependencies = [
  "noodles-bam",
  "noodles-bgzf",
@@ -411,9 +411,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-bam"
-version = "0.89.0"
+version = "0.91.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c1872afd5963f751ae78ef04ab3fb050aefc615c05c04cda7c54120eedf9b0"
+checksum = "68aa8af90e253005bbb957a589da61d8966ea1453bb3c1122d53704ddaa5e93c"
 dependencies = [
  "bstr",
  "indexmap",
@@ -426,13 +426,14 @@ dependencies = [
 
 [[package]]
 name = "noodles-bgzf"
-version = "0.47.0"
+version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d22589ec50582fa0c3e629d27e5263fc5ff5d436955648ba601b7ac4155fbf2"
+checksum = "da1dbf501b46281ca402b458211653bc8c510ea605400a1192d272a35360aa54"
 dependencies = [
  "bytes",
  "crossbeam-channel",
  "libdeflater",
+ "rayon",
  "zlib-rs",
 ]
 
@@ -447,9 +448,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-csi"
-version = "0.56.0"
+version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6832254d731cb022d46927ce64403221b280b17140516cafa21e43ee4140d633"
+checksum = "56d2b47cd56d466c6b39d7d2d3f19905c786d5bbcf45c782af3c206129bb39b8"
 dependencies = [
  "bit-vec",
  "bstr",
@@ -460,9 +461,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-gff"
-version = "0.57.0"
+version = "0.58.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b724039f4d7cce1c47cfada85298f7fb195617a2d44cfd25dc376df886904ee"
+checksum = "61a5fb65a42b8aad5aa48c06ea287b4a9d7a8337c0911e4e3216412653a9d2ec"
 dependencies = [
  "bstr",
  "indexmap",
@@ -475,9 +476,9 @@ dependencies = [
 
 [[package]]
 name = "noodles-sam"
-version = "0.85.0"
+version = "0.86.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbaf538bea4f886de8b3fb611784a13f82c9f8e08e942849e88ec44234674512"
+checksum = "2553a62c2a78d87686005327f2597a765ae55e10e2fd09015a54c0337676fbae"
 dependencies = [
  "bitflags",
  "bstr",

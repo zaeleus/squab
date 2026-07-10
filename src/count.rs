@@ -3,7 +3,10 @@ mod filter;
 mod intersections;
 mod try_buffered_chunks;
 
-use std::io::{self, Read};
+use std::{
+    io::{self, Read},
+    num::NonZero,
+};
 
 use noodles::{bam, core::Position};
 use rayon::iter::{ParallelBridge, ParallelIterator};
@@ -22,28 +25,40 @@ pub fn count_single_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
+    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,
 {
-    TryBufferedChunks::new(reader.records(), CHUNK_SIZE)
-        .par_bridge()
-        .try_fold(Context::default, |mut ctx, result| {
-            let chunk = result?;
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build()
+        .unwrap();
 
-            for record in chunk {
-                let event =
-                    count_single_end_record(interval_trees, filter, strand_specification, &record)?;
+    pool.install(|| {
+        TryBufferedChunks::new(reader.records(), CHUNK_SIZE)
+            .par_bridge()
+            .try_fold(Context::default, |mut ctx, result| {
+                let chunk = result?;
 
-                ctx.add_event(event);
-            }
+                for record in chunk {
+                    let event = count_single_end_record(
+                        interval_trees,
+                        filter,
+                        strand_specification,
+                        &record,
+                    )?;
 
-            Ok(ctx)
-        })
-        .try_reduce(Context::default, |mut ctx, c| {
-            ctx.add(&c);
-            Ok(ctx)
-        })
+                    ctx.add_event(event);
+                }
+
+                Ok(ctx)
+            })
+            .try_reduce(Context::default, |mut ctx, c| {
+                ctx.add(&c);
+                Ok(ctx)
+            })
+    })
 }
 
 pub fn count_single_end_record<'f>(
@@ -81,36 +96,44 @@ pub fn count_paired_end_records<'f, R>(
     interval_trees: &IntervalTrees<'f>,
     filter: &'f Filter,
     strand_specification: StrandSpecification,
+    worker_count: NonZero<usize>,
 ) -> io::Result<Context<'f>>
 where
     R: Read + Send,
 {
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(worker_count.get())
+        .build()
+        .unwrap();
+
     let primary_only = !filter.with_secondary_records() && !filter.with_supplementary_records();
     let mut record_pairs = RecordPairs::new(reader, primary_only);
 
-    let mut ctx = TryBufferedChunks::new(&mut record_pairs, CHUNK_SIZE)
-        .par_bridge()
-        .try_fold(Context::default, |mut ctx, result| {
-            let chunk = result?;
+    let mut ctx = pool.install(|| {
+        TryBufferedChunks::new(&mut record_pairs, CHUNK_SIZE)
+            .par_bridge()
+            .try_fold(Context::default, |mut ctx, result| {
+                let chunk = result?;
 
-            for (r1, r2) in chunk {
-                let event = count_paired_end_record_pair(
-                    interval_trees,
-                    filter,
-                    strand_specification,
-                    &r1,
-                    &r2,
-                )?;
+                for (r1, r2) in chunk {
+                    let event = count_paired_end_record_pair(
+                        interval_trees,
+                        filter,
+                        strand_specification,
+                        &r1,
+                        &r2,
+                    )?;
 
-                ctx.add_event(event);
-            }
+                    ctx.add_event(event);
+                }
 
-            Ok::<_, io::Error>(ctx)
-        })
-        .try_reduce(Context::default, |mut ctx, c| {
-            ctx.add(&c);
-            Ok(ctx)
-        })?;
+                Ok::<_, io::Error>(ctx)
+            })
+            .try_reduce(Context::default, |mut ctx, c| {
+                ctx.add(&c);
+                Ok(ctx)
+            })
+    })?;
 
     for record in record_pairs.unmatched_records() {
         let event = count_single_end_record(interval_trees, filter, strand_specification, &record)?;
