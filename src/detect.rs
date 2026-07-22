@@ -230,7 +230,24 @@ fn discard_header<R>(reader: &mut bam::io::Reader<R>) -> io::Result<()>
 where
     R: Read,
 {
-    reader.read_header()?;
+    const MAGIC_NUMBER: [u8; 4] = *b"BAM\x01";
+
+    let mut header_reader = reader.header_reader();
+
+    let magic_number = header_reader.read_magic_number()?;
+
+    if magic_number != MAGIC_NUMBER {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid BAM magic number",
+        ));
+    }
+
+    let mut raw_sam_header_reader = header_reader.raw_sam_header_reader()?;
+    raw_sam_header_reader.discard_to_end()?;
+
+    header_reader.read_reference_sequences()?;
+
     Ok(())
 }
 
