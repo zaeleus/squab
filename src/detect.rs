@@ -147,7 +147,7 @@ fn count<R>(reader: &mut bam::io::Reader<R>, interval_trees: &IntervalTrees) -> 
 where
     R: Read,
 {
-    reader.read_header()?;
+    discard_header(reader)?;
 
     let mut n = 0;
     let mut record = bam::Record::default();
@@ -224,6 +224,14 @@ fn detect(counts: &Counts) -> io::Result<(LibraryLayout, StrandSpecification, f6
         strand_specification,
         strandedness_confidence,
     ))
+}
+
+fn discard_header<R>(reader: &mut bam::io::Reader<R>) -> io::Result<()>
+where
+    R: Read,
+{
+    reader.read_header()?;
+    Ok(())
 }
 
 #[cfg(test)]
