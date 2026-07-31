@@ -92,20 +92,12 @@ where
     info!("counting features");
 
     let ctx = match library_layout {
-        LibraryLayout::SingleEnd => count_single_end_records(
-            reader,
-            &interval_trees,
-            &filter,
-            strand_specification,
-            worker_count,
-        )?,
-        LibraryLayout::PairedEnd => count_paired_end_records(
-            reader,
-            &interval_trees,
-            &filter,
-            strand_specification,
-            worker_count,
-        )?,
+        LibraryLayout::SingleEnd => {
+            count_single_end_records(reader, &interval_trees, &filter, strand_specification)?
+        }
+        LibraryLayout::PairedEnd => {
+            count_paired_end_records(reader, &interval_trees, &filter, strand_specification)?
+        }
     };
 
     let mut writer: Box<dyn Write> = if let Some(dst) = dst {
