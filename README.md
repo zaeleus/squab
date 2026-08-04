@@ -81,7 +81,7 @@ $ squab \
 $ squab \
     --annotations annotations.gff3.gz \
     --feature-type gene \
-    --id gene_name \
+    --feature-id gene_name \
     --output sample.counts.tsv \
     sample.bam
 ```
