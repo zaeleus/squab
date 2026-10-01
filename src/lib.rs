@@ -87,21 +87,21 @@ where
             continue;
         };
 
-        if record.ty() != feature_type {
+        if record.ty().as_ref() != feature_type {
             continue;
         }
 
         let reference_sequence_name = record.reference_sequence_name();
 
-        let reference_sequence_id = match reference_sequence_names
-            .get_index_of(reference_sequence_name)
-        {
-            Some(id) => id,
-            None => {
-                let (id, _) = reference_sequence_names.insert_full(reference_sequence_name.into());
-                id
-            }
-        };
+        let reference_sequence_id =
+            match reference_sequence_names.get_index_of(reference_sequence_name.as_ref()) {
+                Some(id) => id,
+                None => {
+                    let (id, _) =
+                        reference_sequence_names.insert_full(reference_sequence_name.into_owned());
+                    id
+                }
+            };
 
         let start = record.start()?;
         let end = record.end()?;
